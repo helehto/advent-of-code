@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import functools
+import json
 import sys
 
 
@@ -21,7 +22,7 @@ def main():
     packets = []
     for section in sys.stdin.read().strip().split("\n\n"):
         a, b = section.split()
-        packets += (eval(a), eval(b))
+        packets += (json.loads(a), json.loads(b))
 
     # part 1
     s = 0
