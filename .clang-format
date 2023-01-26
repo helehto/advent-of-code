@@ -1,0 +1,11 @@
+BasedOnStyle: LLVM
+AccessModifierOffset: -4
+AlwaysBreakTemplateDeclarations: Yes
+AllowShortFunctionsOnASingleLine: None
+BinPackArguments: true
+BinPackParameters: false
+BreakBeforeBraces: WebKit
+BreakConstructorInitializers: AfterColon
+ColumnLimit: 90
+IndentWidth: 4
+UseTab: Never

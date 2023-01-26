@@ -1,0 +1,2 @@
+#define X_FOR_EACH_PROBLEM(X) \
+@PROBLEMS@
