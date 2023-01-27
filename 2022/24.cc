@@ -97,10 +97,7 @@ constexpr int heuristic(Point<int> v, Point<int> goal)
 
 void run_2022_24(FILE *f)
 {
-    std::vector<std::string> lines;
-    std::string s;
-    while (getline(f, s))
-        lines.push_back(std::move(s));
+    std::vector<std::string> lines = getlines(f);
     const size_t n = lines.size();
     const size_t m = lines[0].size();
 

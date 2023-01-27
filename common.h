@@ -9,6 +9,7 @@
 #include <functional>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 constexpr uint64_t hash_mix(uint64_t x)
 {
@@ -216,6 +217,14 @@ inline bool getline(FILE *f, std::string &s)
     } while (c != EOF);
 
     return true;
+}
+
+inline std::vector<std::string> getlines(FILE *f) {
+    std::vector<std::string> lines;
+    std::string s;
+    while (getline(f, s))
+        lines.push_back(std::move(s));
+    return lines;
 }
 
 template <typename T>
