@@ -257,3 +257,31 @@ static std::vector<T> find_numbers(std::string_view s)
     find_numbers(s, result);
     return result;
 }
+
+static inline std::vector<std::string_view> &split(std::string_view s,
+                                                   std::vector<std::string_view> &out)
+{
+    out.clear();
+
+    while (true) {
+        while (!s.empty() && isspace(s.front()))
+            s.remove_prefix(1);
+        if (s.empty())
+            break;
+
+        size_t i = 0;
+        while (i < s.size() && !isspace(s[i]))
+            i++;
+        out.emplace_back(s.data(), i);
+        s.remove_prefix(i);
+    }
+
+    return out;
+}
+
+static inline std::vector<std::string_view> split(std::string_view s)
+{
+    std::vector<std::string_view> out;
+    split(s, out);
+    return out;
+}
