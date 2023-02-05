@@ -2,6 +2,7 @@ project('sub1sec', 'cpp', default_options: ['cpp_std=c++20'])
 
 add_project_arguments('-march=native', language: 'cpp')
 add_project_arguments('-fno-omit-frame-pointer', language: 'cpp')
+add_project_arguments('-Wno-stringop-overflow', language: 'cpp')
 
 days = [
   [2015, 1],
@@ -12,6 +13,7 @@ days = [
   [2015, 6],
   [2015, 8],
   [2015, 9],
+  [2015, 10],
   [2022, 1],
   [2022, 2],
   [2022, 3],
