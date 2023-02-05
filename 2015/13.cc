@@ -1,0 +1,84 @@
+#include "common.h"
+#include "dense_map.h"
+#include <fmt/core.h>
+#include <fmt/ranges.h>
+#include <span>
+
+static std::vector<std::vector<int>> get_happiness_matrix(FILE *f)
+{
+    const auto lines = getlines(f);
+    int n = 0;
+
+    dense_map<std::string_view, int> name_map;
+    std::vector<std::string_view> words;
+    for (auto &line : lines) {
+        split(line, words);
+        words[10].remove_suffix(1); // remove full stop
+        if (auto [it, inserted] = name_map.emplace(words[0], n); inserted)
+            n++;
+        if (auto [it, inserted] = name_map.emplace(words[10], n); inserted)
+            n++;
+    }
+
+    for (auto k : name_map)
+        fmt::print("{}\n", k);
+    fflush(stdout);
+
+    std::vector<std::vector<int>> matrix(n, std::vector<int>(n));
+    for (auto &line : lines) {
+        split(line, words);
+        words[10].remove_suffix(1); // remove full stop
+        auto i = name_map.at(words[0]);
+        auto j = name_map.at(words[10]);
+        int d = -1;
+        auto r = std::from_chars(begin(words[3]), end(words[3]), d);
+        assert(r.ec == std::errc());
+        if (words[2] == "lose")
+            d = -d;
+        matrix[i][j] = d;
+    }
+
+    return matrix;
+}
+
+static int total_happiness(const std::vector<std::vector<int>> &matrix,
+                           std::span<int> perm)
+{
+    int result = 0;
+
+    for (size_t i = 1; i < perm.size(); i++) {
+        result += matrix[perm[i - 1]][perm[i]];
+        result += matrix[perm[i]][perm[i - 1]];
+    }
+
+    result += matrix[perm.front()][perm.back()];
+    result += matrix[perm.back()][perm.front()];
+
+    return result;
+}
+
+static int max_happiness(const std::vector<std::vector<int>> &matrix)
+{
+    std::vector<int> perm(matrix.size());
+    for (size_t i = 0; i < matrix.size(); i++)
+        perm[i] = i;
+
+    int max_happiness = 0;
+    do {
+        int total = total_happiness(matrix, perm);
+        max_happiness = std::max(max_happiness, total);
+    } while (std::next_permutation(begin(perm), end(perm)));
+
+    return max_happiness;
+}
+
+void run_2015_13(FILE *f)
+{
+    auto matrix = get_happiness_matrix(f);
+    fmt::print("{}\n", max_happiness(matrix));
+
+    for (auto &row : matrix)
+        row.push_back(0);
+    matrix.push_back(std::vector<int>(matrix.size() + 1, 0));
+    fmt::print("{}\n", max_happiness(matrix));
+}
