@@ -81,7 +81,6 @@ static int part1(const std::vector<std::string> &map, const std::vector<Move> &m
 static int part2(const std::vector<std::string> &map, const std::vector<Move> &moves)
 {
     constexpr int face_width = 50;
-    std::vector<std::vector<int>> faces(map[0].size(), std::vector<int>(map.size()));
     std::vector<Point<int>> face_to_global;
 
     auto wrap = [&](Point<int> localp, int face,

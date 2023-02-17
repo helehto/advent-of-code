@@ -4,7 +4,7 @@
 #include <fmt/ranges.h>
 #include <span>
 
-static std::vector<std::vector<int>> get_distance_matrix(FILE *f)
+static Matrix<int> get_distance_matrix(FILE *f)
 {
     const auto lines = getlines(f);
     int n = 0;
@@ -19,7 +19,7 @@ static std::vector<std::vector<int>> get_distance_matrix(FILE *f)
             n++;
     }
 
-    std::vector<std::vector<int>> dist(n, std::vector<int>(n));
+    Matrix<int> dist(n, n);
     for (auto &line : lines) {
         split(line, words);
         auto i = name_map.at(words[0]);
@@ -27,29 +27,29 @@ static std::vector<std::vector<int>> get_distance_matrix(FILE *f)
         int distance = -1;
         auto r = std::from_chars(begin(words[4]), end(words[4]), distance);
         assert(r.ec == std::errc());
-        dist[i][j] = distance;
-        dist[j][i] = distance;
+        dist(i, j) = distance;
+        dist(j, i) = distance;
     }
 
     return dist;
 }
 
-static int evaluate_route(const std::vector<std::vector<int>> &dist, std::span<int> perm)
+static int evaluate_route(const Matrix<int> &dist, std::span<int> perm)
 {
     int cost = 0;
 
     for (size_t i = 1; i < perm.size(); i++)
-        cost += dist[perm[i - 1]][perm[i]];
+        cost += dist(perm[i - 1], perm[i]);
 
     return cost;
 }
 
 template <typename Compare>
-static int solve(const std::vector<std::vector<int>> &dist, Compare comp)
+static int solve(const Matrix<int> &dist, Compare comp)
 {
     std::vector<int> perm;
-    perm.resize(dist.size());
-    for (size_t i = 0; i < dist.size(); i++)
+    perm.resize(dist.rows);
+    for (size_t i = 0; i < perm.size(); i++)
         perm[i] = i;
 
     int cost = evaluate_route(dist, perm);

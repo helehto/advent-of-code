@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <fmt/core.h>
 #include <functional>
+#include <memory>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -285,3 +286,32 @@ static inline std::vector<std::string_view> split(std::string_view s)
     split(s, out);
     return out;
 }
+
+template <typename T>
+struct Matrix {
+    std::unique_ptr<T[]> data;
+    size_t rows;
+    size_t cols;
+
+    Matrix() = default;
+
+    Matrix(size_t rows_, size_t cols_, T value = T()) :
+        data(new T[rows_ * cols_](value)), rows(rows_), cols(cols_)
+    {
+    }
+
+    T &operator()(size_t i, size_t j)
+    {
+        return data[i * cols + j];
+    }
+
+    const T &operator()(size_t i, size_t j) const
+    {
+        return data[i * cols + j];
+    }
+
+    size_t size() const
+    {
+        return rows * cols;
+    }
+};

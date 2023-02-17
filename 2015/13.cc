@@ -4,7 +4,7 @@
 #include <fmt/ranges.h>
 #include <span>
 
-static std::vector<std::vector<int>> get_happiness_matrix(FILE *f)
+static Matrix<int> get_happiness_matrix(FILE *f)
 {
     const auto lines = getlines(f);
     int n = 0;
@@ -20,11 +20,7 @@ static std::vector<std::vector<int>> get_happiness_matrix(FILE *f)
             n++;
     }
 
-    for (auto k : name_map)
-        fmt::print("{}\n", k);
-    fflush(stdout);
-
-    std::vector<std::vector<int>> matrix(n, std::vector<int>(n));
+    Matrix<int> matrix(n, n);
     for (auto &line : lines) {
         split(line, words);
         words[10].remove_suffix(1); // remove full stop
@@ -35,32 +31,31 @@ static std::vector<std::vector<int>> get_happiness_matrix(FILE *f)
         assert(r.ec == std::errc());
         if (words[2] == "lose")
             d = -d;
-        matrix[i][j] = d;
+        matrix(i, j) = d;
     }
 
     return matrix;
 }
 
-static int total_happiness(const std::vector<std::vector<int>> &matrix,
-                           std::span<int> perm)
+static int total_happiness(const Matrix<int> &matrix, std::span<int> perm)
 {
     int result = 0;
 
     for (size_t i = 1; i < perm.size(); i++) {
-        result += matrix[perm[i - 1]][perm[i]];
-        result += matrix[perm[i]][perm[i - 1]];
+        result += matrix(perm[i - 1], perm[i]);
+        result += matrix(perm[i], perm[i - 1]);
     }
 
-    result += matrix[perm.front()][perm.back()];
-    result += matrix[perm.back()][perm.front()];
+    result += matrix(perm.front(), perm.back());
+    result += matrix(perm.back(), perm.front());
 
     return result;
 }
 
-static int max_happiness(const std::vector<std::vector<int>> &matrix)
+static int max_happiness(const Matrix<int> &matrix)
 {
-    std::vector<int> perm(matrix.size());
-    for (size_t i = 0; i < matrix.size(); i++)
+    std::vector<int> perm(matrix.rows);
+    for (size_t i = 0; i < perm.size(); i++)
         perm[i] = i;
 
     int max_happiness = 0;
@@ -77,8 +72,11 @@ void run_2015_13(FILE *f)
     auto matrix = get_happiness_matrix(f);
     fmt::print("{}\n", max_happiness(matrix));
 
-    for (auto &row : matrix)
-        row.push_back(0);
-    matrix.push_back(std::vector<int>(matrix.size() + 1, 0));
-    fmt::print("{}\n", max_happiness(matrix));
+    Matrix<int> augmented(matrix.rows+1,matrix.cols+1);
+    for (size_t i = 0; i < matrix.rows; i++) {
+        for (size_t j = 0; j < matrix.cols; j++) {
+            augmented(i, j) = matrix(i, j);
+        }
+    }
+    fmt::print("{}\n", max_happiness(augmented));
 }
