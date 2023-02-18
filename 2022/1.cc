@@ -1,5 +1,6 @@
 #include "common.h"
 #include <algorithm>
+#include <charconv>
 #include <fmt/core.h>
 #include <string>
 #include <vector>
@@ -12,10 +13,13 @@ void run_2022_1(FILE *f)
     std::vector<int> calories{0};
 
     while (getline(f, s)) {
-        if (s.empty())
+        if (s.empty()) {
             calories.push_back(0);
-        else
-            calories.back() += std::stoi(s);
+        } else {
+            int value = 0;
+            std::from_chars(s.data(), s.data() + s.size(), value);
+            calories.back() += value;
+        }
     }
 
     std::nth_element(begin(calories), begin(calories) + 2, end(calories));
