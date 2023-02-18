@@ -20,13 +20,7 @@ static uint64_t make_mask(std::string_view s)
 
 void run_2022_3(FILE *f)
 {
-    std::vector<std::string> strings;
-
-    std::string s;
-    while (getline(f, s)) {
-        if (!s.empty())
-            strings.push_back(std::move(s));
-    }
+    std::vector<std::string> strings = getlines(f);
 
     int part1 = 0;
     for (const auto &s : strings) {
