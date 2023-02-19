@@ -122,6 +122,85 @@ static __m256i md5_block_avx2(uint8_t *messages, uint32_t *lengths)
     return _mm256_add_epi32(A, _mm256_set1_epi32(0x67452301));
 }
 
+struct to_chars_result {
+    char *ptr;
+};
+
+static constexpr uint64_t ctpow(uint64_t base, int exp)
+{
+    uint64_t result = 1;
+    for (int i = 0; i < exp; i++)
+        result *= base;
+    return result;
+}
+
+__attribute__((noinline)) static to_chars_result to_chars(char *p, int n)
+{
+    // For integers with `i` leading zero bits where 0 ≤ i < 64, index `i` in
+    // this table gives floor(log10(2 ** i)).
+    //
+    // This gives an initial value for the number of digits in base 10, to be
+    // adjusted with next_power_of_10 below.
+    static constexpr std::array<uint8_t, 64> num_digits10 = {
+        19, 19, 19, 19, 18, 18, 18, 17, 17, 17, 16, 16, 16, 16, 15, 15,
+        15, 14, 14, 14, 13, 13, 13, 13, 12, 12, 12, 11, 11, 11, 10, 10,
+        10, 10, 9,  9,  9,  8,  8,  8,  7,  7,  7,  7,  6,  6,  6,  5,
+        5,  5,  4,  4,  4,  4,  3,  3,  3,  2,  2,  2,  1,  1,  1,  0};
+
+    // For integers with `i` leading zero bits where 0 ≤ i < 64, index `i` in
+    // this table gives the next power of 10.
+    //
+    // For adjacent powers of two where there is a power of ten between them,
+    // e.g. 64 ≤ 100 ≤ 128, we need to consult this table to determine whether
+    // the number of digits must be adjusted by 1. For instance, 99 and 101
+    // both have 57 leading zero bits when written as 64-bit integers, but 101
+    // contains an extra digit in base 10.
+    static constexpr auto next_power_of_10 = [] {
+        std::array<uint64_t, num_digits10.size()> tab;
+        for (int i = 63; i >= 0; i--)
+            tab[i] = ctpow(10, num_digits10[i]);
+        return tab;
+    }();
+
+    // 00-99 packed into a single string.
+    static constexpr const char packed_digits2[] =
+        "0001020304050607080910111213141516171819"
+        "2021222324252627282930313233343536373839"
+        "4041424344454647484950515253545556575859"
+        "6061626364656667686970717273747576777879"
+        "8081828384858687888990919293949596979899";
+
+    if (__builtin_expect(n < 10, 0)) {
+        *p = '0' + n % 10;
+        return {p + 1};
+    }
+
+    // Determine the number of base 10 digits to be written. This way, we can
+    // write the digits into the right place immediately and not have to
+    // reverse or move them afterwards.
+    const int lzcnt = __builtin_clzl(n);
+    const int ndigits = num_digits10[lzcnt] + ((uint64_t)n >= next_power_of_10[lzcnt]);
+
+    char *q = p + ndigits;
+
+    for (; n >= 100; n /= 100, q -= 2) {
+        const int r = n % 100;
+        q[-2] = packed_digits2[2 * r];
+        q[-1] = packed_digits2[2 * r + 1];
+    }
+
+    // At this point, `n` is at most 99. Instead of dividing by 10 to find the
+    // final digits, split this into two cases: 0 < n < 10 and 10 ≤ n < 100.
+    if (n >= 10) {
+        q[-2] = packed_digits2[2 * n + 0];
+        q[-1] = packed_digits2[2 * n + 1];
+    } else {
+        q[-1] = n + '0';
+    }
+
+    return {p + ndigits};
+}
+
 static std::pair<int, int> hash(char *buffer, int text_offset, int n, int stride)
 {
     const auto mask5 = _mm256_set1_epi32(0xf0ffff);
@@ -129,12 +208,11 @@ static std::pair<int, int> hash(char *buffer, int text_offset, int n, int stride
     const auto vzero = _mm256_set1_epi32(0);
 
     // Assemble the eight inputs and their lengths.
-    char *p = buffer + text_offset;
-    char *q = buffer + 64;
     uint32_t lengths[8];
     for (int j = 0; j < 8; j++) {
-        auto r = std::to_chars(p + 64 * j, q + 64 * j, n + j * stride);
-        lengths[j] = r.ptr - (p + 64 * j) + text_offset;
+        char *p = buffer + text_offset + 64*j;
+        auto r = to_chars(p, n + j * stride);
+        lengths[j] = r.ptr - p + text_offset;
     }
 
     // Run MD5 on the eight inputs.
