@@ -161,7 +161,7 @@ hash_search(std::string_view s, int n, int stride, std::atomic_int &limit)
     for (int i = 0; i < 8; i++)
         memcpy(input + 64 * i, s.data(), s.size());
 
-    for (size_t i = 0; (i & 16384) != 0 || n < limit.load(); i++, n += 8 * stride) {
+    for (size_t i = 0; n < limit.load(); i++, n += 8 * stride) {
         auto [eqmask5, eqmask6] = hash(input, s.size(), n, stride);
 
         if (eqmask5)
