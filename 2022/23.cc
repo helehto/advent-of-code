@@ -115,8 +115,6 @@ void run_2022_23(FILE *f)
             if (mask == 0)
                 continue;
 
-            assert(map.neighborhood_mask(p) != 0);
-
             for (const auto &d : dirs) {
                 if ((mask & d.mask) == 0) {
                     Point<int> dest{p.x + d.dx, p.y + d.dy};
