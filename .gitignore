@@ -1,4 +1,4 @@
 build
-inputs
+inputs/*.txt
 *.txt
 .session

@@ -19,7 +19,7 @@ def main() -> None:
     args = parser.parse_args()
 
     time = now.replace(year=args.year, day=args.day)
-    path = Path(f"input-{time.year}-{time.day}.txt")
+    path = Path(__file__).parent / "inputs" / f"input-{time.year}-{time.day}.txt"
 
     # Try a cached copy first to avoid hammering the server on repeated runs.
     url = f"https://adventofcode.com/{time.year}/day/{time.day}/input"
