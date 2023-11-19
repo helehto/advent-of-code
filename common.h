@@ -205,6 +205,7 @@ constexpr T modulo(T x, T mod)
 inline bool getline(FILE *f, std::string &s)
 {
     s.clear();
+    s.reserve(64);
 
     int c = getc(f);
     if (c == EOF)
