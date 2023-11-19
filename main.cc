@@ -47,12 +47,12 @@ static constexpr const Problem *lookup_problem(int year, int day)
     return nullptr;
 }
 
-static std::vector<uint64_t> run_problem(const Problem &p, int iterations)
+static std::vector<uint64_t>
+run_problem(const Problem &p, std::string input_path, int iterations)
 {
     using namespace std::chrono;
 
-    auto input_path = fmt::format("../inputs/input-{}-{}.txt", p.year, p.day);
-    FILE *f = fopen(input_path.c_str(), "r");
+    FILE *f = input_path.empty() ? stdin : fopen(input_path.c_str(), "r");
 
     std::vector<uint64_t> durations;
     durations.reserve(iterations);
@@ -151,13 +151,15 @@ int main(int argc, char **argv)
     if (read_from_stdin) {
         if (problems_to_run.size() > 1)
             die("can only specify one problem with -s, got %zu", problems_to_run.size());
-        run_problem(*problems_to_run[0], 1);
+        run_problem(*problems_to_run[0], "", 1);
         return 0;
     }
 
     std::vector<TimingData> timings;
-    for (const auto *p : problems_to_run)
-        timings.push_back({p->year, p->day, run_problem(*p, iterations)});
+    for (const auto *p : problems_to_run) {
+        auto input_path = fmt::format("../inputs/input-{}-{}.txt", p->year, p->day);
+        timings.push_back({p->year, p->day, run_problem(*p, input_path, iterations)});
+    }
 
     const char *separator = "";
     fmt::print("[");
