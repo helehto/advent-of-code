@@ -315,6 +315,26 @@ struct Matrix {
     {
         return rows * cols;
     }
+
+    T *begin()
+    {
+        return data.get();
+    }
+
+    T *end()
+    {
+        return data.get() + rows * cols;
+    }
+
+    const T *begin() const
+    {
+        return data.get();
+    }
+
+    const T *end() const
+    {
+        return data.get() + rows * cols;
+    }
 };
 
 template <typename T, typename Predicate>
