@@ -288,6 +288,35 @@ static inline std::vector<std::string_view> split(std::string_view s)
     return out;
 }
 
+struct Ndindex2DRange {
+    size_t rows;
+    size_t cols;
+    size_t i = 0;
+    size_t j = 0;
+
+    struct sentinel {};
+
+    Ndindex2DRange begin() { return *this; }
+    sentinel end() { return {}; }
+
+    Point<size_t> operator*() const { return {j, i}; }
+    bool operator==(sentinel) const { return i >= rows; }
+
+    Ndindex2DRange &operator++()
+    {
+        if (j < cols - 1) {
+            j++;
+        } else {
+            i++;
+            j = 0;
+        }
+
+        return *this;
+    }
+
+    Ndindex2DRange operator++(int) { return ++*this; }
+};
+
 template <typename T>
 struct Matrix {
     std::unique_ptr<T[]> data;
@@ -346,6 +375,11 @@ struct Matrix {
     constexpr const T *end() const
     {
         return data.get() + rows * cols;
+    }
+
+    Ndindex2DRange ndindex()
+    {
+        return {rows,cols};
     }
 };
 

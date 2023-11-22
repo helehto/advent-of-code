@@ -1,7 +1,7 @@
 BasedOnStyle: LLVM
 AccessModifierOffset: -4
 AlwaysBreakTemplateDeclarations: Yes
-AllowShortFunctionsOnASingleLine: None
+AllowShortFunctionsOnASingleLine: Inline
 BinPackArguments: true
 BinPackParameters: false
 BreakBeforeBraces: WebKit

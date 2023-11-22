@@ -37,33 +37,24 @@ int run_2021_9(FILE *f)
     auto lines = getlines(f);
 
     Matrix<char> chart(lines.size(), lines[0].size());
-    for (size_t y = 0; y < chart.rows; ++y) {
-        for (size_t x = 0; x < chart.cols; ++x)
-            chart(y, x) = lines[y][x];
-    }
+    for (auto p : chart.ndindex())
+        chart(p) = lines[p.y][p.x];
 
     int risk_sum = 0;
-    for (size_t y = 0; y < chart.rows; ++y) {
-        for (size_t x = 0; x < chart.cols; ++x) {
-            const Point<size_t> p = {x, y};
+    for (auto p : chart.ndindex()) {
+        char min_neighbor = CHAR_MAX;
+        for (auto p : neighbors4(chart, p))
+            min_neighbor = std::min(min_neighbor, chart(p));
 
-            char min_neighbor = CHAR_MAX;
-            for (auto p : neighbors4(chart, p))
-                min_neighbor = std::min(min_neighbor, chart(p));
-
-            if (chart(p) < min_neighbor)
-                risk_sum += chart(p) + 1 - '0';
-        }
+        if (chart(p) < min_neighbor)
+            risk_sum += chart(p) + 1 - '0';
     }
     fmt::print("{}\n", risk_sum);
 
     std::unordered_set<Point<size_t>> unvisited;
-    for (size_t y = 0; y < chart.rows; ++y) {
-        for (size_t x = 0; x < chart.cols; ++x) {
-            const Point<size_t> p = {x, y};
-            if (chart(p) != '9')
-                unvisited.insert(p);
-        }
+    for (auto p : chart.ndindex()) {
+        if (chart(p) != '9')
+            unvisited.insert(p);
     }
 
     Matrix<int> basins(chart.rows, chart.cols, -1);

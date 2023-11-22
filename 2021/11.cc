@@ -41,10 +41,8 @@ int run_2021_11(FILE *f)
     auto lines = getlines(f);
 
     Matrix<char> grid(lines.size(), lines[0].size());
-    for (size_t y = 0; y < grid.rows; ++y) {
-        for (size_t x = 0; x < grid.cols; ++x)
-            grid(y, x) = lines[y][x] - '0';
-    }
+    for (auto p : grid.ndindex())
+        grid(p) = lines[p.y][p.x] - '0';
 
     dense_set<Point<size_t>> flashed;
     std::vector<Point<size_t>> queue;
@@ -56,12 +54,9 @@ int run_2021_11(FILE *f)
         for (auto &v : grid)
             v += 1;
 
-        for (size_t y = 0; y < grid.rows; y++) {
-            for (size_t x = 0; x < grid.cols; x++) {
-                Point<size_t> p(x, y);
-                if (grid(p) > 9)
-                    queue.push_back(p);
-            }
+        for (auto p : grid.ndindex()) {
+            if (grid(p) > 9)
+                queue.push_back(p);
         }
 
         for (size_t j = 0; j < queue.size(); j++) {
@@ -75,13 +70,10 @@ int run_2021_11(FILE *f)
             }
         }
 
-        for (size_t y = 0; y < grid.rows; y++) {
-            for (size_t x = 0; x < grid.cols; x++) {
-                Point<size_t> p(x, y);
-                if (grid(p) > 9) {
-                    total_flashes++;
-                    grid(p) = 0;
-                }
+        for (auto p : grid.ndindex()) {
+            if (grid(p) > 9) {
+                total_flashes++;
+                grid(p) = 0;
             }
         }
 
