@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fmt/core.h>
+#include <fnmatch.h>
 #include <getopt.h>
 #include <string_view>
 #include <tuple>
@@ -37,14 +38,18 @@ static constexpr Problem problems[] = {
     X_FOR_EACH_PROBLEM(X_PROBLEM_TABLE_INITIALIZERS)
 };
 
-static constexpr const Problem *lookup_problem(int year, int day)
+static std::vector<const Problem *> glob_problem(const char *pattern)
 {
+    std::vector<const Problem *> result;
+
     for (const auto &p : problems) {
-        if (year == p.year && day == p.day)
-            return &p;
+        char s[64];
+        snprintf(s, sizeof(s), "%d/%d", p.year, p.day);
+        if (fnmatch(pattern, s, 0) == 0)
+            result.push_back(&p);
     }
 
-    return nullptr;
+    return result;
 }
 
 static std::vector<uint64_t>
@@ -136,16 +141,10 @@ int main(int argc, char **argv)
 
     std::vector<const Problem *> problems_to_run;
     for (int i = optind; i < argc; i++) {
-        int y = 0, d = 0;
-        const Problem *p;
-        if (argv[i] == "all"sv) {
-            for (auto &p : problems)
-                problems_to_run.push_back(&p);
-        } else if (sscanf(argv[i], "%d/%d", &y, &d) != 2 || !(p = lookup_problem(y, d))) {
-            die("invalid problem %s", argv[i]);
-        } else {
-            problems_to_run.push_back(p);
-        }
+        std::vector<const Problem *> problems = glob_problem(argv[i]);
+        if (problems.empty())
+            die("invalid problem or pattern '%s'", argv[i]);
+        problems_to_run.insert(end(problems_to_run), begin(problems), end(problems));
     }
 
     if (read_from_stdin) {
