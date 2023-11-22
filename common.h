@@ -297,8 +297,10 @@ struct Matrix {
     Matrix() = default;
 
     Matrix(size_t rows_, size_t cols_, T value = T()) :
-        data(new T[rows_ * cols_](value)), rows(rows_), cols(cols_)
+        data(new T[rows_ * cols_]), rows(rows_), cols(cols_)
     {
+        for (auto &v : *this)
+            v = value;
     }
 
     T &operator()(size_t i, size_t j)
