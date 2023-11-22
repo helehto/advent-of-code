@@ -1,6 +1,12 @@
 project('sub1sec', 'cpp', default_options: ['cpp_std=c++20'])
 
 add_project_arguments('-march=native', language: 'cpp')
+
+if get_option('buildtype') == 'debug'
+  # AVX-512 breaks Valgrind.
+  add_project_arguments('-mno-avx512f', language: 'cpp')
+endif
+
 add_project_arguments('-fno-omit-frame-pointer', language: 'cpp')
 add_project_arguments('-Wno-stringop-overflow', language: 'cpp')
 
