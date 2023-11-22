@@ -294,7 +294,7 @@ struct Matrix {
     size_t rows;
     size_t cols;
 
-    Matrix() = default;
+    constexpr Matrix() = default;
 
     Matrix(size_t rows_, size_t cols_, T value = T()) :
         data(new T[rows_ * cols_]), rows(rows_), cols(cols_)
@@ -303,37 +303,47 @@ struct Matrix {
             v = value;
     }
 
-    T &operator()(size_t i, size_t j)
+    constexpr T &operator()(size_t i, size_t j)
     {
         return data[i * cols + j];
     }
 
-    const T &operator()(size_t i, size_t j) const
+    constexpr const T &operator()(size_t i, size_t j) const
     {
         return data[i * cols + j];
     }
 
-    size_t size() const
+    template <typename U> constexpr T &operator()(Point<U> p)
+    {
+        return data[p.y * cols + p.x];
+    }
+
+    template <typename U> constexpr const T &operator()(Point<U> p) const
+    {
+        return data[p.y * cols + p.x];
+    }
+
+    constexpr size_t size() const
     {
         return rows * cols;
     }
 
-    T *begin()
+    constexpr T *begin()
     {
         return data.get();
     }
 
-    T *end()
+    constexpr T *end()
     {
         return data.get() + rows * cols;
     }
 
-    const T *begin() const
+    constexpr const T *begin() const
     {
         return data.get();
     }
 
-    const T *end() const
+    constexpr const T *end() const
     {
         return data.get() + rows * cols;
     }
