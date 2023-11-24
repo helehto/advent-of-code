@@ -54,7 +54,7 @@ static int unmarked_sum(const Board &b)
     return sum;
 }
 
-int run_2021_4(FILE *f)
+void run_2021_4(FILE *f)
 {
     std::string s;
     getline(f, s);
@@ -92,7 +92,7 @@ int run_2021_4(FILE *f)
                     fmt::print("{}\n", n * unmarked_sum(b));
                 } else if (boards.size() == 1) {
                     fmt::print("{}\n", n * unmarked_sum(boards[0]));
-                    return 0;
+                    return;
                 }
                 boards[i] = boards.back();
                 boards.pop_back();
@@ -101,6 +101,4 @@ int run_2021_4(FILE *f)
             }
         }
     }
-
-    return 0;
 }

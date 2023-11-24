@@ -2,7 +2,7 @@
 #include <fmt/core.h>
 #include <vector>
 
-int run_2021_10(FILE *f)
+void run_2021_10(FILE *f)
 {
     std::string s;
     int score1 = 0;
@@ -58,5 +58,4 @@ int run_2021_10(FILE *f)
     fmt::print("{}\n", score1);
     std::sort(begin(scores2), end(scores2));
     fmt::print("{}\n", scores2[scores2.size() / 2]);
-    return 0;
 }

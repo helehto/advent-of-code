@@ -4,7 +4,7 @@
 #include <span>
 #include <vector>
 
-int run_2021_6(FILE *f)
+void run_2021_6(FILE *f)
 {
     std::array<uint64_t, 9> a = {{}};
     std::string s;
@@ -20,6 +20,4 @@ int run_2021_6(FILE *f)
     for (; i < 255; i++)
         a[(i + 7) % a.size()] += a[i % a.size()];
     fmt::print("{}\n", std::accumulate(begin(a), end(a), UINT64_C(0)));
-
-    return 0;
 }

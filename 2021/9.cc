@@ -32,7 +32,7 @@ neighbors4(const Matrix<char> &chart, Point<size_t> p)
     return result;
 }
 
-int run_2021_9(FILE *f)
+void run_2021_9(FILE *f)
 {
     auto lines = getlines(f);
 
@@ -107,5 +107,4 @@ int run_2021_9(FILE *f)
     }
     std::sort(begin(sizes), end(sizes), std::greater<int>());
     fmt::print("{}\n", sizes[0] * sizes[1] * sizes[2]);
-    return 0;
 }

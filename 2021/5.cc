@@ -2,7 +2,7 @@
 #include <fmt/core.h>
 #include <unordered_map>
 
-int run_2021_5(FILE *f)
+void run_2021_5(FILE *f)
 {
     struct Pair {
         Point<int> a;
@@ -67,5 +67,4 @@ int run_2021_5(FILE *f)
 
     fmt::print("{}\n", part1);
     fmt::print("{}\n", part2);
-    return 0;
 }

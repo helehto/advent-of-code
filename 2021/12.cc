@@ -47,7 +47,7 @@ static void search(SearchParameters &sp,
     }
 }
 
-int run_2021_12(FILE *f)
+void run_2021_12(FILE *f)
 {
     std::string s;
     char a[16], b[16];
@@ -103,6 +103,4 @@ int run_2021_12(FILE *f)
         search<true>(sp, sp.start_index, UINT64_C(1) << sp.start_index);
         fmt::print("{}\n", sp.count);
     }
-
-    return 0;
 }

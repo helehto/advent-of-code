@@ -73,7 +73,7 @@ int part2(std::span<int> crabs)
     return std::min(cost2(crabs, ceilf(goal)), cost2(crabs, floorf(goal)));
 }
 
-int run_2021_7(FILE *f)
+void run_2021_7(FILE *f)
 {
     std::string s;
     getline(f, s);
@@ -82,5 +82,4 @@ int run_2021_7(FILE *f)
 
     printf("%d\n", part1(crabs));
     printf("%d\n", part2(crabs));
-    return 0;
 }

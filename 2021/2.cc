@@ -2,7 +2,7 @@
 #include <fmt/core.h>
 #include <vector>
 
-int run_2021_2(FILE *f)
+void run_2021_2(FILE *f)
 {
     int x1 = 0;
     int y1 = 0;
@@ -29,5 +29,4 @@ int run_2021_2(FILE *f)
 
     fmt::print("{}\n", x1 * y1);
     fmt::print("{}\n", x2 * y2);
-    return 0;
 }

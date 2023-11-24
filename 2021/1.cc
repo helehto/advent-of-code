@@ -21,7 +21,7 @@ static int solve(std::span<int> input, size_t window_size)
     return count;
 }
 
-int run_2021_1(FILE *f)
+void run_2021_1(FILE *f)
 {
     std::string s;
     std::vector<int> xs;
@@ -34,5 +34,4 @@ int run_2021_1(FILE *f)
 
     fmt::print("{}\n", solve(xs, 1));
     fmt::print("{}\n", solve(xs, 3));
-    return 0;
 }

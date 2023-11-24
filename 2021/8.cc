@@ -3,7 +3,7 @@
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 
-int run_2021_8(FILE *f)
+void run_2021_8(FILE *f)
 {
     std::string s;
     int part1 = 0;
@@ -95,5 +95,4 @@ int run_2021_8(FILE *f)
 
     fmt::print("{}\n", part1);
     fmt::print("{}\n", part2);
-    return 0;
 }

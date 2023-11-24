@@ -36,7 +36,7 @@ neighbors8(const Matrix<char> &grid, Point<size_t> p)
     return result;
 }
 
-int run_2021_11(FILE *f)
+void run_2021_11(FILE *f)
 {
     auto lines = getlines(f);
 
@@ -81,7 +81,7 @@ int run_2021_11(FILE *f)
             fmt::print("{}\n", total_flashes);
         } else if (flashed.size() == grid.size()) {
             fmt::print("{}\n", step);
-            return 0;
+            return;
         }
     }
 }
