@@ -146,6 +146,8 @@ int main(int argc, char **argv)
             die("invalid problem or pattern '%s'", argv[i]);
         problems_to_run.insert(end(problems_to_run), begin(problems), end(problems));
     }
+    if (problems_to_run.empty())
+        die("no problems specified");
 
     if (read_from_stdin) {
         if (problems_to_run.size() > 1)
