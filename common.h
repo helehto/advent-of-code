@@ -260,25 +260,32 @@ static std::vector<T> find_numbers(std::string_view s)
     return result;
 }
 
-static inline std::vector<std::string_view> &split(std::string_view s,
-                                                   std::vector<std::string_view> &out)
+template <typename Predicate>
+static inline std::vector<std::string_view> &
+split(std::string_view s, std::vector<std::string_view> &out, Predicate &&predicate)
 {
     out.clear();
 
     while (true) {
-        while (!s.empty() && isspace(s.front()))
+        while (!s.empty() && predicate(s.front()))
             s.remove_prefix(1);
         if (s.empty())
             break;
 
         size_t i = 0;
-        while (i < s.size() && !isspace(s[i]))
+        while (i < s.size() && !predicate(s[i]))
             i++;
         out.emplace_back(s.data(), i);
         s.remove_prefix(i);
     }
 
     return out;
+}
+
+static inline std::vector<std::string_view> &split(std::string_view s,
+                                                   std::vector<std::string_view> &out)
+{
+    return split(s, out, [](char c) { return isspace(c); });
 }
 
 static inline std::vector<std::string_view> split(std::string_view s)
