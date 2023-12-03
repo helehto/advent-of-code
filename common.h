@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/container/static_vector.hpp>
 #include <cassert>
 #include <charconv>
 #include <cmath>
@@ -395,4 +396,30 @@ static void erase_if(std::vector<T> &v, Predicate &&predicate)
 {
     auto it = std::remove_if(begin(v), end(v), std::forward<Predicate>(predicate));
     v.erase(it, end(v));
+}
+
+static std::array<Point<size_t>, 8> neighbors8(Point<size_t> p)
+{
+    return {{
+        {p.x - 1, p.y - 1},
+        {p.x - 1, p.y},
+        {p.x - 1, p.y + 1},
+        {p.x, p.y - 1},
+        {p.x, p.y + 1},
+        {p.x + 1, p.y - 1},
+        {p.x + 1, p.y},
+        {p.x + 1, p.y + 1},
+    }};
+}
+
+template <typename T>
+static boost::container::static_vector<Point<size_t>, 8> neighbors8(const Matrix<T> &grid,
+                                                                    Point<size_t> p)
+{
+    boost::container::static_vector<Point<size_t>, 8> result;
+    for (auto n : neighbors8(p))
+        if (n.x < grid.cols && n.y < grid.rows)
+            result.push_back(n);
+
+    return result;
 }

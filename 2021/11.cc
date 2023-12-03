@@ -1,40 +1,11 @@
 #include "common.h"
 #include <algorithm>
-#include <boost/container/static_vector.hpp>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 #include <ranges>
 #include <span>
 #include "dense_set.h"
 #include <vector>
-
-template <typename T, size_t N>
-using static_vector = boost::container::static_vector<T, N>;
-
-static std::array<Point<size_t>, 8> neighbors8(Point<size_t> p)
-{
-    return {{
-        {p.x - 1, p.y - 1},
-        {p.x - 1, p.y},
-        {p.x - 1, p.y + 1},
-        {p.x, p.y - 1},
-        {p.x, p.y + 1},
-        {p.x + 1, p.y - 1},
-        {p.x + 1, p.y},
-        {p.x + 1, p.y + 1},
-    }};
-}
-
-static static_vector<Point<size_t>, 8>
-neighbors8(const Matrix<char> &grid, Point<size_t> p)
-{
-    static_vector<Point<size_t>, 8> result;
-    for (auto n : neighbors8(p))
-        if (n.x < grid.cols && n.y < grid.rows)
-            result.push_back(n);
-
-    return result;
-}
 
 void run_2021_11(FILE *f)
 {
