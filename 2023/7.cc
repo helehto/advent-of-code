@@ -1,11 +1,8 @@
 #include "common.h"
 #include <cstdlib>
-#include <fmt/ranges.h>
 #include <optional>
 #include <span>
 #include <x86intrin.h>
-
-using namespace boost::container;
 
 enum : uint8_t {
     high_card,
@@ -42,10 +39,8 @@ static std::pair<uint8_t, uint8_t> evaluate_hand(uint8_t *counts)
     if (mask3)
         return {mask2 ? full_house : three_of_a_kind, __builtin_ctz(mask3)};
 
-    if (mask2) {
-        const int num_pairs = __builtin_popcount(mask2);
-        return {num_pairs > 1 ? two_pair : one_pair, __builtin_ctz(mask2)};
-    }
+    if (mask2)
+        return {(mask2 & (mask2 - 1)) ? two_pair : one_pair, __builtin_ctz(mask2)};
 
     assert(mask1 != 0);
     return {high_card, __builtin_ctz(mask1)};
@@ -66,7 +61,7 @@ static uint8_t evaluate_hand_with_jokers(uint8_t *counts)
 
 static int total_winnings(std::vector<Hand> hands)
 {
-    sort(hands.begin(), hands.end(), [&](const Hand &h1, const Hand &h2) {
+    std::sort(hands.begin(), hands.end(), [](const Hand &h1, const Hand &h2) {
         if (h1.eval != h2.eval)
             return h1.eval < h2.eval;
 
@@ -117,10 +112,8 @@ void run_2023_7(FILE *f)
     fmt::print("{}\n", total_winnings(hands));
 
     for (auto &h : hands) {
-        for (auto &c : h.cards) {
-            if (c == 11)
-                c = 0;
-        }
+        for (auto &c : h.cards)
+            c = c == 11 ? 0 : c;
         h.eval = evaluate_hand_with_jokers(h.counts.data());
     }
     fmt::print("{}\n", total_winnings(std::move(hands)));
