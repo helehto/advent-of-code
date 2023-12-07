@@ -18,7 +18,7 @@ def main():
     a = subprocess.check_output(cmd).strip()
 
     rows = []
-    mean_sum = 0
+    means = []
     pct10_sum = 0
     pct90_sum = 0
     for year, day, ts in json.loads(a.split(b"\n")[-1]):
@@ -38,16 +38,21 @@ def main():
         pct90 = pct(0.9)
         rows.append((year, day, mean, stddev, pct10, pct90))
 
-        mean_sum += float(mean)
+        means.append(float(mean))
         pct10_sum += float(pct10)
         pct90_sum += pct90
 
     if len(rows) > 1:
         rows.append(SEPARATING_LINE)
-        rows.append(['Σ', '', mean_sum, 0, pct10_sum, pct90_sum])
+        rows.append(["Σ", "", sum(means), 0, pct10_sum, pct90_sum])
 
     headers = ("Year", "Day", "Mean (μs)", "σ (μs)", "10% (μs)", "90% (μs)")
     print(tabulate(rows, headers))
+
+    if len(rows) > 1:
+        print()
+        g = 2 ** (sum(math.log2(m) for m in means) / len(means))
+        print(f"Geometric mean: {g:.2f} μs")
 
 
 if __name__ == "__main__":
