@@ -205,21 +205,24 @@ constexpr T modulo(T x, T mod)
 
 inline bool getline(FILE *f, std::string &s)
 {
+    constexpr size_t buf_size = 256;
+
     s.clear();
-    s.reserve(64);
+    s.reserve(buf_size);
 
-    int c = getc(f);
-    if (c == EOF)
-        return false;
+    while (true) {
+        char buf[buf_size];
+        if (fgets(buf, sizeof(buf), f) == nullptr)
+            return !s.empty();
 
-    do {
-        if (c == '\n')
-            break;
-        s.push_back(c);
-        c = getc(f);
-    } while (c != EOF);
-
-    return true;
+        for (size_t i = 0; i < sizeof(buf); i++) {
+            if (buf[i] == '\0')
+                break;
+            if (buf[i] == '\n')
+                return true;
+            s.push_back(buf[i]);
+        }
+    }
 }
 
 inline std::vector<std::string> getlines(FILE *f) {
