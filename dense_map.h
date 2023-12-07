@@ -193,6 +193,7 @@ public:
       , size_with_tombs_(0)
       , hash_(hash)
       , equal_(equal) {
+    assert((bucket_count & (bucket_count - 1)) == 0);
     memset(&states_[0], 0, sizeof(bucket_state) * bucket_count);
     set_state_of(capacity_, bucket_state::sentinel);
   }
@@ -412,7 +413,14 @@ public:
   }
 
   void reserve(size_type count) {
-    rehash(std::ceil(count / max_load_factor()));
+    size_t c = std::ceil(count / max_load_factor());
+    c |= c >> 1;
+    c |= c >> 2;
+    c |= c >> 4;
+    c |= c >> 8;
+    c |= c >> 16;
+    c |= c >> 32;
+    rehash(c + 1);
   }
 
   //-------------------------------------------------------------------------
