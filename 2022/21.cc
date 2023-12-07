@@ -19,7 +19,7 @@ enum : int64_t {
     NO_VALUE = INT64_MIN,
 };
 
-struct Monkey {
+struct Monkey21 {
     uint16_t type;
     union {
         uint16_t op[2];
@@ -28,7 +28,7 @@ struct Monkey {
 };
 
 struct Input {
-    std::vector<Monkey> monkeys;
+    std::vector<Monkey21> monkeys;
     size_t humn_index;
     size_t root_index;
 };

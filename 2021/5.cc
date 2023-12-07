@@ -20,8 +20,8 @@ void run_2021_5(FILE *f)
         h = std::max(h, y2);
     }
 
-    Matrix<uint16_t> count1(w + 1, h + 1);
-    Matrix<uint16_t> count2(w + 1, h + 1);
+    Matrix<uint16_t> count1(w + 2, h + 2);
+    Matrix<uint16_t> count2(w + 2, h + 2);
 
     for (auto &[a, b] : input) {
         auto [x1, y1] = a;

@@ -14,10 +14,7 @@ struct Parser {
         return peek();
     }
 
-    char peek() const
-    {
-        return document.front();
-    }
+    char peek() const { return !document.empty() ? document.front() : '\0'; }
 
     std::string_view parse_string();
     int64_t parse_object();

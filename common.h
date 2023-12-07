@@ -158,7 +158,7 @@ public:
         // make_heap builds a max-heap but we want a min-heap, hence the
         // reversed comparison.
         std::make_heap(begin(heap_), end(heap_),
-                       [&cmp](size_t a, size_t b) { return !cmp(a, b); });
+                       [&cmp](size_t a, size_t b) { return cmp(b, a); });
 
         index_map_.resize(n);
         for (size_t i = 0; i < n; i++)

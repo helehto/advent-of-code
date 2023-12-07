@@ -14,7 +14,7 @@ static bool is_big(const char *p)
     return true;
 }
 
-struct SearchParameters {
+struct SearchParameters12 {
     std::vector<std::vector<uint8_t>> neighbors;
     uint8_t start_index;
     uint8_t end_index;
@@ -23,7 +23,7 @@ struct SearchParameters {
 };
 
 template <bool AllowRevisit>
-static void search(SearchParameters &sp,
+static void search(SearchParameters12 &sp,
                    uint8_t current,
                    uint64_t visited_mask,
                    bool any_revisited = false)
@@ -93,13 +93,13 @@ void run_2021_12(FILE *f)
     }
 
     {
-        SearchParameters sp{neighbors, start_index, end_index, big_mask};
+        SearchParameters12 sp{neighbors, start_index, end_index, big_mask};
         search<false>(sp, sp.start_index, UINT64_C(1) << sp.start_index);
         fmt::print("{}\n", sp.count);
     }
 
     {
-        SearchParameters sp{neighbors, start_index, end_index, big_mask};
+        SearchParameters12 sp{neighbors, start_index, end_index, big_mask};
         search<true>(sp, sp.start_index, UINT64_C(1) << sp.start_index);
         fmt::print("{}\n", sp.count);
     }

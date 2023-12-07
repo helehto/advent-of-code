@@ -53,7 +53,7 @@ struct std::hash<CacheKey17> {
     }
 };
 
-struct State {
+struct State17 {
     int n;
     int height;
 };
@@ -64,7 +64,7 @@ struct Cycle {
     int height;
 };
 
-static std::optional<Cycle> detect_cycle(const std::vector<State> &state_vec)
+static std::optional<Cycle> detect_cycle(const std::vector<State17> &state_vec)
 {
     // This has a boatload of stupid assumptions that happened to work on the
     // input, but I can't be bothered to go back and rework this now.
@@ -96,7 +96,7 @@ void run_2022_17(FILE *f)
     std::string jets;
     getline(f, jets);
 
-    dense_map<CacheKey17, std::vector<State>> past_states;
+    dense_map<CacheKey17, std::vector<State17>> past_states;
     dense_set<Point<int>> occupied;
     std::vector<int> heights;
     size_t rock_idx = 0;

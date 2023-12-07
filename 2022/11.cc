@@ -10,7 +10,7 @@ enum class Operation {
     square,
 };
 
-struct Monkey {
+struct Monkey11 {
     std::vector<int64_t> items;
     Operation op;
     int operand;
@@ -20,7 +20,7 @@ struct Monkey {
 };
 
 template <int Rounds, int ItemDivisor>
-static int64_t run(std::vector<Monkey> monkeys)
+static int64_t run(std::vector<Monkey11> monkeys)
 {
     int lcm = 1;
     for (const auto &m : monkeys)
@@ -58,13 +58,13 @@ static int64_t run(std::vector<Monkey> monkeys)
     return monkeys[0].inspections * monkeys[1].inspections;
 }
 
-static std::vector<Monkey> parse_monkeys(FILE *f)
+static std::vector<Monkey11> parse_monkeys(FILE *f)
 {
-    std::vector<Monkey> monkeys;
+    std::vector<Monkey11> monkeys;
 
     std::string s;
     while (getline(f, s)) {
-        Monkey &m = monkeys.emplace_back();
+        Monkey11 &m = monkeys.emplace_back();
 
         // Starting items
         getline(f, s);

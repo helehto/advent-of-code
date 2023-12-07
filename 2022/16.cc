@@ -107,14 +107,14 @@ static std::vector<int> floyd_warshall(const std::vector<Valve> &valves)
     return d;
 }
 
-struct SearchParameters {
+struct SearchParameters16 {
     const Valves &input;
     const std::vector<int> &costs;
     boost::unordered_map<uint64_t, int> &path_scores;
     uint64_t nonzero_mask;
 };
 
-struct State {
+struct State16 {
     size_t u;
     int remaining;
     int score = 0;
@@ -125,9 +125,9 @@ struct State {
 // converging to the same bitset (e.g ('AA', 'BB') and ('BB', 'AA')). This
 // doesn't matter though since we are only interested in the maximum, not the
 // specific path that was taken.
-static void search(const SearchParameters &p, State s)
+static void search(const SearchParameters16 &p, State16 s)
 {
-    std::vector<State> stack{s};
+    std::vector<State16> stack{s};
 
     while (!stack.empty()) {
         auto s = stack.back();
@@ -150,7 +150,7 @@ static void search(const SearchParameters &p, State s)
             if (new_remaining <= 0)
                 continue;
 
-            stack.push_back(State{
+            stack.push_back(State16{
                 .u = v,
                 .remaining = new_remaining,
                 .score = s.score + p.input.valves[v].flow * new_remaining,
@@ -176,8 +176,8 @@ void run_2022_16(FILE *f)
     // Part 1:
     {
         boost::unordered_map<uint64_t, int> path_scores;
-        SearchParameters p{input, costs, path_scores, nonzero_mask};
-        search(p, State{.u = input.start_index, .remaining = 30});
+        SearchParameters16 p{input, costs, path_scores, nonzero_mask};
+        search(p, State16{.u = input.start_index, .remaining = 30});
         int m = 0;
         for (auto &[_, score] : path_scores)
             m = std::max(m, score);
@@ -187,8 +187,8 @@ void run_2022_16(FILE *f)
     // Part 2:
     {
         boost::unordered_map<uint64_t, int> path_scores;
-        SearchParameters p{input, costs, path_scores, nonzero_mask};
-        search(p, State{.u = input.start_index, .remaining = 26});
+        SearchParameters16 p{input, costs, path_scores, nonzero_mask};
+        search(p, State16{.u = input.start_index, .remaining = 26});
 
         // Sorting the paths by descending score allows for some short
         // circuiting below when finding disjoint paths with the maximum sum.
