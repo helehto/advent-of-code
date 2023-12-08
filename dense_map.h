@@ -147,11 +147,6 @@ private:
 
   constexpr static auto max_load_ = std::make_pair(3, 4);
 
-  void rehash_if_needed_() {
-    if (max_load_.second * size_with_tombs_ >= capacity_ * max_load_.first)
-      rehash(2 * capacity_);
-  }
-
   template <typename ConstructFn>
   std::pair<iterator, bool> do_insert_helper_(const key_type &key, ConstructFn &&construct) {
     const auto [i, found] = find_bucket_(key);
@@ -160,7 +155,11 @@ private:
       set_state_of(i, bucket_state::occupied);
       size_++;
       size_with_tombs_++;
-      rehash_if_needed_();
+
+      if (max_load_.second * size_with_tombs_ >= capacity_ * max_load_.first) {
+        rehash(2 * capacity_);
+        return {iterator_from_index(find_bucket_(key).first), false};
+      }
     }
     return {iterator_from_index(i), !found};
   }
