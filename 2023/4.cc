@@ -32,7 +32,7 @@ void run_2023_4(FILE *f)
 
     std::vector<int> n_cards(matches.size(), 1);
     for (size_t i = 0; i < n_cards.size(); i++) {
-        for (size_t j = 0; j < matches[i]; j++)
+        for (int j = 0; j < matches[i]; j++)
             n_cards[i + j + 1] += n_cards[i];
     }
     fmt::print("{}\n", std::accumulate(n_cards.begin(), n_cards.end(), 0));

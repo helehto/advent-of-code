@@ -8,9 +8,12 @@
 #include <variant>
 #include <vector>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 struct Packet {
     std::variant<int, std::vector<Packet>> data;
 };
+#pragma GCC diagnostic pop
 
 static std::weak_ordering operator<=>(const Packet &a, const Packet &b)
 {
