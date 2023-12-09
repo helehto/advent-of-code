@@ -1,5 +1,5 @@
 #include "common.h"
-#include <fmt/ranges.h>
+#include <numeric>
 #include <span>
 
 static double basis(int64_t k, int64_t x, int64_t j)
@@ -20,26 +20,33 @@ static double basis(int64_t k, int64_t x, int64_t j)
     return p / q;
 }
 
-static double lagrange(std::span<const int> points, int64_t x)
+static std::vector<double> lagrange_basis(int64_t k, int64_t x)
 {
-    double result = 0;
-    for (size_t j = 0; j < points.size(); ++j)
-        result += points[j] * basis(points.size(), x, j);
+    std::vector<double> result;
+    for (int64_t j = 0; j < k; ++j)
+        result.push_back(basis(k, x, j));
     return result;
 }
 
 void run_2023_9(FILE *f)
 {
+    std::string s;
+    getline(f, s);
+    auto nums = find_numbers<int>(s);
+
+    // This assumes that all input lists are of the same length.
+    const auto basis1 = lagrange_basis(nums.size(), nums.size() + 1);
+    const auto basis2 = lagrange_basis(nums.size(), 0);
+
     int64_t part1 = 0;
     int64_t part2 = 0;
-    std::string s;
-    std::vector<int> nums;
-    while (getline(f, s)) {
+    while (true) {
+        part1 += std::inner_product(nums.begin(), nums.end(), basis1.begin(), 0.0);
+        part2 += std::inner_product(nums.begin(), nums.end(), basis2.begin(), 0.0);
+        if (!getline(f, s))
+            break;
         find_numbers(s, nums);
-        part1 += lagrange(nums, nums.size() + 1);
-        part2 += lagrange(nums, 0);
     }
-
     fmt::print("{}\n", part1);
     fmt::print("{}\n", part2);
 }
