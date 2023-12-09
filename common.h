@@ -12,6 +12,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <x86intrin.h>
 
 constexpr uint64_t hash_mix(uint64_t x)
 {
@@ -205,22 +206,39 @@ constexpr T modulo(T x, T mod)
 
 inline bool getline(FILE *f, std::string &s)
 {
-    constexpr size_t buf_size = 256;
+    constexpr size_t chunk_size = 256;
 
     s.clear();
-    s.reserve(buf_size);
+    size_t offset = 0;
+
+    __m256i vzero = _mm256_setzero_si256();
+    __m256i vnl = _mm256_set1_epi8('\n');
 
     while (true) {
-        char buf[buf_size];
-        if (fgets(buf, sizeof(buf), f) == nullptr)
-            return !s.empty();
+        s.resize(s.size() + chunk_size);
 
-        for (size_t i = 0; i < sizeof(buf); i++) {
-            if (buf[i] == '\0')
-                break;
-            if (buf[i] == '\n')
+    read_more:
+        if (fgets(s.data() + offset, chunk_size, f) == nullptr) {
+            s.resize(offset);
+            return !s.empty();
+        }
+
+        // No break condition, the null byte added by fgets() will break the
+        // loop if we reach the end of the chunk.
+        for (size_t j = offset;; j += 32) {
+            auto bytes = _mm256_lddqu_si256(reinterpret_cast<__m256i *>(s.data() + j));
+
+            if (int mask = _mm256_movemask_epi8(_mm256_cmpeq_epi8(bytes, vnl))) {
+                offset = j + __builtin_ctz(mask);
+                s.resize(offset);
                 return true;
-            s.push_back(buf[i]);
+            }
+
+            if (int mask = _mm256_movemask_epi8(_mm256_cmpeq_epi8(bytes, vzero))) {
+                offset = j + __builtin_ctz(mask);
+                s.resize(offset + chunk_size);
+                goto read_more;
+            }
         }
     }
 }
@@ -239,7 +257,7 @@ static void find_numbers(std::string_view s, std::vector<T> &result)
     result.clear();
 
     while (true) {
-        while (!s.empty() && s.front() != '-' && !isdigit(s.front()))
+        while (!s.empty() && s.front() != '-' && !(s.front()>='0'&&s.front()<='9'))
             s.remove_prefix(1);
         if (s.empty())
             return;
