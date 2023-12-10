@@ -10,6 +10,7 @@ import subprocess
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--iterations", type=int, default=1)
+    parser.add_argument("-t", "--total-only", action='store_true')
     parser.add_argument("problems", nargs="+")
     args = parser.parse_args()
 
@@ -36,20 +37,22 @@ def main():
 
         pct10 = pct(0.1)
         pct90 = pct(0.9)
-        rows.append((year, day, mean, stddev, pct10, pct90))
+        if not args.total_only:
+            rows.append((year, day, mean, stddev, pct10, pct90))
 
         means.append(float(mean))
         pct10_sum += float(pct10)
         pct90_sum += pct90
 
-    if len(rows) > 1:
-        rows.append(SEPARATING_LINE)
+    if len(rows) > 1 or args.total_only:
+        if not args.total_only:
+            rows.append(SEPARATING_LINE)
         rows.append(["Σ", "", sum(means), 0, pct10_sum, pct90_sum])
 
     headers = ("Year", "Day", "Mean (μs)", "σ (μs)", "10% (μs)", "90% (μs)")
     print(tabulate(rows, headers))
 
-    if len(rows) > 1:
+    if len(rows) > 1 or args.total_only:
         print()
         g = 2 ** (sum(math.log2(m) for m in means) / len(means))
         print(f"Geometric mean: {g:.2f} μs")
