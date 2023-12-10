@@ -1,6 +1,7 @@
 #ifndef DENSE_MAP_H
 #define DENSE_MAP_H
 
+#include <bit>
 #include <cassert>
 #include <cmath>
 #include <cstddef>
@@ -175,23 +176,31 @@ private:
     });
   }
 
+  constexpr static size_type next_power_of_two(size_type x)
+  {
+    auto lzcnt = std::countl_zero(x - 1);
+    return size_type(1) << (8 * sizeof(size_type) - lzcnt);
+  }
+
 public:
   //-------------------------------------------------------------------------
   // Construction and destruction.
   //-------------------------------------------------------------------------
 
-  dense_map() : dense_map(size_type(16)) {}
+  dense_map() : dense_map(size_type(0)) {}
 
-  dense_map(size_type bucket_count, const Hash &hash = Hash(), const KeyEqual &equal = KeyEqual())
-      : buckets_(std::unique_ptr<bucket[]>(new bucket[bucket_count + 1]))
-      , states_(std::make_unique<uint8_t[]>(bucket_count + 1))
-      , capacity_(bucket_count)
-      , size_(0)
+  dense_map(size_type bucket_count,
+            const Hash &hash = Hash(),
+            const KeyEqual &equal = KeyEqual())
+      : size_(0)
       , size_with_tombs_(0)
       , hash_(hash)
-      , equal_(equal) {
-    assert((bucket_count & (bucket_count - 1)) == 0);
-    memset(&states_[0], 0, sizeof(bucket_state) * bucket_count);
+      , equal_(equal)
+  {
+    bucket_count = bucket_count ? next_power_of_two(bucket_count) : 16;
+    buckets_ = std::unique_ptr<bucket[]>(new bucket[bucket_count + 1]);
+    states_ = std::make_unique<uint8_t[]>(bucket_count + 1);
+    capacity_ = bucket_count;
     set_state_of(capacity_, bucket_state::sentinel);
   }
 
@@ -409,14 +418,13 @@ public:
   }
 
   void reserve(size_type count) {
-    size_t c = std::ceil(count / max_load_factor());
-    c |= c >> 1;
-    c |= c >> 2;
-    c |= c >> 4;
-    c |= c >> 8;
-    c |= c >> 16;
-    c |= c >> 32;
-    rehash(c + 1);
+    auto desired_bucket_count = std::ceil(count / max_load_factor());
+    if (desired_bucket_count >= capacity_) {
+      dense_map new_set(desired_bucket_count, hash_, equal_);
+      for (auto &elem : *this)
+        new_set.insert(std::move(elem));
+      swap(new_set);
+    }
   }
 
   //-------------------------------------------------------------------------
