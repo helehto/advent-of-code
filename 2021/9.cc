@@ -1,36 +1,11 @@
 #include "common.h"
 #include <algorithm>
-#include <boost/container/static_vector.hpp>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 #include <ranges>
 #include <span>
 #include <unordered_set>
 #include <vector>
-
-template <typename T, size_t N>
-using static_vector = boost::container::static_vector<T, N>;
-
-static std::array<Point<size_t>, 4> neighbors4(Point<size_t> p)
-{
-    return {{
-        {p.x, p.y - 1},
-        {p.x + 1, p.y},
-        {p.x, p.y + 1},
-        {p.x - 1, p.y},
-    }};
-}
-
-static static_vector<Point<size_t>, 4>
-neighbors4(const Matrix<char> &chart, Point<size_t> p)
-{
-    static_vector<Point<size_t>, 4> result;
-    for (auto n : neighbors4(p))
-        if (n.x < chart.cols && n.y < chart.rows)
-            result.push_back(n);
-
-    return result;
-}
 
 void run_2021_9(FILE *f)
 {

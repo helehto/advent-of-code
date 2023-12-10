@@ -419,6 +419,28 @@ static void erase_if(std::vector<T> &v, Predicate &&predicate)
     v.erase(it, end(v));
 }
 
+static std::array<Point<size_t>, 4> neighbors4(Point<size_t> p)
+{
+    return {{
+        {p.x, p.y - 1},
+        {p.x + 1, p.y},
+        {p.x, p.y + 1},
+        {p.x - 1, p.y},
+    }};
+}
+
+template <typename T>
+static boost::container::static_vector<Point<size_t>, 4>
+neighbors4(const Matrix<T> &chart, Point<size_t> p)
+{
+    boost::container::static_vector<Point<size_t>, 4> result;
+    for (auto n : neighbors4(p))
+        if (n.x < chart.cols && n.y < chart.rows)
+            result.push_back(n);
+
+    return result;
+}
+
 static std::array<Point<size_t>, 8> neighbors8(Point<size_t> p)
 {
     return {{
