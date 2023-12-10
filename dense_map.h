@@ -184,7 +184,7 @@ public:
   dense_map() : dense_map(size_type(16)) {}
 
   dense_map(size_type bucket_count, const Hash &hash = Hash(), const KeyEqual &equal = KeyEqual())
-      : buckets_(std::make_unique<bucket[]>(bucket_count + 1))
+      : buckets_(std::unique_ptr<bucket[]>(new bucket[bucket_count + 1]))
       , states_(std::make_unique<uint8_t[]>(bucket_count + 1))
       , capacity_(bucket_count)
       , mask_((1UL << __builtin_ctzl(capacity_)) - 1)
