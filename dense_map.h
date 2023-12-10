@@ -99,7 +99,6 @@ private:
   std::unique_ptr<bucket[]> buckets_;
   std::unique_ptr<uint8_t[]> states_;  // TODO: pack?
   size_t capacity_;
-  size_t mask_;
   size_t size_;
   size_t size_with_tombs_;
   hasher hash_;
@@ -124,7 +123,7 @@ private:
 
   std::pair<size_t, bool> find_bucket_(const Key &key) const {
     const size_t hash = hash_(key);
-    const auto mask = mask_;
+    const auto mask = capacity_ - 1;
     size_t i = hash & mask;
 
     while (1) {
@@ -187,7 +186,6 @@ public:
       : buckets_(std::unique_ptr<bucket[]>(new bucket[bucket_count + 1]))
       , states_(std::make_unique<uint8_t[]>(bucket_count + 1))
       , capacity_(bucket_count)
-      , mask_((1UL << __builtin_ctzl(capacity_)) - 1)
       , size_(0)
       , size_with_tombs_(0)
       , hash_(hash)
@@ -356,7 +354,6 @@ public:
     swap(buckets_, other.buckets_);
     swap(states_, other.states_);
     swap(capacity_, other.capacity_);
-    swap(mask_, other.mask_);
     swap(size_, other.size_);
     swap(size_with_tombs_, other.size_with_tombs_);
     swap(hash_, other.hash_);
