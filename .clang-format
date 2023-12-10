@@ -5,7 +5,7 @@ AllowShortFunctionsOnASingleLine: Inline
 BinPackArguments: true
 BinPackParameters: false
 BreakBeforeBraces: WebKit
-BreakConstructorInitializers: AfterColon
+BreakConstructorInitializers: BeforeComma
 ColumnLimit: 90
 IndentWidth: 4
 UseTab: Never

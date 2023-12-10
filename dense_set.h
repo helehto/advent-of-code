@@ -83,15 +83,25 @@ public:
       : map_(bucket_count, hash, equal) {}
 
   template <typename InputIt>
-  dense_set(InputIt begin, InputIt end, size_type bucket_count = 16, const Hash &hash = Hash(),
+  dense_set(InputIt begin, InputIt end, size_type bucket_count = 0, const Hash &hash = Hash(),
             const KeyEqual &equal = KeyEqual())
-      : map_(std::move(begin), std::move(end), bucket_count, hash, equal) {}
+  {
+    size_type map_bucket_count = bucket_count;
+    using category = typename std::iterator_traits<InputIt>::iterator_category;
+    if constexpr (std::is_same_v<category, std::random_access_iterator_tag>) {
+      map_bucket_count = std::distance(begin, end);
+    }
 
-  dense_set(std::initializer_list<Key> list, size_type bucket_count = 16, const Hash &hash = Hash(),
+    underlying_map_type map(map_bucket_count, hash, equal);
+    for (; begin != end; ++begin)
+      map.emplace(std::move(*begin), unit_type{});
+    map_.swap(map);
+  }
+
+  dense_set(std::initializer_list<Key> list, size_type bucket_count = 0, const Hash &hash = Hash(),
             const KeyEqual &equal = KeyEqual())
-      : map_(bucket_count, hash, equal) {
-    for (const auto &key : list)
-      map_.emplace(key, unit_type{});
+      : map_(list.begin(), list.end(), std::max(bucket_count, list.size()), hash, equal)
+  {
   }
 
   //-------------------------------------------------------------------------

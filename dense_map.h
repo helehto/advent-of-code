@@ -182,6 +182,23 @@ private:
     return size_type(1) << (8 * sizeof(size_type) - lzcnt);
   }
 
+  struct internal_tag {};
+
+  dense_map(internal_tag,
+            size_type bucket_count,
+            const Hash &hash = Hash(),
+            const KeyEqual &equal = KeyEqual())
+      : size_(0)
+      , size_with_tombs_(0)
+      , hash_(hash)
+      , equal_(equal)
+  {
+    buckets_ = std::unique_ptr<bucket[]>(new bucket[bucket_count + 1]);
+    states_ = std::make_unique<uint8_t[]>(bucket_count + 1);
+    capacity_ = bucket_count;
+    set_state_of(capacity_, bucket_state::sentinel);
+  }
+
 public:
   //-------------------------------------------------------------------------
   // Construction and destruction.
@@ -192,16 +209,12 @@ public:
   dense_map(size_type bucket_count,
             const Hash &hash = Hash(),
             const KeyEqual &equal = KeyEqual())
-      : size_(0)
-      , size_with_tombs_(0)
-      , hash_(hash)
-      , equal_(equal)
+      : dense_map(internal_tag{},
+                  bucket_count ? next_power_of_two(2 * bucket_count / max_load_factor())
+                               : 16,
+                  hash,
+                  equal)
   {
-    bucket_count = bucket_count ? next_power_of_two(bucket_count) : 16;
-    buckets_ = std::unique_ptr<bucket[]>(new bucket[bucket_count + 1]);
-    states_ = std::make_unique<uint8_t[]>(bucket_count + 1);
-    capacity_ = bucket_count;
-    set_state_of(capacity_, bucket_state::sentinel);
   }
 
   // TODO: Better bucket count, based on the capacity other hash table?
@@ -411,7 +424,7 @@ public:
   float max_load_factor() const noexcept { return static_cast<float>(max_load_.first) / max_load_.second; }
 
   void rehash(size_type count) {
-    dense_map new_set(count, hash_, equal_);
+    dense_map new_set(internal_tag{}, count, hash_, equal_);
     for (auto &elem : *this)
       new_set.insert(std::move(elem));
     swap(new_set);

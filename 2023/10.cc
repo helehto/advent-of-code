@@ -87,10 +87,7 @@ void run_2023_10(FILE *f)
     fmt::print("{}\n", path.size() / 2);
 
     // Remove any superfluous pipes from the grid.
-    dense_set<Point<size_t>> path_set;
-    path_set.reserve(2 * path.size());
-    for (auto p : path)
-        path_set.insert(p);
+    dense_set<Point<size_t>> path_set(path.begin(), path.end());
     for (auto p : grid.ndindex()) {
         if (!path_set.count(p))
             grid(p) = '.';
