@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <fmt/core.h>
+#include <fmt/ranges.h>
 #include <functional>
 #include <memory>
 #include <type_traits>

@@ -1,7 +1,6 @@
 #include "common.h"
 #include <algorithm>
 #include <fmt/core.h>
-#include <fmt/ranges.h>
 #include <ranges>
 #include <span>
 #include <unordered_set>

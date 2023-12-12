@@ -1,5 +1,4 @@
 #include "common.h"
-#include <fmt/ranges.h>
 #include <optional>
 #include <span>
 

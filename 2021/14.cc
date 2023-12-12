@@ -1,6 +1,5 @@
 #include "common.h"
 #include <fmt/core.h>
-#include <fmt/ranges.h>
 #include <unordered_map>
 
 auto increment_count(std::unordered_map<std::string, int> &map, const std::string &key)

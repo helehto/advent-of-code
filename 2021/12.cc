@@ -1,7 +1,6 @@
 #include "common.h"
 #include <cctype>
 #include <fmt/core.h>
-#include <fmt/ranges.h>
 #include <span>
 #include <vector>
 

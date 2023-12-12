@@ -1,7 +1,6 @@
 #include "common.h"
 #include "dense_map.h"
 #include <fmt/core.h>
-#include <fmt/ranges.h>
 #include <numeric>
 #include <boost/container/static_vector.hpp>
 #include <tuple>

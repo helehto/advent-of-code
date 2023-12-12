@@ -1,6 +1,5 @@
 #include "common.h"
 #include <fmt/core.h>
-#include <fmt/ranges.h>
 
 static void increment(std::string &s)
 {

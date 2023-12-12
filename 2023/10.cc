@@ -1,6 +1,5 @@
 #include "common.h"
 #include "dense_set.h"
-#include <fmt/ranges.h>
 #include <span>
 #include <queue>
 

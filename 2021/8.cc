@@ -1,7 +1,6 @@
 #include "common.h"
 #include <array>
 #include <fmt/core.h>
-#include <fmt/ranges.h>
 
 void run_2021_8(FILE *f)
 {

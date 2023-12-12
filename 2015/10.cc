@@ -1,6 +1,5 @@
 #include "common.h"
 #include <fmt/core.h>
-#include <fmt/ranges.h>
 #include <span>
 
 // See the 'Cosmological decay' section on Wikipedia:
