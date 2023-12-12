@@ -1,5 +1,4 @@
 #include "common.h"
-#include <cassert>
 #include <fmt/core.h>
 #include <string>
 #include <utility>
@@ -177,7 +176,7 @@ static std::vector<Move> parse_moves(const std::string_view &s)
             i++;
         } else {
             uint16_t n = 0;
-            assert(isdigit(s[i]));
+            ASSERT(isdigit(s[i]));
             do {
                 n = 10 * n + s[i] - '0';
                 i++;

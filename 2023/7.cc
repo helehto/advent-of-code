@@ -42,7 +42,7 @@ static std::pair<uint8_t, uint8_t> evaluate_hand(uint8_t *counts)
     if (mask2)
         return {(mask2 & (mask2 - 1)) ? two_pair : one_pair, __builtin_ctz(mask2)};
 
-    assert(mask1 != 0);
+    ASSERT(mask1 != 0);
     return {high_card, __builtin_ctz(mask1)};
 }
 

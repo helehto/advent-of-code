@@ -1,6 +1,5 @@
 #include "common.h"
 #include <algorithm>
-#include <cassert>
 #include <climits>
 #include <fmt/core.h>
 #include <string>

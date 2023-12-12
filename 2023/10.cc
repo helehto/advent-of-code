@@ -19,12 +19,12 @@ static std::array<Point<size_t>, 2> get_pipe_neighbors(Point<size_t> p, char c)
     case 'F':
         return {{{p.x + 1, p.y}, {p.x, p.y + 1}}};
     }
-    assert(false);
+    ASSERT(false);
 }
 
 static int64_t signed_area(std::span<const Point<size_t>> points)
 {
-    assert(points.front() == points.back());
+    ASSERT(points.front() == points.back());
 
     int64_t result = 0;
     size_t i = 1;
@@ -63,7 +63,7 @@ void run_2023_10(FILE *f)
             start_neighbors[i++] = q;
         if (Point q(start.x, start.y + 1); strchr("|JL", grid(q)))
             start_neighbors[i++] = q;
-        assert(i == 2);
+        ASSERT(i == 2);
     }
 
     bool start_is_corner = (start_neighbors[0].x != start_neighbors[1].x &&

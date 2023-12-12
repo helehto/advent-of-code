@@ -5,11 +5,11 @@
 static int count_mem(std::string_view v)
 {
     int mem_size = 0;
-    assert(v.front() == '"');
+    ASSERT(v.front() == '"');
 
     while (true) {
         v.remove_prefix(1);
-        assert(!v.empty());
+        ASSERT(!v.empty());
         char c = v.front();
         if (c == '"')
             break;
@@ -30,7 +30,7 @@ static int count_mem(std::string_view v)
             v.remove_prefix(2);
             break;
         default:
-            assert(!"bad escape");
+            ASSERT(!"bad escape");
         }
     }
 

@@ -15,6 +15,20 @@
 #include <vector>
 #include <x86intrin.h>
 
+#define STRINGIFY2(x) #x
+#define STRINGIFY(x) STRINGIFY2(x)
+
+#define ASSERT(x)                                                                        \
+    do {                                                                                 \
+        if (!(x)) {                                                                      \
+            fprintf(stderr,                                                              \
+                    "\x1b[1;31m" __FILE__                                                \
+                    ":" STRINGIFY(__LINE__) ": %s: Assertion `%s' failed.\x1b[m\n",      \
+                    __PRETTY_FUNCTION__, #x);                                            \
+            __builtin_trap();                                                            \
+        }                                                                                \
+    } while (0)
+
 constexpr uint64_t hash_mix(uint64_t x)
 {
         //const auto m = UINT64_C((uint64_t(0xe9846af) << 32) + 0x9b1a615d;

@@ -1,7 +1,6 @@
 #include "common.h"
 #include "dense_map.h"
 #include "dense_set.h"
-#include <cassert>
 #include <climits>
 #include <cmath>
 #include <fmt/core.h>

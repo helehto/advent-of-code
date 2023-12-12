@@ -1,5 +1,4 @@
 #include "common.h"
-#include <cassert>
 #include <cstdio>
 #include <fmt/core.h>
 #include <string>

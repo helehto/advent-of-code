@@ -27,7 +27,7 @@ static Matrix<int> get_happiness_matrix(FILE *f)
         auto j = name_map.at(words[10]);
         int d = -1;
         auto r = std::from_chars(begin(words[3]), end(words[3]), d);
-        assert(r.ec == std::errc());
+        ASSERT(r.ec == std::errc());
         if (words[2] == "lose")
             d = -d;
         matrix(i, j) = d;

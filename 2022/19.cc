@@ -1,7 +1,6 @@
 #include "common.h"
 #include "dense_map.h"
 #include <fmt/core.h>
-#include <cassert>
 
 enum {
     ORE,

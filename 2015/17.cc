@@ -60,7 +60,7 @@ void run_2015_17(FILE *f)
     int n;
     while (fscanf(f, "%d", &n) == 1)
         containers.push_back(n);
-    assert(containers.size() < 64);
+    ASSERT(containers.size() < 64);
 
     fmt::print("{}\n", part1(containers, 0, 150, 0));
     fmt::print("{}\n", part2(containers, 150));

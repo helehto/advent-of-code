@@ -19,7 +19,7 @@ void run_2021_8(FILE *f)
         std::array<uint8_t, 128> mask2digit;
 
         auto resolve = [&](int shuffled, int unshuffled) {
-            assert(shuffle[unshuffled] == -1);
+            ASSERT(shuffle[unshuffled] == -1);
             shuffle[unshuffled] = shuffled;
             unshuffle[shuffled] = unshuffled;
             mask2digit[masks[shuffled]] = unshuffled;

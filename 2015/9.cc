@@ -25,7 +25,7 @@ static Matrix<int> get_distance_matrix(FILE *f)
         auto j = name_map.at(words[2]);
         int distance = -1;
         auto r = std::from_chars(begin(words[4]), end(words[4]), distance);
-        assert(r.ec == std::errc());
+        ASSERT(r.ec == std::errc());
         dist(i, j) = distance;
         dist(j, i) = distance;
     }

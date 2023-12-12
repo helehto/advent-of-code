@@ -1,6 +1,5 @@
 #include "common.h"
 #include <algorithm>
-#include <cassert>
 #include <charconv>
 #include <fmt/core.h>
 #include <optional>
@@ -43,7 +42,7 @@ static std::optional<Packet> parse_packet(std::string_view &s)
     if (isdigit(s.front())) {
         int v;
         auto r = std::from_chars(begin(s), end(s), v);
-        assert(r.ec == std::errc());
+        ASSERT(r.ec == std::errc());
         s.remove_prefix(r.ptr - &s[0]);
         return Packet{v};
     }
@@ -56,15 +55,15 @@ static std::optional<Packet> parse_packet(std::string_view &s)
             auto p = parse_packet(s);
             if (!p)
                 break;
-            assert(!s.empty());
+            ASSERT(!s.empty());
             v.emplace_back(*p);
             if (s.front() == ']')
                 break;
-            assert(s.front() == ',');
+            ASSERT(s.front() == ',');
             s.remove_prefix(1);
         }
 
-        assert(s.front() == ']');
+        ASSERT(s.front() == ']');
         s.remove_prefix(1);
         return Packet{std::move(v)};
     }
@@ -75,8 +74,8 @@ static std::optional<Packet> parse_packet(std::string_view &s)
 static Packet parse_line(std::string_view s)
 {
     auto p = parse_packet(s);
-    assert(p);
-    assert(s.empty());
+    ASSERT(p);
+    ASSERT(s.empty());
     return *p;
 }
 

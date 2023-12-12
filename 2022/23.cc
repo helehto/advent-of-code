@@ -1,5 +1,4 @@
 #include "common.h"
-#include <cassert>
 #include <climits>
 #include <fmt/core.h>
 #include <span>

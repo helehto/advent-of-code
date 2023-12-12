@@ -1,5 +1,4 @@
 #include "common.h"
-#include <cassert>
 #include <climits>
 #include <fmt/core.h>
 #include <set>
@@ -22,7 +21,7 @@ static std::vector<Point<int>> boundary(Sensor a, Sensor b)
     // The boundary finding code below was written with this assumption in
     // mind. It works on my input, and I can't be bothered to work out the
     // details of this corner case.
-    assert(dx != 0 && dy != 0);
+    ASSERT(dx != 0 && dy != 0);
 
     Point<int> b0, b1;
 

@@ -89,7 +89,7 @@ Entity Parser::parse_entity()
         return parse_string();
     default:
         auto r = std::from_chars(begin(document), end(document), value);
-        assert(r.ec == std::errc() || !"bad input");
+        ASSERT(r.ec == std::errc() || !"bad input");
         document.remove_prefix(r.ptr - document.data());
         return value;
     }

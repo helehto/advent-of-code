@@ -1,6 +1,5 @@
 #include "common.h"
 #include <algorithm>
-#include <cassert>
 #include <cinttypes>
 #include <cstring>
 #include <fmt/core.h>

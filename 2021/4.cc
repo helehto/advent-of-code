@@ -68,7 +68,7 @@ void run_2021_4(FILE *f)
             curr_line.clear();
             find_numbers(s, curr_line);
             curr_board.insert(end(curr_board), begin(curr_line), end(curr_line));
-            assert(curr_board.size() <= 25);
+            ASSERT(curr_board.size() <= 25);
             if (curr_board.size() == 25) {
                 Board b;
                 std::copy(begin(curr_board), end(curr_board), std::begin(b.nums));
