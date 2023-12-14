@@ -71,10 +71,7 @@ void run_2023_13(FILE *f)
         while (next < lines.size() && !lines[next].empty())
             next++;
 
-        Matrix<uint8_t> grid(next - curr, lines[curr].size());
-        for (size_t i = curr; i < next; i++)
-            for (size_t j = 0; j < lines[i].size(); j++)
-                grid(i - curr, j) = lines[i][j];
+        auto grid = Matrix<uint8_t>::from_lines(std::span(&lines[curr], &lines[next]));
 
         // look for vertical reflection lines
         for (size_t j = 0; j + 1 < grid.cols; j++) {

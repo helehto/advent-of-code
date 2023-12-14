@@ -29,12 +29,7 @@ static int read_number(const Matrix<char> &grid, Point<size_t> p)
 
 void run_2023_3(FILE *f)
 {
-    const auto lines = getlines(f);
-    Matrix<char> grid(lines.size(), lines[0].size());
-    for (size_t y = 0; y < lines.size(); y++) {
-        for (size_t x = 0; x < lines[0].size(); x++)
-            grid(y, x) = lines[y][x];
-    }
+    auto grid = Matrix<char>::from_lines(getlines(f));
 
     dense_set<Point<size_t>> part_number_positions;
     for (auto p : grid.ndindex()) {

@@ -5,11 +5,7 @@
 
 void run_2021_9(FILE *f)
 {
-    auto lines = getlines(f);
-
-    Matrix<char> chart(lines.size(), lines[0].size());
-    for (auto p : chart.ndindex())
-        chart(p) = lines[p.y][p.x];
+    auto chart = Matrix<char>::from_lines(getlines(f));
 
     int risk_sum = 0;
     for (auto p : chart.ndindex()) {

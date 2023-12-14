@@ -110,11 +110,7 @@ static int total_load(const Matrix<char> &grid)
 
 void run_2023_14(FILE *f)
 {
-    const auto lines = getlines(f);
-    Matrix<char> grid(lines.size(), lines[0].size());
-    for (auto p : grid.ndindex())
-        grid(p) = lines[p.y][p.x];
-
+    auto grid = Matrix<char>::from_lines(getlines(f));
     auto grid2 = grid;
     roll_n(grid);
     fmt::print("{}\n", total_load(grid));

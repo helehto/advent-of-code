@@ -38,12 +38,7 @@ static int64_t signed_area(std::span<const Point<size_t>> points)
 
 void run_2023_10(FILE *f)
 {
-    const auto lines = getlines(f);
-    Matrix<char> grid(lines.size(), lines[0].size());
-    for (size_t y = 0; y < lines.size(); y++) {
-        for (size_t x = 0; x < lines[0].size(); x++)
-            grid(y, x) = lines[y][x];
-    }
+    auto grid = Matrix<char>::from_lines(getlines(f));
 
     Point<size_t> start{};
     for (auto p : grid.ndindex())

@@ -392,6 +392,18 @@ struct Matrix {
     Matrix(Matrix &&) = default;
     Matrix &operator=(Matrix &&) = default;
 
+    template <typename Proj = std::identity>
+    static Matrix from_lines(std::span<const std::string> lines, Proj proj = {})
+    {
+        Matrix m(lines.size(), lines[0].size());
+        T *p = m.data.get();
+        for (size_t i = 0; i < lines.size(); i++) {
+            for (size_t j = 0; j < lines[0].size(); j++)
+                *p++ = proj(lines[i][j]);
+        }
+        return m;
+    }
+
     bool operator==(const Matrix &other) const noexcept
     {
         return std::equal(begin(), end(), other.begin());
