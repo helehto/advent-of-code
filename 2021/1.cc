@@ -1,7 +1,4 @@
 #include "common.h"
-#include <fmt/core.h>
-#include <span>
-#include <vector>
 
 static int solve(std::span<int> input, size_t window_size)
 {

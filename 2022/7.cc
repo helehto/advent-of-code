@@ -1,10 +1,6 @@
 #include "common.h"
-#include <charconv>
 #include <climits>
-#include <fmt/core.h>
-#include <string>
 #include <unordered_map>
-#include <vector>
 
 void run_2022_7(FILE *f)
 {

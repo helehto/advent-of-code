@@ -1,8 +1,5 @@
 #include "common.h"
-#include <fmt/core.h>
 #include <numeric>
-#include <span>
-#include <vector>
 
 void run_2021_6(FILE *f)
 {

@@ -1,5 +1,4 @@
 #include "common.h"
-#include <fmt/core.h>
 
 constexpr uint64_t pack(std::string_view p)
 {

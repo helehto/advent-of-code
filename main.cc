@@ -18,7 +18,7 @@ using namespace std::literals;
         exit(EXIT_FAILURE);                                                              \
     } while (0)
 
-#define GLUE_(x, y) x ## y
+#define GLUE_(x, y) x##y
 #define GLUE(x, y) GLUE_(x, y)
 #define GLUE3(x, y, z) GLUE(GLUE(x, y), z)
 
@@ -34,9 +34,7 @@ struct Problem {
 };
 
 X_FOR_EACH_PROBLEM(X_DECLARE_RUN_FUNCS);
-static constexpr Problem problems[] = {
-    X_FOR_EACH_PROBLEM(X_PROBLEM_TABLE_INITIALIZERS)
-};
+static constexpr Problem problems[] = {X_FOR_EACH_PROBLEM(X_PROBLEM_TABLE_INITIALIZERS)};
 
 static std::vector<const Problem *> glob_problem(const char *pattern)
 {
@@ -88,10 +86,7 @@ struct TimingData {
 
 template <>
 struct fmt::formatter<TimingData> {
-    constexpr auto parse(format_parse_context &ctx)
-    {
-        return ctx.begin();
-    }
+    constexpr auto parse(format_parse_context &ctx) { return ctx.begin(); }
 
     template <typename FormatContext>
     auto format(const TimingData &td, FormatContext &ctx) const

@@ -1,6 +1,5 @@
 #include "common.h"
 #include "dense_map.h"
-#include <fmt/core.h>
 
 enum {
     ORE,
@@ -55,7 +54,7 @@ struct SearchState {
     std::array<uint8_t, 3> resources = {0, 0, 0};
 };
 
-static int search(SearchParameters &p, const SearchState &state={})
+static int search(SearchParameters &p, const SearchState &state = {})
 {
     const auto &[t, geodes, income, resources] = state;
 
@@ -132,7 +131,8 @@ static int search(SearchParameters &p, const SearchState &state={})
     }
 
     p.cache[key] = {score};
-    if (score>p.largest)p.largest=score;
+    if (score > p.largest)
+        p.largest = score;
     return score;
 }
 

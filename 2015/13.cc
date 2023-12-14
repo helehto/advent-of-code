@@ -1,7 +1,5 @@
 #include "common.h"
 #include "dense_map.h"
-#include <fmt/core.h>
-#include <span>
 
 static Matrix<int> get_happiness_matrix(FILE *f)
 {
@@ -71,7 +69,7 @@ void run_2015_13(FILE *f)
     auto matrix = get_happiness_matrix(f);
     fmt::print("{}\n", max_happiness(matrix));
 
-    Matrix<int> augmented(matrix.rows+1,matrix.cols+1);
+    Matrix<int> augmented(matrix.rows + 1, matrix.cols + 1);
     for (size_t i = 0; i < matrix.rows; i++) {
         for (size_t j = 0; j < matrix.cols; j++) {
             augmented(i, j) = matrix(i, j);

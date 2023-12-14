@@ -1,7 +1,4 @@
 #include "common.h"
-#include <fmt/core.h>
-#include <vector>
-#include <span>
 
 static int most_common_bit(std::span<uint16_t> xs, size_t bit)
 {

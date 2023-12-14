@@ -1,6 +1,5 @@
 #include "common.h"
 #include <climits>
-#include <fmt/core.h>
 #include <set>
 
 struct Sensor {
@@ -52,8 +51,7 @@ static std::vector<Point<int>> boundary(Sensor a, Sensor b)
     return points;
 }
 
-static Point<int> intersect(std::vector<Point<int>> &a,
-                            std::vector<Point<int>> &b)
+static Point<int> intersect(std::vector<Point<int>> &a, std::vector<Point<int>> &b)
 {
     size_t ai = a.size() / 2;
     size_t bi = b.size() / 2;

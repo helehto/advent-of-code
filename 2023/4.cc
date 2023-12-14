@@ -1,5 +1,4 @@
 #include "common.h"
-#include <fmt/core.h>
 #include <numeric>
 
 void run_2023_4(FILE *f)

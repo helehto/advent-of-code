@@ -2,11 +2,8 @@
 #include "dense_map.h"
 #include "dense_set.h"
 #include <climits>
-#include <cmath>
-#include <fmt/core.h>
 #include <numeric>
 #include <optional>
-#include <span>
 
 static std::vector<Point<int>> rock_templates[] = {
     // clang-format off
@@ -76,7 +73,7 @@ static std::optional<Cycle> detect_cycle(const std::vector<State17> &state_vec)
     const int delta_n = streak[1].n - streak[0].n;
     const int delta_height = streak[1].height - streak[0].height;
 
-    for (size_t i = 2; i < streak.size();++i) {
+    for (size_t i = 2; i < streak.size(); ++i) {
         if (streak[i].n - streak[i - 1].n != delta_n)
             return std::nullopt;
         if (streak[i].height - streak[i - 1].height != delta_height)

@@ -1,12 +1,11 @@
 #include "common.h"
 #include <algorithm>
 #include <ranges>
-#include <span>
 #include <unordered_set>
 
 static size_t scan_x(Matrix<char> &grid, Point<size_t> p, int dx)
 {
-    auto [i,j] = p;
+    auto [i, j] = p;
     for (size_t k = j + dx;; k += dx) {
         if (grid(i, k) != '.')
             return k - dx;
@@ -38,7 +37,7 @@ static void roll_n(Matrix<char> &grid)
 
 static void roll_s(Matrix<char> &grid)
 {
-    for (size_t i = grid.rows-1; i--;) {
+    for (size_t i = grid.rows - 1; i--;) {
         for (size_t j = 0; j < grid.cols; j++) {
             if (grid(i, j) == 'O') {
                 if (size_t k = scan_y(grid, {i, j}, 1); k != i)
@@ -50,7 +49,7 @@ static void roll_s(Matrix<char> &grid)
 
 static void roll_w(Matrix<char> &grid)
 {
-    for (auto [i,j]:grid.ndindex()) {
+    for (auto [i, j] : grid.ndindex()) {
         if (j > 0 && grid(i, j) == 'O') {
             if (size_t k = scan_x(grid, {i, j}, -1); k != j)
                 grid(i, k) = std::exchange(grid(i, j), '.');
@@ -60,10 +59,10 @@ static void roll_w(Matrix<char> &grid)
 
 static void roll_e(Matrix<char> &grid)
 {
-    for (size_t j = grid.cols-1; j--;) {
+    for (size_t j = grid.cols - 1; j--;) {
         for (size_t i = 0; i < grid.rows; i++) {
             if (grid(i, j) == 'O') {
-                if (size_t k = scan_x(grid, {i, j}, 1);k!=j)
+                if (size_t k = scan_x(grid, {i, j}, 1); k != j)
                     grid(i, k) = std::exchange(grid(i, j), '.');
             }
         }
@@ -100,7 +99,7 @@ static Matrix<char> find_cycle(Matrix<char> grid, int which)
     }
 }
 
-static int total_load(const Matrix<char>&grid)
+static int total_load(const Matrix<char> &grid)
 {
     int sum = 0;
     for (auto p : grid.ndindex())

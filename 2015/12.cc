@@ -1,5 +1,4 @@
 #include "common.h"
-#include <fmt/core.h>
 #include <variant>
 
 using Entity = std::variant<int64_t, std::string_view>;

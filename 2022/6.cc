@@ -1,7 +1,4 @@
 #include "common.h"
-#include <fmt/core.h>
-#include <string>
-#include <string_view>
 
 static size_t solve(std::string_view s, size_t n)
 {

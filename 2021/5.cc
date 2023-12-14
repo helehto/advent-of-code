@@ -1,5 +1,4 @@
 #include "common.h"
-#include <fmt/core.h>
 #include <unordered_map>
 
 void run_2021_5(FILE *f)

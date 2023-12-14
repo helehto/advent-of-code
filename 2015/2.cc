@@ -1,13 +1,12 @@
 #include "common.h"
-#include <fmt/core.h>
 
 void run_2015_2(FILE *f)
 {
     std::vector<std::tuple<int, int, int>> input;
 
-    int l,w,h;
+    int l, w, h;
     while (fscanf(f, "%dx%dx%d\n", &l, &w, &h) == 3)
-        input.emplace_back(l,w,h);
+        input.emplace_back(l, w, h);
 
     int part1 = 0;
     int part2 = 0;

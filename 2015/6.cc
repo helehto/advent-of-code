@@ -1,8 +1,5 @@
 #include "common.h"
-#include <fmt/core.h>
 #include <numeric>
-#include <string>
-#include <string_view>
 
 void run_2015_6(FILE *f)
 {

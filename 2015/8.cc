@@ -1,6 +1,5 @@
 #include "common.h"
 #include "dense_map.h"
-#include <fmt/core.h>
 
 static int count_mem(std::string_view v)
 {

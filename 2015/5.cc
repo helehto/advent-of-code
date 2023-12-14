@@ -1,7 +1,4 @@
 #include "common.h"
-#include <fmt/core.h>
-#include <string>
-#include <string_view>
 
 static bool part1(std::string_view s)
 {

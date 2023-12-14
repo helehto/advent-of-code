@@ -1,8 +1,4 @@
 #include "common.h"
-#include <cstdio>
-#include <fmt/core.h>
-#include <string>
-#include <vector>
 
 void run_2022_8(FILE *f)
 {

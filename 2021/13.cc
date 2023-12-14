@@ -1,5 +1,4 @@
 #include "common.h"
-#include <fmt/core.h>
 
 void run_2021_13(FILE *f)
 {

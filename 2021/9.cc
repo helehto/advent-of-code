@@ -1,10 +1,7 @@
 #include "common.h"
 #include <algorithm>
-#include <fmt/core.h>
 #include <ranges>
-#include <span>
 #include <unordered_set>
-#include <vector>
 
 void run_2021_9(FILE *f)
 {

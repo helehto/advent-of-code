@@ -1,7 +1,5 @@
 #include "common.h"
 #include "dense_map.h"
-#include <fmt/core.h>
-#include <span>
 
 struct Reindeer {
     int velocity;

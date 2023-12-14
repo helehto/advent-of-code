@@ -10,6 +10,9 @@
 #include <fmt/ranges.h>
 #include <functional>
 #include <memory>
+#include <span>
+#include <string>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -31,18 +34,18 @@
 
 constexpr uint64_t hash_mix(uint64_t x)
 {
-        //const auto m = UINT64_C((uint64_t(0xe9846af) << 32) + 0x9b1a615d;
-        const uint64_t m = UINT64_C(0xe9846af9b1a615d);
-        x ^= x >> 32;
-        x *= m;
-        x ^= x >> 32;
-        x *= m;
-        x ^= x >> 28;
-        return x;
+    // const auto m = UINT64_C((uint64_t(0xe9846af) << 32) + 0x9b1a615d;
+    const uint64_t m = UINT64_C(0xe9846af9b1a615d);
+    x ^= x >> 32;
+    x *= m;
+    x ^= x >> 32;
+    x *= m;
+    x ^= x >> 28;
+    return x;
 }
 
 template <typename T, typename... Rest>
-constexpr void hash_combine(std::size_t& h, const T& v, const Rest&... rest)
+constexpr void hash_combine(std::size_t &h, const T &v, const Rest &...rest)
 {
     const std::uint64_t m = 0xc6a4a7935bd1e995ULL;
     std::uint64_t k = std::hash<T>{}(v);
@@ -67,8 +70,8 @@ struct Point {
     T x;
     T y;
 
-    constexpr bool operator==(const Point& other) const = default;
-    constexpr bool operator!=(const Point& other) const = default;
+    constexpr bool operator==(const Point &other) const = default;
+    constexpr bool operator!=(const Point &other) const = default;
 };
 
 template <typename T>
@@ -79,7 +82,7 @@ T manhattan(const Point<T> &a, const Point<T> &b)
 
 template <typename T>
 struct std::hash<Point<T>> {
-    constexpr size_t operator()(const Point<T>& p) const
+    constexpr size_t operator()(const Point<T> &p) const
     {
         size_t h = 0;
         hash_combine(h, p.x, p.y);
@@ -89,10 +92,7 @@ struct std::hash<Point<T>> {
 
 template <typename T>
 struct fmt::formatter<Point<T>> {
-    constexpr auto parse(format_parse_context &ctx)
-    {
-        return ctx.begin();
-    }
+    constexpr auto parse(format_parse_context &ctx) { return ctx.begin(); }
 
     template <typename FormatContext>
     auto format(const Point<T> &p, FormatContext &ctx) const
@@ -128,10 +128,7 @@ private:
         index_map_[heap_[b]] = b;
     }
 
-    bool heap_cmp(size_t a, size_t b)
-    {
-        return cmp_(heap_[a], heap_[b]);
-    }
+    bool heap_cmp(size_t a, size_t b) { return cmp_(heap_[a], heap_[b]); }
 
     void sift_down(size_t i)
     {
@@ -164,7 +161,8 @@ private:
     }
 
 public:
-    explicit BinaryHeap(Compare cmp, size_t n) : cmp_(cmp)
+    explicit BinaryHeap(Compare cmp, size_t n)
+        : cmp_(cmp)
     {
         heap_.reserve(n);
 
@@ -181,10 +179,7 @@ public:
             index_map_[heap_[i]] = i;
     }
 
-    bool empty() const
-    {
-        return heap_.empty();
-    }
+    bool empty() const { return heap_.empty(); }
 
     size_t top() const
     {
@@ -258,7 +253,8 @@ inline bool getline(FILE *f, std::string &s)
     }
 }
 
-inline std::vector<std::string> getlines(FILE *f) {
+inline std::vector<std::string> getlines(FILE *f)
+{
     std::vector<std::string> lines;
     std::string s;
     while (getline(f, s))
@@ -272,7 +268,7 @@ static void find_numbers(std::string_view s, std::vector<T> &result)
     result.clear();
 
     while (true) {
-        while (!s.empty() && s.front() != '-' && !(s.front()>='0'&&s.front()<='9'))
+        while (!s.empty() && s.front() != '-' && !(s.front() >= '0' && s.front() <= '9'))
             s.remove_prefix(1);
         if (s.empty())
             return;
@@ -369,17 +365,21 @@ struct Matrix {
 
     constexpr Matrix() = default;
 
-    Matrix(size_t rows_, size_t cols_, T value = T()) :
-        data(new T[rows_ * cols_]), rows(rows_), cols(cols_)
+    Matrix(size_t rows_, size_t cols_, T value = T())
+        : data(new T[rows_ * cols_])
+        , rows(rows_)
+        , cols(cols_)
     {
         for (auto &v : *this)
             v = value;
     }
 
-    Matrix(const Matrix &other) :
-        data(new T[other.rows * other.cols]), rows(other.rows), cols(other.cols)
+    Matrix(const Matrix &other)
+        : data(new T[other.rows * other.cols])
+        , rows(other.rows)
+        , cols(other.cols)
     {
-        std::copy(other.begin(),other.end(),data.get());
+        std::copy(other.begin(), other.end(), data.get());
     }
 
     Matrix &operator=(const Matrix &other)
@@ -394,63 +394,33 @@ struct Matrix {
 
     bool operator==(const Matrix &other) const noexcept
     {
-        return std::equal(begin(),end(),other.begin());
+        return std::equal(begin(), end(), other.begin());
     }
+    bool operator!=(const Matrix &other) const noexcept { return !(*this == other); }
 
-    bool operator!=(const Matrix &other) const noexcept
-    {
-        return !(*this==other);
-    }
+    constexpr T &operator()(size_t i, size_t j) { return data[i * cols + j]; }
+    constexpr const T &operator()(size_t i, size_t j) const { return data[i * cols + j]; }
 
-    constexpr T &operator()(size_t i, size_t j)
-    {
-        return data[i * cols + j];
-    }
-
-    constexpr const T &operator()(size_t i, size_t j) const
-    {
-        return data[i * cols + j];
-    }
-
-    template <typename U> constexpr T &operator()(Point<U> p)
+    template <typename U>
+    constexpr T &operator()(Point<U> p)
     {
         return data[p.y * cols + p.x];
     }
 
-    template <typename U> constexpr const T &operator()(Point<U> p) const
+    template <typename U>
+    constexpr const T &operator()(Point<U> p) const
     {
         return data[p.y * cols + p.x];
     }
 
-    constexpr size_t size() const
-    {
-        return rows * cols;
-    }
+    constexpr size_t size() const { return rows * cols; }
 
-    constexpr T *begin()
-    {
-        return data.get();
-    }
+    constexpr T *begin() { return data.get(); }
+    constexpr T *end() { return data.get() + rows * cols; }
+    constexpr const T *begin() const { return data.get(); }
+    constexpr const T *end() const { return data.get() + rows * cols; }
 
-    constexpr T *end()
-    {
-        return data.get() + rows * cols;
-    }
-
-    constexpr const T *begin() const
-    {
-        return data.get();
-    }
-
-    constexpr const T *end() const
-    {
-        return data.get() + rows * cols;
-    }
-
-    Ndindex2DRange ndindex() const
-    {
-        return {rows,cols};
-    }
+    Ndindex2DRange ndindex() const { return {rows, cols}; }
 };
 
 template <typename T, typename Predicate>

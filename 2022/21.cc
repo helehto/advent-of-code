@@ -1,10 +1,5 @@
 #include "common.h"
-#include <cstdint>
-#include <cstdio>
-#include <fmt/core.h>
-#include <string>
 #include <unordered_map>
-#include <vector>
 
 enum {
     OP_CONSTANT = 1,
@@ -51,7 +46,8 @@ static Input parse_monkeys(FILE *f)
         char type;
         if (sscanf(s.c_str(), "%4s: %d", m.name, &m.constant) == 2) {
             m.type = OP_CONSTANT;
-        } else if (sscanf(s.c_str(), "%4s: %4s %c %4s", m.name, m.op[0], &type, m.op[1]) == 4) {
+        } else if (sscanf(s.c_str(), "%4s: %4s %c %4s", m.name, m.op[0], &type,
+                          m.op[1]) == 4) {
             if (type == '+')
                 m.type = OP_ADD;
             else if (type == '-')

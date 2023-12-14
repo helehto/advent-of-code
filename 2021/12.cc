@@ -1,8 +1,5 @@
 #include "common.h"
 #include <cctype>
-#include <fmt/core.h>
-#include <span>
-#include <vector>
 
 static bool is_big(const char *p)
 {

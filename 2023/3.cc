@@ -1,6 +1,5 @@
 #include "common.h"
 #include "dense_set.h"
-#include <fmt/core.h>
 
 static boost::container::static_vector<Point<size_t>, 8>
 surrounding_part_numbers(const Matrix<char> &grid, Point<size_t> p)

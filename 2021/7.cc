@@ -1,8 +1,5 @@
 #include "common.h"
-#include <fmt/core.h>
 #include <numeric>
-#include <span>
-#include <vector>
 
 static int cost1(std::span<int> crabs, int goal)
 {

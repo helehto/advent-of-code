@@ -2,9 +2,7 @@
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 #include <climits>
-#include <fmt/core.h>
 #include <numeric>
-#include <vector>
 
 using Cube = std::array<int, 3>;
 
@@ -87,9 +85,9 @@ static boost::unordered_set<Cube> flood(boost::unordered_set<Cube> occupied)
 void run_2022_18(FILE *f)
 {
     boost::unordered_set<Cube> cubes;
-    int x,y,z;
-    while (fscanf(f, "%d,%d,%d",&x,&y,&z)==3){
-        cubes.insert({x,y,z});
+    int x, y, z;
+    while (fscanf(f, "%d,%d,%d", &x, &y, &z) == 3) {
+        cubes.insert({x, y, z});
     }
 
     const auto area = sum_surface_area(cubes);

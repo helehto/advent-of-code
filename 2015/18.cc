@@ -1,5 +1,4 @@
 #include "common.h"
-#include <fmt/core.h>
 
 static int count_neighbors(const std::vector<std::string> &g, size_t x, size_t y)
 {
@@ -47,7 +46,6 @@ static int solve(std::vector<std::string> grid, int iterations, bool stuck)
             grid.back().back() = '#';
         }
     };
-
 
     stuck_corners();
     std::vector<std::string> new_grid(grid.size(), std::string(grid[0].size(), '.'));

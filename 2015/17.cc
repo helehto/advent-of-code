@@ -1,5 +1,4 @@
 #include "common.h"
-#include <fmt/core.h>
 
 static int
 part1(const std::vector<int> &containers, uint64_t used_mask, int left, size_t start)

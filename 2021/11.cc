@@ -1,10 +1,7 @@
 #include "common.h"
-#include <algorithm>
-#include <fmt/core.h>
-#include <ranges>
-#include <span>
 #include "dense_set.h"
-#include <vector>
+#include <algorithm>
+#include <ranges>
 
 void run_2021_11(FILE *f)
 {

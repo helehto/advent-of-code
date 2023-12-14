@@ -1,8 +1,4 @@
 #include "common.h"
-#include <charconv>
-#include <fmt/core.h>
-#include <string>
-#include <vector>
 
 struct Instruction {
     int due;

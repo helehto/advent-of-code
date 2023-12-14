@@ -1,10 +1,7 @@
 #include "common.h"
 #include "dense_map.h"
-#include <fmt/core.h>
 #include <numeric>
-#include <boost/container/static_vector.hpp>
 #include <tuple>
-#include <vector>
 
 enum { U, D, L, R };
 using boost::container::static_vector;
@@ -15,16 +12,14 @@ struct Grid {
     int n;
 
     Grid(int m, int n)
-        : m(m), n(n)
+        : m(m)
+        , n(n)
     {
         for (auto &g : grid)
             g.resize(n * m);
     }
 
-    constexpr bool at(int dir, Point<int> p) const
-    {
-        return grid[dir][p.y * m + p.x];
-    }
+    constexpr bool at(int dir, Point<int> p) const { return grid[dir][p.y * m + p.x]; }
 
     constexpr bool is_unoccupied(Point<int> p, int t) const
     {
@@ -100,7 +95,7 @@ void run_2022_24(FILE *f)
     const size_t n = lines.size();
     const size_t m = lines[0].size();
 
-    Grid grid(m,n);
+    Grid grid(m, n);
 
     for (size_t y = 1; y < lines.size() - 1; y++) {
         const auto &line = lines[y];

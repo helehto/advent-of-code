@@ -1,9 +1,6 @@
 #include "common.h"
 #include <algorithm>
 #include <climits>
-#include <fmt/core.h>
-#include <string>
-#include <vector>
 
 static int dijkstra(const Matrix<char> &m, size_t target, std::vector<int> &dist)
 {

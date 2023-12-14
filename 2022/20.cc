@@ -2,8 +2,6 @@
 #include <algorithm>
 #include <cinttypes>
 #include <cstring>
-#include <fmt/core.h>
-#include <vector>
 #include <x86intrin.h>
 
 constexpr int index_shift = 16;

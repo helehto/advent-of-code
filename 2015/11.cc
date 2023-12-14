@@ -1,5 +1,4 @@
 #include "common.h"
-#include <fmt/core.h>
 
 static void increment(std::string &s)
 {

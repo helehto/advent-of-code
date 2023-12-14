@@ -1,6 +1,5 @@
 #include "common.h"
 #include <algorithm>
-#include <span>
 
 static void expand_dimension(std::span<std::array<int, 2>> galaxies, int factor, int dim)
 {

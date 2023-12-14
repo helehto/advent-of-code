@@ -1,6 +1,4 @@
 #include "common.h"
-#include <fmt/core.h>
-#include <span>
 
 // See the 'Cosmological decay' section on Wikipedia:
 // https://en.wikipedia.org/wiki/Look-and-say_sequence

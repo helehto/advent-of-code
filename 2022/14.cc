@@ -1,7 +1,6 @@
 #include "common.h"
 #include "dense_set.h"
 #include <climits>
-#include <fmt/core.h>
 
 struct Cave {
     dense_set<Point<int>> occupied;

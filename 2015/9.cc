@@ -1,7 +1,5 @@
 #include "common.h"
 #include "dense_map.h"
-#include <fmt/core.h>
-#include <span>
 
 static Matrix<int> get_distance_matrix(FILE *f)
 {

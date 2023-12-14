@@ -1,7 +1,6 @@
 #include "common.h"
 #include <algorithm>
 #include <ranges>
-#include <span>
 
 using namespace std::ranges;
 using namespace std::views;
@@ -93,8 +92,8 @@ void run_2023_13(FILE *f)
             }
         }
 
-done_part1:
-        // look for vertical reflection lines 
+    done_part1:
+        // look for vertical reflection lines
         for (size_t j = 0; j + 1 < grid.cols; j++) {
             if (auto sr = scanv(grid, j, j + 1); sr.mismatches == 1) {
                 if (sr.i == 0 || sr.j == grid.cols - 1 ||
@@ -105,18 +104,18 @@ done_part1:
             }
         }
 
-        // look for horizontal reflection lines 
+        // look for horizontal reflection lines
         for (size_t j = 0; j + 1 < grid.rows; j++) {
             if (auto sr = scanh(grid, j, j + 1); sr.mismatches == 1) {
                 if (sr.i == 0 || sr.j == grid.rows - 1 ||
                     scanh(grid, sr.i - 1, sr.j + 1).mismatches == 0) {
-                    part2 += 100*(j + 1);
+                    part2 += 100 * (j + 1);
                     goto done_part2;
                 }
             }
         }
 
-done_part2:
+    done_part2:
         curr = next + 1;
     } while (curr < lines.size());
 

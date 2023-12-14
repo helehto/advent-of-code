@@ -1,7 +1,5 @@
 #include "common.h"
 #include "dense_set.h"
-#include <fmt/core.h>
-#include <span>
 
 static Point<int> move_knot(const Point<int> &dst, Point<int> src)
 {

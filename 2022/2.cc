@@ -1,5 +1,4 @@
-#include <fmt/core.h>
-#include <cstdio>
+#include "common.h"
 
 void run_2022_2(FILE *f)
 {

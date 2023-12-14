@@ -1,17 +1,16 @@
 #include "common.h"
 #include "dense_set.h"
-#include <fmt/core.h>
 
 void run_2015_3(FILE *f)
 {
     std::string s;
-    getline(f,s);
+    getline(f, s);
 
     {
         dense_set<Point<int>> points;
         points.insert({0, 0});
 
-        Point<int> p = {0,0};
+        Point<int> p = {0, 0};
         for (auto c : s) {
             switch (c) {
             case '>':

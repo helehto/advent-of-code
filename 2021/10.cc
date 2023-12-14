@@ -1,6 +1,4 @@
 #include "common.h"
-#include <fmt/core.h>
-#include <vector>
 
 void run_2021_10(FILE *f)
 {

@@ -1,5 +1,4 @@
 #include "common.h"
-#include <fmt/core.h>
 
 struct Outcome {
     int r;

@@ -2,9 +2,6 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
-#include <cstdio>
-#include <span>
-#include <string>
 
 static void move_crates(std::string &src, std::string &dst, int n, bool reverse)
 {

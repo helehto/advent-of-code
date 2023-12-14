@@ -1,7 +1,4 @@
 #include "common.h"
-#include <cstdint>
-#include <fmt/core.h>
-#include "common.h"
 #include <numeric>
 
 enum class Operation {

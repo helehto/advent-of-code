@@ -1,7 +1,5 @@
 #include "common.h"
 #include <climits>
-#include <fmt/core.h>
-#include <span>
 
 namespace {
 
@@ -13,10 +11,7 @@ struct Map {
     int ymax = 0;
     int k = 0;
 
-    uint8_t &at(Point<int> p)
-    {
-        return array[(xmax - xmin) * p.y + p.x - k];
-    }
+    uint8_t &at(Point<int> p) { return array[(xmax - xmin) * p.y + p.x - k]; }
 
     void increment(Point<int> p)
     {
@@ -34,8 +29,7 @@ struct Map {
         new_map.ymax = std::max(p.y + 16, ymax + 16);
         new_map.array.resize((new_map.ymax - new_map.ymin) *
                              (new_map.xmax - new_map.xmin));
-        new_map.k = 
-            (new_map.xmax - new_map.xmin) * new_map.ymin + new_map.xmin;
+        new_map.k = (new_map.xmax - new_map.xmin) * new_map.ymin + new_map.xmin;
 
         // This is pretty slow, but it's not going to run very often.
         for (int y = ymin; y < ymax; y++) {
@@ -53,8 +47,8 @@ struct Map {
         const uint8_t *r1 = &at({p.x - 1, p.y});
         const uint8_t *r2 = &at({p.x - 1, p.y + 1});
         return (uint64_t)r0[0] << 0 | (uint64_t)r0[1] << 8 | (uint64_t)r0[2] << 16 |
-               (uint64_t)r1[0] << 24 | (uint64_t)r1[2] << 32 |
-               (uint64_t)r2[0] << 40 | (uint64_t)r2[1] << 48 | (uint64_t)r2[2] << 56;
+               (uint64_t)r1[0] << 24 | (uint64_t)r1[2] << 32 | (uint64_t)r2[0] << 40 |
+               (uint64_t)r2[1] << 48 | (uint64_t)r2[2] << 56;
     }
 };
 
@@ -62,7 +56,8 @@ struct Map {
 
 constexpr uint64_t gen_mask(int x1, int x2, int x3)
 {
-    return UINT64_C(0xff) << (8*x1) | UINT64_C(0xff) << (8*x2) | UINT64_C(0xff) << (8*x3);
+    return UINT64_C(0xff) << (8 * x1) | UINT64_C(0xff) << (8 * x2) |
+           UINT64_C(0xff) << (8 * x3);
 }
 
 void run_2022_23(FILE *f)
@@ -85,10 +80,10 @@ void run_2022_23(FILE *f)
     };
 
     std::array<Dir, 4> dirs = {{
-        {gen_mask(0,1,2), 0, -1},
-        {gen_mask(5,6,7), 0, 1},
-        {gen_mask(0,3,5), -1, 0},
-        {gen_mask(2,4,7), 1, 0},
+        {gen_mask(0, 1, 2), 0, -1},
+        {gen_mask(5, 6, 7), 0, 1},
+        {gen_mask(0, 3, 5), -1, 0},
+        {gen_mask(2, 4, 7), 1, 0},
     }};
 
     Map map;
@@ -125,8 +120,7 @@ void run_2022_23(FILE *f)
         }
 
         for (size_t i = 0; i < elves.size(); i++) {
-            Point<int> dest =
-                proposal_map.at(proposals[i]) > 1 ? elves[i] : proposals[i];
+            Point<int> dest = proposal_map.at(proposals[i]) > 1 ? elves[i] : proposals[i];
             new_elves.push_back(dest);
             new_map.increment(dest);
         }
@@ -137,7 +131,7 @@ void run_2022_23(FILE *f)
             break;
         }
 
-        std::swap(map,new_map);
+        std::swap(map, new_map);
         memset(proposal_map.array.data(), 0, proposal_map.array.size());
         memset(new_map.array.data(), 0, new_map.array.size());
         std::swap(elves, new_elves);

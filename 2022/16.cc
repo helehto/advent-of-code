@@ -1,10 +1,7 @@
+#include "common.h"
 #include <algorithm>
 #include <boost/unordered_map.hpp>
 #include <climits>
-#include <fmt/core.h>
-#include "common.h"
-#include <string>
-#include <vector>
 
 struct Valve {
     int flow = 0;
@@ -181,7 +178,7 @@ void run_2022_16(FILE *f)
         int m = 0;
         for (auto &[_, score] : path_scores)
             m = std::max(m, score);
-	fmt::print("{}\n", m);
+        fmt::print("{}\n", m);
     }
 
     // Part 2:
@@ -213,6 +210,6 @@ void run_2022_16(FILE *f)
             }
         }
 
-	fmt::print("{}\n", score);
+        fmt::print("{}\n", score);
     }
 }

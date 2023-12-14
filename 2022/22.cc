@@ -1,8 +1,4 @@
 #include "common.h"
-#include <fmt/core.h>
-#include <string>
-#include <utility>
-#include <vector>
 
 enum { U, L, D, R };
 

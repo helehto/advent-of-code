@@ -1,6 +1,5 @@
 #include "common.h"
 #include "dense_set.h"
-#include <span>
 #include <queue>
 
 static std::array<Point<size_t>, 2> get_pipe_neighbors(Point<size_t> p, char c)

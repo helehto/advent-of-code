@@ -1,7 +1,6 @@
 #include "common.h"
 #include <cstdlib>
 #include <optional>
-#include <span>
 #include <x86intrin.h>
 
 enum : uint8_t {

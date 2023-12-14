@@ -1,5 +1,4 @@
 #include "common.h"
-#include <fmt/core.h>
 #include <unordered_map>
 
 auto increment_count(std::unordered_map<std::string, int> &map, const std::string &key)
@@ -48,7 +47,7 @@ void run_2021_14(FILE *f)
                 max = std::max(max, count);
             }
 
-            fmt::print("{}\n", max - min+1);
+            fmt::print("{}\n", max - min + 1);
         }
 
         bigrams.swap(new_bigrams);

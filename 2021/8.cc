@@ -1,6 +1,5 @@
 #include "common.h"
 #include <array>
-#include <fmt/core.h>
 
 void run_2021_8(FILE *f)
 {

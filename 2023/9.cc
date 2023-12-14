@@ -1,6 +1,5 @@
 #include "common.h"
 #include <numeric>
-#include <span>
 
 static double basis(int64_t k, int64_t x, int64_t j)
 {

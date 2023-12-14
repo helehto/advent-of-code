@@ -1,7 +1,4 @@
 #include "common.h"
-#include <fmt/core.h>
-#include <vector>
-#include <span>
 
 struct Board {
     std::array<uint8_t, 25> nums;

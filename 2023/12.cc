@@ -1,5 +1,4 @@
 #include "common.h"
-#include <span>
 #include <unordered_map>
 
 static std::unordered_map<uint16_t, uint64_t> cache;

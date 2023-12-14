@@ -1,6 +1,5 @@
 #include "common.h"
 #include <optional>
-#include <span>
 
 struct Range {
     uint64_t to;
