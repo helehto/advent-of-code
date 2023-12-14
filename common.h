@@ -376,6 +376,32 @@ struct Matrix {
             v = value;
     }
 
+    Matrix(const Matrix &other) :
+        data(new T[other.rows * other.cols]), rows(other.rows), cols(other.cols)
+    {
+        std::copy(other.begin(),other.end(),data.get());
+    }
+
+    Matrix &operator=(const Matrix &other)
+    {
+        Matrix m(other);
+        std::swap(m, *this);
+        return *this;
+    }
+
+    Matrix(Matrix &&) = default;
+    Matrix &operator=(Matrix &&) = default;
+
+    bool operator==(const Matrix &other) const noexcept
+    {
+        return std::equal(begin(),end(),other.begin());
+    }
+
+    bool operator!=(const Matrix &other) const noexcept
+    {
+        return !(*this==other);
+    }
+
     constexpr T &operator()(size_t i, size_t j)
     {
         return data[i * cols + j];
@@ -421,7 +447,7 @@ struct Matrix {
         return data.get() + rows * cols;
     }
 
-    Ndindex2DRange ndindex()
+    Ndindex2DRange ndindex() const
     {
         return {rows,cols};
     }
