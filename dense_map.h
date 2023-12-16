@@ -30,12 +30,14 @@ public:
 
 private:
     // NOTE: The code is dependent on the states having these specific values.
+    // clang-format off
     enum class bucket_state : uint8_t {
-        empty = 0,
-        occupied = 1,
-        tombstone = 2,
-        sentinel = 3,
+        empty     = 0b00000000,
+        tombstone = 0b01000000,
+        sentinel  = 0b10000000,
+        occupied  = 0b11000000,
     };
+    // clang-format on
 
     struct bucket {
         alignas(value_type) char buffer[sizeof(value_type)];
@@ -119,11 +121,13 @@ private:
         states_[i] = static_cast<uint8_t>(state);
     }
 
-    size_t find_occupied_(size_t i) const
+    __attribute__((noinline)) size_t find_occupied_(size_t i) const
     {
-        for (;; ++i)
-            if (static_cast<int>(state_of(i)) & 1)
-                return i;
+        for (;; i += 16) {
+            const auto *p = reinterpret_cast<const __m128i *>(&states_[i]);
+            if (unsigned int mask = _mm_movemask_epi8(_mm_lddqu_si128(p)))
+                return i + std::countr_zero(mask);
+        }
     }
 
     std::pair<size_t, bool> find_bucket_(const Key &key) const
@@ -201,10 +205,11 @@ private:
         , hash_(hash)
         , equal_(equal)
     {
-        buckets_ = std::unique_ptr<bucket[]>(new bucket[bucket_count + 1]);
-        states_ = std::make_unique<uint8_t[]>(bucket_count + 1);
+        buckets_ = std::unique_ptr<bucket[]>(new bucket[bucket_count + 16]);
+        states_ = std::make_unique<uint8_t[]>(bucket_count + 16);
         capacity_ = bucket_count;
-        set_state_of(capacity_, bucket_state::sentinel);
+        for (int i = 0; i < 15; i++)
+            set_state_of(capacity_ + i, bucket_state::sentinel);
     }
 
 public:
