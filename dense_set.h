@@ -3,11 +3,12 @@
 
 #include "dense_map.h"
 
+struct dense_set_key {};
+
 template <typename Key, class Hash = std::hash<Key>, class KeyEqual = std::equal_to<Key>>
 class dense_set {
 private:
-    struct unit_type {};
-    using underlying_map_type = dense_map<Key, unit_type, Hash, KeyEqual>;
+    using underlying_map_type = dense_map<Key, dense_set_key, Hash, KeyEqual>;
 
 public:
     using key_type = Key;
@@ -86,7 +87,7 @@ public:
 
         underlying_map_type map(map_bucket_count, hash, equal);
         for (; begin != end; ++begin)
-            map.emplace(std::move(*begin), unit_type{});
+            map.emplace(std::move(*begin), dense_set_key{});
         map_.swap(map);
     }
 
@@ -124,12 +125,12 @@ public:
 
     std::pair<iterator, bool> insert(const value_type &value)
     {
-        auto [u, inserted] = map_.insert(std::make_pair(value, unit_type{}));
+        auto [u, inserted] = map_.insert(std::make_pair(value, dense_set_key{}));
         return {iterator{u}, inserted};
     }
     std::pair<iterator, bool> insert(value_type &&value)
     {
-        auto [u, inserted] = map_.insert(std::make_pair(std::move(value), unit_type{}));
+        auto [u, inserted] = map_.insert(std::make_pair(std::move(value), dense_set_key{}));
         return {iterator{u}, inserted};
     }
 
