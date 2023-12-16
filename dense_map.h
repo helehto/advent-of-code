@@ -46,79 +46,55 @@ private:
         }
     };
 
-public:
-    class const_iterator {
+    template <bool IsConst, typename Derived>
+    class iterator_base {
         friend class dense_map;
 
-        const_iterator(const dense_map *set, size_t index)
+        template <typename U>
+        using Const = std::conditional_t<IsConst, const U, U>;
+
+        iterator_base(Const<dense_map> *set, size_t index)
             : set_(set)
             , index_(index)
         {
         }
 
-        const dense_map *set_;
+        Const<dense_map> *set_;
         size_t index_;
 
     public:
         using difference_type = std::ptrdiff_t;
         using iterator_category = std::input_iterator_tag;
         using value_type = std::pair<const Key, T>;
-        using pointer = const value_type *;
-        using reference = const value_type &;
+        using pointer = Const<value_type> *;
+        using reference = Const<value_type> &;
 
-        const_iterator() = default;
+        iterator_base() = default;
 
-        bool operator==(const const_iterator &other) const
+        bool operator==(const iterator_base &other) const { return index_ == other.index_; }
+        bool operator!=(const iterator_base &other) const { return index_ != other.index_; }
+        reference operator*() const { return set_->buckets_[index_].data(); }
+        pointer operator->() const { return &set_->buckets_[index_].data(); }
+        Derived &operator++()
         {
-            return index_ == other.index_;
+            index_ = set_->find_occupied_(index_ + 1);
+            return static_cast<Derived &>(*this);
         }
-        bool operator!=(const const_iterator &other) const
-        {
-            return index_ != other.index_;
-        }
-        const value_type &operator*() const { return set_->buckets_[index_].data(); }
-        const value_type *operator->() const { return &set_->buckets_[index_].data(); }
-        const_iterator &operator++()
-        {
-            return void(index_ = set_->find_occupied_(index_ + 1)), *this;
-        }
-        const_iterator operator++(int) { return ++const_iterator(*this); }
+        Derived operator++(int) { return ++Derived(*this); }
     };
 
-    class iterator {
-        friend class dense_map;
-
-        iterator(dense_map *set, size_t index)
-            : set_(set)
-            , index_(index)
-        {
-        }
-
-        dense_map *set_;
-        size_t index_;
+public:
+    class iterator : public iterator_base<false, iterator> {
+        using iterator_base<false, iterator>::iterator_base;
+    };
+    class const_iterator : public iterator_base<true, const_iterator> {
+        using iterator_base<true, const_iterator>::iterator_base;
 
     public:
-        using difference_type = std::ptrdiff_t;
-        using iterator_category = std::input_iterator_tag;
-        using value_type = std::pair<const Key, T>;
-        using pointer = const value_type *;
-        using reference = const value_type &;
-
-        iterator() = default;
-
-        operator const_iterator() { return const_iterator(set_, index_); }
-
-        bool operator==(const iterator &other) const { return index_ == other.index_; }
-        bool operator!=(const iterator &other) const { return index_ != other.index_; }
-        value_type &operator*() { return set_->buckets_[index_].data(); }
-        value_type *operator->() { return &set_->buckets_[index_].data(); }
-        const value_type &operator*() const { return set_->buckets_[index_].data(); }
-        const value_type *operator->() const { return &set_->buckets_[index_].data(); }
-        iterator &operator++()
+        const_iterator(const iterator &i)
+            : iterator_base<true, const_iterator>(i.set_, i.index_)
         {
-            return void(index_ = set_->find_occupied_(index_ + 1)), *this;
         }
-        iterator operator++(int) { return ++iterator(*this); }
     };
 
 private:

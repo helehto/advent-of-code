@@ -21,7 +21,6 @@ public:
 
 public:
     class const_iterator {
-        typename underlying_map_type::const_iterator iter_;
         friend class dense_set;
 
         const_iterator(typename underlying_map_type::iterator iter)
@@ -34,49 +33,26 @@ public:
         {
         }
 
+        typename underlying_map_type::const_iterator iter_;
+
     public:
         using difference_type = std::ptrdiff_t;
         using iterator_category = std::input_iterator_tag;
-        using value_type = Key;
+        using value_type = dense_set::key_type;
         using pointer = const value_type *;
         using reference = const value_type &;
 
         const_iterator() = default;
 
-        bool operator!=(const const_iterator &other) const
-        {
-            return iter_ != other.iter_;
-        }
-        const value_type &operator*() const { return iter_->first; }
-        const value_type *operator->() const { return &iter_->first; }
+        bool operator==(const const_iterator &other) const { return iter_ == other.iter_; }
+        bool operator!=(const const_iterator &other) const { return iter_ != other.iter_; }
+        reference operator*() const { return iter_->first; }
+        pointer operator->() const { return &iter_->first; }
         const_iterator &operator++() { return void(++iter_), *this; }
+        const_iterator operator++(int) { return ++*this; }
     };
 
-    class iterator {
-        typename underlying_map_type::iterator iter_;
-        friend class dense_set;
-
-        iterator(typename underlying_map_type::iterator iter)
-            : iter_(iter)
-        {
-        }
-
-    public:
-        using difference_type = std::ptrdiff_t;
-        using iterator_category = std::input_iterator_tag;
-        using value_type = Key;
-        using pointer = const value_type *;
-        using reference = const value_type &;
-
-        iterator() = default;
-
-        operator const_iterator() { return const_iterator(iter_); }
-
-        bool operator!=(const iterator &other) const { return iter_ != other.iter_; }
-        const value_type &operator*() const { return iter_->first; }
-        const value_type *operator->() const { return &iter_->first; }
-        iterator &operator++() { return void(++iter_), *this; }
-    };
+    using iterator = const_iterator;
 
 private:
     underlying_map_type map_;
@@ -126,12 +102,12 @@ public:
     // Iterators.
     //-------------------------------------------------------------------------
 
-    iterator begin() noexcept { return iterator{map_.begin()}; }
-    const_iterator begin() const noexcept { return const_iterator{map_.begin()}; }
-    const_iterator cbegin() const noexcept { return const_iterator{map_.cbegin()}; }
-    iterator end() noexcept { return iterator{map_.end()}; }
-    const_iterator end() const noexcept { return const_iterator{map_.end()}; }
-    const_iterator cend() const noexcept { return const_iterator{map_.cend()}; }
+    iterator begin() noexcept { return map_.begin(); }
+    const_iterator begin() const noexcept { return map_.begin(); }
+    const_iterator cbegin() const noexcept { return map_.cbegin(); }
+    iterator end() noexcept { return map_.end(); }
+    const_iterator end() const noexcept { return map_.end(); }
+    const_iterator cend() const noexcept { return map_.cend(); }
 
     //-------------------------------------------------------------------------
     // Capacity.
