@@ -13,6 +13,19 @@
 #include <type_traits>
 #include <utility>
 
+namespace detail {
+
+__attribute__((noinline)) inline size_t find_occupied(uint8_t *states, size_t i)
+{
+    for (;; i += 16) {
+        const auto *p = reinterpret_cast<const __m128i *>(states + i);
+        if (unsigned int mask = _mm_movemask_epi8(_mm_lddqu_si128(p)))
+            return i + std::countr_zero(mask);
+    }
+}
+
+} // namespace detail
+
 template <typename Key,
           class T,
           class Hash = std::hash<Key>,
@@ -118,13 +131,9 @@ private:
         states_[i] = static_cast<uint8_t>(state);
     }
 
-    __attribute__((noinline)) size_t find_occupied_(size_t i) const
+    size_t find_occupied_(size_t i) const
     {
-        for (;; i += 16) {
-            const auto *p = reinterpret_cast<const __m128i *>(&states_[i]);
-            if (unsigned int mask = _mm_movemask_epi8(_mm_lddqu_si128(p)))
-                return i + std::countr_zero(mask);
-        }
+        return detail::find_occupied(states_.get(),i);
     }
 
     std::pair<size_t, bool> find_bucket_(const Key &key) const
