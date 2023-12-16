@@ -108,9 +108,6 @@ private:
     hasher hash_;
     key_equal equal_;
 
-    iterator iterator_from_index(size_t i) { return iterator(this, i); }
-    const_iterator iterator_from_index(size_t i) const { return const_iterator(this, i); }
-
     bucket_state state_of(size_t i) const
     {
         return static_cast<bucket_state>(states_[i]);
@@ -169,10 +166,10 @@ private:
 
             if (max_load_.second * size_with_tombs_ >= capacity_ * max_load_.first) {
                 rehash(2 * capacity_);
-                return {iterator_from_index(find_bucket_(key).first), false};
+                return {iterator(this, find_bucket_(key).first), false};
             }
         }
-        return {iterator_from_index(i), !found};
+        return {iterator(this, i), !found};
     }
 
     std::pair<iterator, bool> do_insert_(const value_type &value)
@@ -301,16 +298,13 @@ public:
     // TODO: Less stupid way to find the first element
     //-------------------------------------------------------------------------
 
-    iterator begin() noexcept { return iterator_from_index(find_occupied_(0)); }
-    const_iterator begin() const noexcept
-    {
-        return iterator_from_index(find_occupied_(0));
-    }
+    iterator begin() noexcept { return {this, find_occupied_(0)}; }
+    const_iterator begin() const noexcept { return {this, find_occupied_(0)}; }
     const_iterator cbegin() const noexcept { return begin(); }
 
-    iterator end() noexcept { return iterator_from_index(capacity_); }
-    const_iterator end() const noexcept { return iterator_from_index(capacity_); }
-    const_iterator cend() const noexcept { return iterator_from_index(capacity_); }
+    iterator end() noexcept { return {this, capacity_}; }
+    const_iterator end() const noexcept { return {this, capacity_}; }
+    const_iterator cend() const noexcept { return {this, capacity_}; }
 
     //-------------------------------------------------------------------------
     // Capacity.
@@ -422,7 +416,7 @@ public:
         size_--;
 
         // Find the next occupied bucket.
-        return iterator_from_index(find_occupied_(pos.index_ + 1));
+        return {this, find_occupied_(pos.index_ + 1)};
     }
 
     size_type erase(const key_type &key)
@@ -475,13 +469,13 @@ public:
     iterator find(const key_type &key)
     {
         const auto [i, found] = find_bucket_(key);
-        return found ? iterator_from_index(i) : end();
+        return found ? iterator(this, i) : end();
     }
 
     const_iterator find(const key_type &key) const
     {
         const auto [i, found] = find_bucket_(key);
-        return found ? iterator_from_index(i) : end();
+        return found ? iterator(this, i) : end();
     }
 
     T &operator[](const key_type &key) { return try_emplace(key).first->second; }
