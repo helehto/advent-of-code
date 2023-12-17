@@ -23,12 +23,12 @@ static bool try_move(const dense_set<Point<int>> &occupied,
     for (const auto &p : rock) {
         if (p.x + dx < 0 || p.x + dx >= 7 || p.y + dy < 0)
             return false;
-        if (occupied.count({p.x + dx, p.y + dy}))
+        if (occupied.count(p.translate(dx, dy)))
             return false;
     }
 
     for (auto &p : rock)
-        p = {p.x + dx, p.y + dy};
+        p = p.translate(dx,dy);
 
     return true;
 }

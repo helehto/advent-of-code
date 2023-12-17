@@ -43,9 +43,9 @@ struct Map {
 
     uint64_t neighborhood_mask(Point<int> p)
     {
-        const uint8_t *r0 = &at({p.x - 1, p.y - 1});
-        const uint8_t *r1 = &at({p.x - 1, p.y});
-        const uint8_t *r2 = &at({p.x - 1, p.y + 1});
+        const uint8_t *r0 = &at(p.translate(-1, -1));
+        const uint8_t *r1 = &at(p.translate(-1, 0));
+        const uint8_t *r2 = &at(p.translate(-1, 1));
         return (uint64_t)r0[0] << 0 | (uint64_t)r0[1] << 8 | (uint64_t)r0[2] << 16 |
                (uint64_t)r1[0] << 24 | (uint64_t)r1[2] << 32 | (uint64_t)r2[0] << 40 |
                (uint64_t)r2[1] << 48 | (uint64_t)r2[2] << 56;
@@ -111,7 +111,7 @@ void run_2022_23(FILE *f)
 
             for (const auto &d : dirs) {
                 if ((mask & d.mask) == 0) {
-                    Point<int> dest{p.x + d.dx, p.y + d.dy};
+                    auto dest = p.translate(d.dx, d.dy);
                     proposal_map.increment(dest);
                     proposals[i] = dest;
                     break;

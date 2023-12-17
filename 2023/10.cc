@@ -6,17 +6,17 @@ static std::array<Point<size_t>, 2> get_pipe_neighbors(Point<size_t> p, char c)
 {
     switch (c) {
     case '|':
-        return {{{p.x, p.y - 1}, {p.x, p.y + 1}}};
+        return {{p.translate(0, -1), p.translate(0, +1)}};
     case '-':
-        return {{{p.x - 1, p.y}, {p.x + 1, p.y}}};
+        return {{p.translate(-1, 0), p.translate(+1, 0)}};
     case 'L':
-        return {{{p.x, p.y - 1}, {p.x + 1, p.y}}};
+        return {{p.translate(0, -1), p.translate(+1, 0)}};
     case 'J':
-        return {{{p.x, p.y - 1}, {p.x - 1, p.y}}};
+        return {{p.translate(0, -1), p.translate(-1, 0)}};
     case '7':
-        return {{{p.x - 1, p.y}, {p.x, p.y + 1}}};
+        return {{p.translate(-1, 0), p.translate(0, +1)}};
     case 'F':
-        return {{{p.x + 1, p.y}, {p.x, p.y + 1}}};
+        return {{p.translate(+1, 0), p.translate(0, +1)}};
     }
     ASSERT(false);
 }
@@ -49,13 +49,13 @@ void run_2023_10(FILE *f)
     std::array<Point<size_t>, 2> start_neighbors;
     {
         size_t i = 0;
-        if (Point q(start.x, start.y - 1); strchr("|F7", grid(q)))
+        if (auto q = start.translate(0, -1); strchr("|F7", grid(q)))
             start_neighbors[i++] = q;
-        if (Point q(start.x - 1, start.y); strchr("-LF", grid(q)))
+        if (auto q = start.translate(-1, 0); strchr("-LF", grid(q)))
             start_neighbors[i++] = q;
-        if (Point q(start.x + 1, start.y); strchr("-J7", grid(q)))
+        if (auto q = start.translate(+1, 0); strchr("-J7", grid(q)))
             start_neighbors[i++] = q;
-        if (Point q(start.x, start.y + 1); strchr("|JL", grid(q)))
+        if (auto q = start.translate(0, +1); strchr("|JL", grid(q)))
             start_neighbors[i++] = q;
         ASSERT(i == 2);
     }
@@ -109,12 +109,12 @@ void run_2023_10(FILE *f)
         const auto dx = int64_t(p1.x) - int64_t(p0.x);
         const auto dy = int64_t(p1.y) - int64_t(p0.y);
 
-        fill({p1.x - dy, p1.y + dx});
+        fill(p1.translate(-dy, dx));
 
         // Corners have two possibly adjacent squares inside the polygon; check
         // the other one as well.
         if (grid(p1) == 'F')
-            fill({p1.x + dx, p1.y - dy});
+            fill(p1.translate(dx, -dy));
     }
 
     // Flood fill from the initially marked points near the edges to count the

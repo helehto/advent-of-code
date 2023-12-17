@@ -38,7 +38,7 @@ struct Grid {
             result.push_back(v);
 
         for (auto [dx, dy] : neighbors) {
-            Point<int> w(v.x + dx, v.y + dy);
+            auto w = v.translate(dx, dy);
             if (w == goal || (0 < w.x && w.x < m - 1 && 0 < w.y && w.y < n - 1 &&
                               is_unoccupied(w, t))) {
                 result.push_back(w);
@@ -84,11 +84,6 @@ struct std::hash<GMapEntry> {
     }
 };
 
-constexpr int heuristic(Point<int> v, Point<int> goal)
-{
-    return abs(v.x - goal.x) + abs(v.y - goal.y);
-}
-
 void run_2022_24(FILE *f)
 {
     std::vector<std::string> lines = getlines(f);
@@ -115,7 +110,7 @@ void run_2022_24(FILE *f)
     auto search = [&](int t, Point<int> start, Point<int> goal) -> std::tuple<int, int> {
         g.clear();
         g.insert({{start, t}, 0});
-        std::vector<QueueEntry> q{{start, heuristic(start, goal), t}};
+        std::vector<QueueEntry> q{{start, manhattan(start, goal), t}};
 
         while (!q.empty()) {
             auto heap_cmp = [](auto &a, auto &b) { return a.heuristic > b.heuristic; };
@@ -137,7 +132,7 @@ void run_2022_24(FILE *f)
                     !inserted && tentative >= it->second)
                     continue;
 
-                q.push_back({w, tentative + heuristic(w, goal), e.time + 1});
+                q.push_back({w, tentative + manhattan(w, goal), e.time + 1});
                 std::push_heap(begin(q), end(q), heap_cmp);
             }
         }

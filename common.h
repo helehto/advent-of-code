@@ -84,6 +84,11 @@ struct Point {
 
     constexpr bool operator==(const Point &other) const = default;
     constexpr bool operator!=(const Point &other) const = default;
+
+    template <typename U>
+    constexpr Point<T> translate(U dx, U dy) const {
+        return {static_cast<T>(x + dx), static_cast<T>(y + dy)};
+    }
 };
 
 template <typename T>
@@ -454,13 +459,13 @@ static void erase_if(std::vector<T> &v, Predicate &&predicate)
     v.erase(it, end(v));
 }
 
-static std::array<Point<size_t>, 4> neighbors4(Point<size_t> p)
+constexpr static std::array<Point<size_t>, 4> neighbors4(Point<size_t> p)
 {
     return {{
-        {p.x, p.y - 1},
-        {p.x + 1, p.y},
-        {p.x, p.y + 1},
-        {p.x - 1, p.y},
+        p.translate(0, -1),
+        p.translate(+1, 0),
+        p.translate(0, +1),
+        p.translate(-1, 0),
     }};
 }
 
@@ -476,17 +481,17 @@ neighbors4(const Matrix<T> &chart, Point<size_t> p)
     return result;
 }
 
-static std::array<Point<size_t>, 8> neighbors8(Point<size_t> p)
+constexpr static std::array<Point<size_t>, 8> neighbors8(Point<size_t> p)
 {
     return {{
-        {p.x - 1, p.y - 1},
-        {p.x - 1, p.y},
-        {p.x - 1, p.y + 1},
-        {p.x, p.y - 1},
-        {p.x, p.y + 1},
-        {p.x + 1, p.y - 1},
-        {p.x + 1, p.y},
-        {p.x + 1, p.y + 1},
+        p.translate(-1, -1),
+        p.translate(-1, +0),
+        p.translate(-1, +1),
+        p.translate(+0, -1),
+        p.translate(+0, +1),
+        p.translate(+1, -1),
+        p.translate(+1, +0),
+        p.translate(+1, +1),
     }};
 }
 

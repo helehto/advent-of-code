@@ -58,21 +58,21 @@ drop_sand(Cave &cave, Point<int> pos, std::vector<Point<int>> &trajectory, int y
         if (pos.y + 1 == y_limit)
             return {pos, true};
 
-        candidate = {pos.x, pos.y + 1};
+        candidate = pos.translate(0, 1);
         if (cave.occupied.count(candidate) == 0) {
             pos = candidate;
             trajectory.push_back(pos);
             continue;
         }
 
-        candidate = {pos.x - 1, pos.y + 1};
+        candidate = pos.translate(-1, 1);
         if (cave.occupied.count(candidate) == 0) {
             pos = candidate;
             trajectory.push_back(pos);
             continue;
         }
 
-        candidate = {pos.x + 1, pos.y + 1};
+        candidate = pos.translate(1, 1);
         if (cave.occupied.count(candidate) == 0) {
             pos = candidate;
             trajectory.push_back(pos);

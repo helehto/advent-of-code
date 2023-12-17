@@ -142,7 +142,7 @@ static int part2(const std::vector<std::string> &map, const std::vector<Move> &m
             break;
         case Move::N:
             for (size_t i = 0; i < move.n; i++) {
-                auto [nlocal, nface, nd] = wrap({local.x + d.x, local.y + d.y}, face, d);
+                auto [nlocal, nface, nd] = wrap(local.translate(d.x, d.y), face, d);
                 if (map[face_to_global[nface].x + nlocal.x]
                        [face_to_global[nface].y + nlocal.y] == '#')
                     break;

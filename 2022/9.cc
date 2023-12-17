@@ -22,7 +22,7 @@ static void move(std::span<Point<int>> pos,
 {
     for (int i = 0; i < n; i++) {
         // Move the head.
-        pos[0] = {pos[0].x + dx, pos[0].y + dy};
+        pos[0] = pos[0].translate(dx,dy);
 
         // Update the tail.
         for (size_t i = 1; i < pos.size(); i++)
