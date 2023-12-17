@@ -485,7 +485,7 @@ public:
     const_iterator find(const key_type &key) const
     {
         const auto [i, found] = find_bucket_(key);
-        return found ? iterator(this, i) : end();
+        return found ? const_iterator(this, i) : end();
     }
 
     T &operator[](const key_type &key) { return try_emplace(key).first->second; }
