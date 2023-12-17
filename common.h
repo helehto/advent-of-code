@@ -44,6 +44,12 @@
         }                                                                                \
     } while (0)
 
+#ifdef DEBUG
+#define D(x, ...) fmt::print(x "\n" __VA_OPT__(,)__VA_ARGS__)
+#else
+#define D(...)
+#endif
+
 constexpr uint64_t hash_mix(uint64_t x)
 {
     // const auto m = UINT64_C((uint64_t(0xe9846af) << 32) + 0x9b1a615d;
