@@ -32,6 +32,18 @@
         }                                                                                \
     } while (0)
 
+#define ASSERT_MSG(x, format, ...)                                                       \
+    do {                                                                                 \
+        if (!(x)) {                                                                      \
+            fprintf(stderr,                                                              \
+                    "\x1b[1;31m" __FILE__                                                \
+                    ":" STRINGIFY(__LINE__) ": %s: Assertion `%s' failed:\x1b[m ",       \
+                    __PRETTY_FUNCTION__, #x);                                            \
+            fmt::print(stderr, format "\n", __VA_ARGS__);                                \
+            __builtin_trap();                                                            \
+        }                                                                                \
+    } while (0)
+
 constexpr uint64_t hash_mix(uint64_t x)
 {
     // const auto m = UINT64_C((uint64_t(0xe9846af) << 32) + 0x9b1a615d;
