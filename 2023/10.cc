@@ -95,7 +95,7 @@ void run_2023_10(FILE *f)
     std::queue<Point<size_t>> queue;
     int area = 0;
     auto fill = [&](Point<size_t> q) {
-        if (q.x < grid.cols && q.y < grid.rows && grid(q) == '.') {
+        if (grid.in_bounds(q) && grid(q) == '.') {
             grid(q) = 'X';
             queue.push(q);
             area++;

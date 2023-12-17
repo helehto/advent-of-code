@@ -450,6 +450,12 @@ struct Matrix {
     constexpr const T *end() const { return data.get() + rows * cols; }
 
     Ndindex2DRange ndindex() const { return {rows, cols}; }
+
+    template <typename U>
+    bool in_bounds(Point<U> p) const {
+        using Unsigned = std::make_unsigned_t<U>;
+        return static_cast<Unsigned>(p.x) < cols && static_cast<Unsigned>(p.y) < rows;
+    }
 };
 
 template <typename T, typename Predicate>
@@ -475,7 +481,7 @@ neighbors4(const Matrix<T> &chart, Point<size_t> p)
 {
     boost::container::static_vector<Point<size_t>, 4> result;
     for (auto n : neighbors4(p))
-        if (n.x < chart.cols && n.y < chart.rows)
+        if (chart.in_bounds(n))
             result.push_back(n);
 
     return result;
@@ -501,7 +507,7 @@ static boost::container::static_vector<Point<size_t>, 8> neighbors8(const Matrix
 {
     boost::container::static_vector<Point<size_t>, 8> result;
     for (auto n : neighbors8(p))
-        if (n.x < grid.cols && n.y < grid.rows)
+        if (grid.in_bounds(n))
             result.push_back(n);
 
     return result;
