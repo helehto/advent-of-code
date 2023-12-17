@@ -252,14 +252,20 @@ public:
     {
     }
 
-    // TODO: Better bucket count, based on the capacity other hash table?
     dense_map(const dense_map &other)
-        : dense_map(other.begin(), other.end(), 16, other.hash_, other.equal_)
+        : dense_map(internal_tag{}, other.capacity_, other.hash_, other.equal_)
     {
+        insert(other.begin(), other.end());
     }
 
-    // TODO.
-    dense_map &operator=(const dense_map &) = delete;
+    dense_map &operator=(const dense_map &other)
+    {
+        clear();
+        hash_ = other.hash_;
+        equal_ = other.equal_;
+        insert(other.begin(), other.end());
+        return *this;
+    }
 
     dense_map(dense_map &&other)
         : buckets_(std::exchange(other.buckets_, nullptr))
@@ -272,8 +278,11 @@ public:
     {
     }
 
-    // TODO.
-    dense_map &operator=(dense_map &&) = delete;
+    dense_map &operator=(dense_map &&other)
+    {
+        swap(other);
+        return *this;
+    }
 
     template <typename InputIt>
     dense_map(InputIt begin,
