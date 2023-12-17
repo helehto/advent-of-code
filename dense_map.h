@@ -176,7 +176,7 @@ private:
 
             if (max_load_.second * size_with_tombs_ >= capacity_ * max_load_.first) {
                 rehash(2 * capacity_);
-                return {iterator(this, find_bucket_(key).first), false};
+                return {iterator(this, find_bucket_(key).first), !found};
             }
         }
         return {iterator(this, i), !found};
