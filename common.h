@@ -39,7 +39,7 @@
                     "\x1b[1;31m" __FILE__                                                \
                     ":" STRINGIFY(__LINE__) ": %s: Assertion `%s' failed:\x1b[m ",       \
                     __PRETTY_FUNCTION__, #x);                                            \
-            fmt::print(stderr, format "\n", __VA_ARGS__);                                \
+            fmt::print(stderr, format "\n" __VA_OPT__(, ) __VA_ARGS__);                  \
             __builtin_trap();                                                            \
         }                                                                                \
     } while (0)
