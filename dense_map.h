@@ -15,6 +15,16 @@
 
 namespace detail {
 
+// NOTE: The code is dependent on the states having these specific values.
+// clang-format off
+enum class bucket_state : uint8_t {
+    empty     = 0b00000000,
+    tombstone = 0b01000000,
+    sentinel  = 0b10000000,
+    occupied  = 0b11000000,
+};
+// clang-format on
+
 __attribute__((noinline)) inline size_t find_occupied(uint8_t *states, size_t i)
 {
     for (;; i += 16) {
@@ -23,6 +33,13 @@ __attribute__((noinline)) inline size_t find_occupied(uint8_t *states, size_t i)
             return i + std::countr_zero(mask);
     }
 }
+
+template <typename T>
+struct bucket {
+    alignas(T) char buffer[sizeof(T)];
+    T &data() { return *reinterpret_cast<T *>(buffer); }
+    const T &data() const { return *reinterpret_cast<const T *>(buffer); }
+};
 
 } // namespace detail
 
@@ -42,24 +59,8 @@ public:
     using const_reference = const value_type &;
 
 private:
-    // NOTE: The code is dependent on the states having these specific values.
-    // clang-format off
-    enum class bucket_state : uint8_t {
-        empty     = 0b00000000,
-        tombstone = 0b01000000,
-        sentinel  = 0b10000000,
-        occupied  = 0b11000000,
-    };
-    // clang-format on
-
-    struct bucket {
-        alignas(value_type) char buffer[sizeof(value_type)];
-        value_type &data() { return *reinterpret_cast<value_type *>(buffer); }
-        const value_type &data() const
-        {
-            return *reinterpret_cast<const value_type *>(buffer);
-        }
-    };
+    using bucket = detail::bucket<value_type>;
+    using bucket_state = detail::bucket_state;
 
     template <bool IsConst, typename Derived>
     class iterator_base {
@@ -92,7 +93,7 @@ private:
         pointer operator->() const { return &set_->buckets_[index_].data(); }
         Derived &operator++()
         {
-            index_ = set_->find_occupied_(index_ + 1);
+            index_ = detail::find_occupied(set_->states_.get(),index_ + 1);
             return static_cast<Derived &>(*this);
         }
         Derived operator++(int) { return ++Derived(*this); }
