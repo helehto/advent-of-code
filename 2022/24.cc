@@ -86,7 +86,7 @@ struct std::hash<GMapEntry> {
 
 void run_2022_24(FILE *f)
 {
-    std::vector<std::string> lines = getlines(f);
+    auto [buf, lines] = slurp_lines(f);
     const size_t n = lines.size();
     const size_t m = lines[0].size();
 

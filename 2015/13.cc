@@ -3,7 +3,7 @@
 
 static Matrix<int> get_happiness_matrix(FILE *f)
 {
-    const auto lines = getlines(f);
+    auto [buf, lines] = slurp_lines(f);
     int n = 0;
 
     dense_map<std::string_view, int> name_map;

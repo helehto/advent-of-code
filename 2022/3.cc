@@ -16,7 +16,7 @@ static uint64_t make_mask(std::string_view s)
 
 void run_2022_3(FILE *f)
 {
-    std::vector<std::string> strings = getlines(f);
+    auto [buf, strings] = slurp_lines(f);
 
     int part1 = 0;
     for (const auto &s : strings) {

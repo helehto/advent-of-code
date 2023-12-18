@@ -61,7 +61,7 @@ static ScanResult scanv(const Matrix<uint8_t> &m, size_t i, size_t j)
 
 void run_2023_13(FILE *f)
 {
-    const auto lines = getlines(f);
+    auto [buf, lines] = slurp_lines(f);
     int part1 = 0;
     int part2 = 0;
 

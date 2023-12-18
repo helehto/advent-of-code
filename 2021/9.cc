@@ -5,7 +5,8 @@
 
 void run_2021_9(FILE *f)
 {
-    auto chart = Matrix<char>::from_lines(getlines(f));
+    auto [buf, lines] = slurp_lines(f);
+    auto chart = Matrix<char>::from_lines(lines);
 
     int risk_sum = 0;
     for (auto p : chart.ndindex()) {

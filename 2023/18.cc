@@ -13,7 +13,7 @@ static int64_t signed_area(std::span<const Point<int64_t>> points)
 
 void run_2023_18(FILE *f)
 {
-    auto lines = getlines(f);
+    auto [buf, lines] = slurp_lines(f);
     int n = 0;
 
     std::vector<Point<int64_t>> polygon;

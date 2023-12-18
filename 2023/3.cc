@@ -29,7 +29,8 @@ static int read_number(const Matrix<char> &grid, Point<size_t> p)
 
 void run_2023_3(FILE *f)
 {
-    auto grid = Matrix<char>::from_lines(getlines(f));
+    auto [buf, lines] = slurp_lines(f);
+    auto grid = Matrix<char>::from_lines(lines);
 
     dense_set<Point<size_t>> part_number_positions;
     for (auto p : grid.ndindex()) {

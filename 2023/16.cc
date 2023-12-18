@@ -54,7 +54,8 @@ fire(dense_map<uint16_t, dense_set<Point<uint8_t>>> &cache,
 
 void run_2023_16(FILE *f)
 {
-    auto grid = Matrix<char>::from_lines(getlines(f));
+    auto [buf, lines] = slurp_lines(f);
+    auto grid = Matrix<char>::from_lines(lines);
     dense_map<uint16_t, dense_set<Point<uint8_t>>> cache(grid.size());
 
     size_t part2 = 0;

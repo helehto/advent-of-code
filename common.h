@@ -276,13 +276,35 @@ inline bool getline(FILE *f, std::string &s)
     }
 }
 
-inline std::vector<std::string> getlines(FILE *f)
+struct SlurpResult {
+    std::string contents;
+    std::vector<std::string_view> lines;
+};
+
+inline SlurpResult slurp_lines(FILE *f)
 {
-    std::vector<std::string> lines;
-    std::string s;
-    while (getline(f, s))
-        lines.push_back(std::move(s));
-    return lines;
+    int fd = fileno(f);
+
+    off_t size = lseek(fd, 0, SEEK_END);
+    ASSERT(size > 0);
+
+    std::string buf;
+    buf.resize(size);
+    ASSERT(pread(fd, buf.data(), size, 0) == size);
+
+    std::string_view sv(buf);
+    std::vector<std::string_view> lines;
+    while (!sv.empty()) {
+        if (auto nl = sv.find('\n'); nl != std::string_view::npos) {
+            lines.push_back(sv.substr(0, nl));
+            sv.remove_prefix(nl + 1);
+        } else {
+            lines.push_back(sv);
+            break;
+        }
+    }
+
+    return {std::move(buf), std::move(lines)};
 }
 
 template <typename T>
@@ -416,7 +438,7 @@ struct Matrix {
     Matrix &operator=(Matrix &&) = default;
 
     template <typename Proj = std::identity>
-    static Matrix from_lines(std::span<const std::string> lines, Proj proj = {})
+    static Matrix from_lines(std::span<const std::string_view> lines, Proj proj = {})
     {
         Matrix m(lines.size(), lines[0].size());
         T *p = m.data.get();

@@ -101,7 +101,8 @@ static int dijkstra(const Matrix<uint8_t> &m,
 
 void run_2023_17(FILE *f)
 {
-    auto grid = Matrix<uint8_t>::from_lines(getlines(f), [&](auto c) { return c - '0'; });
+    auto [buf, lines] = slurp_lines(f);
+    auto grid = Matrix<uint8_t>::from_lines(lines, [&](auto c) { return c - '0'; });
     const Point<uint8_t> goal{
         static_cast<uint8_t>(grid.cols - 1),
         static_cast<uint8_t>(grid.rows - 1),

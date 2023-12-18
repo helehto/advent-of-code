@@ -5,7 +5,8 @@
 
 void run_2021_11(FILE *f)
 {
-    auto grid = Matrix<char>::from_lines(getlines(f), [](char c) { return c - '0'; });
+    auto [buf, lines] = slurp_lines(f);
+    auto grid = Matrix<char>::from_lines(lines, [](char c) { return c - '0'; });
 
     dense_set<Point<size_t>> flashed;
     std::vector<Point<size_t>> queue;

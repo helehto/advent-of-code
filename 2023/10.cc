@@ -38,7 +38,8 @@ static int64_t signed_area(std::span<const Point<size_t>> points)
 
 void run_2023_10(FILE *f)
 {
-    auto grid = Matrix<char>::from_lines(getlines(f));
+    auto [buf, lines] = slurp_lines(f);
+    auto grid = Matrix<char>::from_lines(lines);
 
     Point<size_t> start{};
     for (auto p : grid.ndindex())

@@ -36,7 +36,7 @@ static int count_mem(std::string_view v)
     return mem_size;
 }
 
-static std::pair<int, int> part1(const std::vector<std::string> &lines)
+static std::pair<int, int> part1(std::span<const std::string_view> lines)
 {
     int total_code = 0;
     int total_mem = 0;
@@ -49,7 +49,7 @@ static std::pair<int, int> part1(const std::vector<std::string> &lines)
     return {total_code, total_mem};
 }
 
-static int part2(const std::vector<std::string> &lines)
+static int part2(std::span<const std::string_view> lines)
 {
     int count = 0;
 
@@ -67,7 +67,7 @@ static int part2(const std::vector<std::string> &lines)
 
 void run_2015_8(FILE *f)
 {
-    const std::vector<std::string> lines = getlines(f);
+    auto [buf, lines] = slurp_lines(f);
     auto [total_code, total_mem] = part1(lines);
     fmt::print("{}\n", total_code - total_mem);
     fmt::print("{}\n", part2(lines) - total_code);
