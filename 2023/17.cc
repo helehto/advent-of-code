@@ -7,7 +7,6 @@ enum { N, E, S, W };
 struct Vertex {
     Point<uint8_t> p;
     uint8_t direction;
-    uint8_t n_forward;
 
     bool operator==(const Vertex &v) const = default;
 };
@@ -17,25 +16,42 @@ struct std::hash<Vertex> {
     constexpr size_t operator()(const Vertex &v) const
     {
         size_t h = 0;
-        hash_combine(h, v.p, v.direction, v.n_forward);
+        hash_combine(h, v.p, v.direction);
         return h;
     }
 };
 
-static Point<uint8_t> step(Point<uint8_t> p, uint8_t d)
+static Point<uint8_t> step(Point<uint8_t> p, uint8_t d, int n)
 {
     static int8_t table[] = {0, 1, 0, -1};
-    return p.translate(table[d], table[(d - 1) & 3]);
+    return p.translate(n * table[d], n * table[(d - 1) & 3]);
 }
 
-template <typename Map, typename Key>
-static auto
-get_or(const Map &m,
-       const Key &key,
-       decltype(std::declval<typename Map::value_type>().second) default_value)
+struct Neighbor {
+    Vertex v;
+    int cost;
+};
+
+static boost::container::static_vector<Neighbor, 32>
+get_neighbors(const Matrix<uint8_t> &m, Vertex u, int min, int max)
 {
-    auto it = m.find(key);
-    return it != m.end() ? it->second : default_value;
+    boost::container::static_vector<Neighbor, 32> result;
+
+    for (int turn : {-1, 1}) {
+        uint8_t new_direction = (u.direction + turn) & 3;
+
+        int cost = 0;
+        for (int n = 1; n <= max; n++) {
+            auto next = step(u.p, new_direction, n);
+            if (!m.in_bounds(next))
+                break;
+            cost += m(next);
+            if (n >= min)
+                result.push_back({{next, new_direction}, cost});
+        }
+    }
+
+    return result;
 }
 
 static int dijkstra(const Matrix<uint8_t> &m,
@@ -44,19 +60,13 @@ static int dijkstra(const Matrix<uint8_t> &m,
                     int max_straight,
                     Point<uint8_t> goal)
 {
-    std::vector<Vertex> queue{
-        Vertex{{0, 0}, S, 0},
-        Vertex{{0, 0}, E, 0},
-    };
-
     auto cmp = [](auto &a, auto &b) { return a.second > b.second; };
-
     using heap_type = boost::heap::fibonacci_heap<std::pair<Vertex, int>,
                                                   boost::heap::compare<decltype(cmp)>>;
     heap_type heap(cmp);
     dense_map<Vertex, heap_type::handle_type> handles;
 
-    for (auto &u : queue) {
+    for (auto &u : {Vertex{{0, 0}, S}, Vertex{{0, 0}, E}}) {
         handles.emplace(u, heap.emplace(u, 0));
         dist[u] = 0;
     }
@@ -64,39 +74,25 @@ static int dijkstra(const Matrix<uint8_t> &m,
     while (!heap.empty()) {
         auto [u, u_dist] = heap.top();
         heap.pop();
-        auto [p, direction, u_straight] = u;
         handles.erase(u);
 
-        if (p == goal)
+        if (u.p == goal)
             return u_dist;
 
-        boost::container::static_vector<Vertex, 3> neighbors;
-
-        auto addn = [&](int d, int n) {
-            auto next = step(p, d);
-            if (m.in_bounds(next) && (next != goal || n >= min_straight))
-                neighbors.emplace_back(next, d, n);
-        };
-
-        if (u_straight < max_straight)
-            addn(direction, u_straight + 1);
-        if (u_straight >= min_straight) {
-            addn((direction + 1) & 3, 1);
-            addn((direction - 1) & 3, 1);
-        }
-
-        for (const auto &v : neighbors) {
-            const auto q = v.p;
-            const auto new_dist = u_dist + m(q);
+        for (const auto &[v, cost] : get_neighbors(m, u, min_straight, max_straight)) {
+            const auto new_dist = u_dist + cost;
 
             auto [it, inserted] = dist.emplace(v, new_dist);
-            if (!inserted && new_dist >= it->second)
+            if (!inserted && it->second <= new_dist)
                 continue;
+            it->second = new_dist;
 
-            if (auto [it, inserted] = handles.try_emplace(v); !inserted)
+            if (auto [it, inserted] = handles.try_emplace(v); !inserted) {
+                (*it->second).second = new_dist;
                 heap.increase(it->second);
-            else
+            } else {
                 it->second = heap.emplace(v, new_dist);
+            }
         }
     }
 
