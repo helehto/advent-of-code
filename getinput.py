@@ -6,7 +6,10 @@ import requests
 from pathlib import Path
 import sys
 
-SESSION_COOKIE_PATH=Path(".session")
+SESSION_COOKIE_PATHS = (
+    Path(".session"),
+    Path(__file__).parent / ".session",
+)
 USER_AGENT = "Custom script by https://github.com/helehto"
 
 
@@ -29,12 +32,18 @@ def main() -> None:
     except FileNotFoundError:
         # File doesn't exist, proceed to download it.
         print(f"Downloading {url}", file=sys.stderr)
-        pass
 
     # Read the session cookie.
     session_cookie = os.environ.get("AOC_SESSION")
     if session_cookie is None:
-        session_cookie=SESSION_COOKIE_PATH.read_text()
+        for session_path in SESSION_COOKIE_PATHS:
+            try:
+                session_cookie = session_path.read_text()
+                break
+            except FileNotFoundError:
+                pass
+        else:
+            raise Exception('Session token not specified!')
 
     # Download the file.
     with requests.Session() as s:
