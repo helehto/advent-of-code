@@ -1,6 +1,7 @@
 #ifndef DENSE_MAP_H
 #define DENSE_MAP_H
 
+#include "common.h"
 #include <bit>
 #include <cassert>
 #include <cmath>
@@ -458,16 +459,16 @@ public:
 
     T &at(const key_type &key)
     {
-        if (const auto [i, found] = find_bucket_(key); found)
-            return buckets_[i].data().second;
-        abort();
+        const auto [i, found] = find_bucket_(key);
+        ASSERT(found);
+        return buckets_[i].data().second;
     }
 
     const T &at(const key_type &key) const
     {
-        if (const auto [i, found] = find_bucket_(key); found)
-            return buckets_[i].data().second;
-        abort();
+        const auto [i, found] = find_bucket_(key);
+        ASSERT(found);
+        return buckets_[i].data().second;
     }
 
     size_type count(const key_type &key) const
