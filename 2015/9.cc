@@ -9,7 +9,7 @@ static Matrix<int> get_distance_matrix(FILE *f)
     dense_map<std::string_view, int> name_map;
     std::vector<std::string_view> words;
     for (auto line : lines) {
-        split(line, words, [](char c) { return c == ' '; });
+        split(line, words, ' ');
         if (auto [it, inserted] = name_map.emplace(words[0], n); inserted)
             n++;
         if (auto [it, inserted] = name_map.emplace(words[2], n); inserted)
@@ -18,7 +18,7 @@ static Matrix<int> get_distance_matrix(FILE *f)
 
     Matrix<int> dist(n, n);
     for (auto line : lines) {
-        split(line, words, [](char c) { return c == ' '; });
+        split(line, words, ' ');
         auto i = name_map.at(words[0]);
         auto j = name_map.at(words[2]);
         int distance = -1;

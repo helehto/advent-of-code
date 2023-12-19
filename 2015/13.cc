@@ -9,7 +9,7 @@ static Matrix<int> get_happiness_matrix(FILE *f)
     dense_map<std::string_view, int> name_map;
     std::vector<std::string_view> words;
     for (auto &line : lines) {
-        split(line, words);
+        split(line, words, ' ');
         words[10].remove_suffix(1); // remove full stop
         if (auto [it, inserted] = name_map.emplace(words[0], n); inserted)
             n++;
@@ -19,7 +19,7 @@ static Matrix<int> get_happiness_matrix(FILE *f)
 
     Matrix<int> matrix(n, n);
     for (auto &line : lines) {
-        split(line, words);
+        split(line, words, ' ');
         words[10].remove_suffix(1); // remove full stop
         auto i = name_map.at(words[0]);
         auto j = name_map.at(words[10]);

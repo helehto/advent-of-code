@@ -21,7 +21,7 @@ static Workflow parse_workflow(const dense_map<std::string_view, int> &workflow_
                                std::vector<std::string_view> &fields)
 {
     Workflow workflow;
-    split(s, fields, [&](char c) { return c == ','; });
+    split(s, fields, ',');
 
     auto name_to_index = [&](std::string_view name) {
         if (name == "A")

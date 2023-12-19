@@ -63,7 +63,7 @@ void run_2023_15(FILE *f)
     std::string s;
     getline(f, s);
     std::vector<std::string_view> fields;
-    split(s, fields, [&](char c) { return c == ','; });
+    split(s, fields, ',');
 
     fmt::print("{}\n", part1(fields));
     fmt::print("{}\n", part2(fields));

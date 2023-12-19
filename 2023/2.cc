@@ -25,15 +25,12 @@ void run_2023_2(FILE *f)
         std::string_view sv = s;
         sv.remove_prefix(sv.find(": ") + 2);
 
-        split(sv, tmp, [](char c) { return c == ';'; });
-
         std::vector<Outcome> outcomes;
-        for (std::string_view game : tmp) {
+        for (std::string_view game : split(sv, tmp, ';')) {
             Outcome outcome{};
             strip(game);
 
-            split(game, tmp2, [](char c) { return c == ','; });
-            for (std::string_view c : tmp2) {
+            for (std::string_view c : split(game, tmp2, ',')) {
                 strip(c);
                 int n;
                 std::from_chars(c.begin(), c.end(), n);

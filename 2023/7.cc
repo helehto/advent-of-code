@@ -97,7 +97,7 @@ void run_2023_7(FILE *f)
     std::vector<std::string_view> sv;
     std::vector<Hand> hands;
     while (getline(f, s)) {
-        split(s, sv, [](char c) { return c == ' '; });
+        split(s, sv, ' ');
         Hand hand;
         hand.counts.fill(0);
         for (size_t i = 0; i < 5; i++) {

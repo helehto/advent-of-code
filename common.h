@@ -281,6 +281,9 @@ struct SlurpResult {
     std::vector<std::string_view> lines;
 };
 
+static inline std::vector<std::string_view> &
+split(std::string_view s, std::vector<std::string_view> &out, char c);
+
 inline SlurpResult slurp_lines(FILE *f)
 {
     int fd = fileno(f);
@@ -292,17 +295,8 @@ inline SlurpResult slurp_lines(FILE *f)
     buf.resize(size);
     ASSERT(pread(fd, buf.data(), size, 0) == size);
 
-    std::string_view sv(buf);
     std::vector<std::string_view> lines;
-    while (!sv.empty()) {
-        if (auto nl = sv.find('\n'); nl != std::string_view::npos) {
-            lines.push_back(sv.substr(0, nl));
-            sv.remove_prefix(nl + 1);
-        } else {
-            lines.push_back(sv);
-            break;
-        }
-    }
+    split(buf, lines, '\n');
 
     return {std::move(buf), std::move(lines)};
 }
@@ -336,6 +330,49 @@ static std::vector<T> find_numbers(std::string_view s)
     std::vector<T> result;
     find_numbers(s, result);
     return result;
+}
+
+static inline std::vector<std::string_view> &
+split(std::string_view s, std::vector<std::string_view> &out, char c)
+{
+    out.clear();
+
+    size_t i = 0;
+    size_t curr_field_start = 0;
+
+    for (; i + 31 < s.size(); i += 32) {
+        __m256i m = _mm256_lddqu_si256(reinterpret_cast<const __m256i *>(s.data() + i));
+        unsigned int mask = _mm256_movemask_epi8(_mm256_cmpeq_epi8(m, _mm256_set1_epi8(c)));
+
+        for (; mask != 0; mask &= mask - 1) {
+            int offset = std::countr_zero(mask);
+            out.emplace_back(s.begin() + curr_field_start, s.begin() + i + offset);
+            curr_field_start = i + offset + 1;
+        }
+    }
+
+    for (; i + 15 < s.size(); i += 16) {
+        __m128i m = _mm_lddqu_si128(reinterpret_cast<const __m128i *>(s.data() + i));
+        unsigned int mask = _mm_movemask_epi8(_mm_cmpeq_epi8(m, _mm_set1_epi8(c)));
+
+        for (; mask != 0; mask &= mask - 1) {
+            int offset = std::countr_zero(mask);
+            out.emplace_back(s.begin() + curr_field_start, s.begin() + i + offset);
+            curr_field_start = i + offset + 1;
+        }
+    }
+
+    for (; i < s.size(); i++) {
+        if (s[i] == c) {
+            out.emplace_back(s.begin() + curr_field_start, s.begin() + i);
+            curr_field_start = i + 1;
+        }
+    }
+
+    if (curr_field_start != s.size())
+        out.emplace_back(s.begin() + curr_field_start, s.end());
+
+    return out;
 }
 
 template <typename Predicate>
