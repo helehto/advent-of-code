@@ -460,14 +460,22 @@ public:
     T &at(const key_type &key)
     {
         const auto [i, found] = find_bucket_(key);
-        ASSERT(found);
+        if constexpr (fmt::is_formattable<key_type>::value){
+            ASSERT_MSG(found, "Key '{}' not found!", key);
+        } else {
+            ASSERT(found);
+        }
         return buckets_[i].data().second;
     }
 
     const T &at(const key_type &key) const
     {
         const auto [i, found] = find_bucket_(key);
-        ASSERT(found);
+        if constexpr (fmt::is_formattable<key_type>::value){
+            ASSERT_MSG(found, "Key '{}' not found!", key);
+        } else {
+            ASSERT(found);
+        }
         return buckets_[i].data().second;
     }
 
