@@ -7,8 +7,8 @@ void run_2021_2(FILE *f)
     int x2 = 0;
     int y2 = 0;
 
-    std::string s;
-    while (getline(f, s)) {
+    auto [buf, lines] = slurp_lines(f);
+    for (std::string_view s : lines) {
         int v = 0;
 
         if (s.starts_with("up")) {

@@ -29,9 +29,8 @@ static std::vector<double> lagrange_basis(int64_t k, int64_t x)
 
 void run_2023_9(FILE *f)
 {
-    std::string s;
-    getline(f, s);
-    auto nums = find_numbers<int>(s);
+    auto [buf, lines] = slurp_lines(f);
+    auto nums = find_numbers<int>(lines[0]);
 
     // This assumes that all input lists are of the same length.
     const auto basis1 = lagrange_basis(nums.size(), nums.size() + 1);
@@ -39,12 +38,13 @@ void run_2023_9(FILE *f)
 
     int64_t part1 = 0;
     int64_t part2 = 0;
-    while (true) {
+    for (size_t i=0;;) {
         part1 += std::inner_product(nums.begin(), nums.end(), basis1.begin(), 0.0);
         part2 += std::inner_product(nums.begin(), nums.end(), basis2.begin(), 0.0);
-        if (!getline(f, s))
+        i++;
+        if (i == lines.size())
             break;
-        find_numbers(s, nums);
+        find_numbers(lines[i], nums);
     }
     fmt::print("{}\n", part1);
     fmt::print("{}\n", part2);

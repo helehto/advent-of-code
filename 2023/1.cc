@@ -14,10 +14,8 @@ void run_2023_1(FILE *f)
     int part2 = 0;
 
     std::vector<int> v;
-    std::string str;
-    while (getline(f, str)) {
-        std::string_view s = str;
-
+    auto [buf, lines] = slurp_lines(f);
+    for (std::string_view s : lines) {
         v.clear();
         for (size_t i = 0; i < s.size(); i++) {
             if (s[i] >= '0' && s[i] <= '9')

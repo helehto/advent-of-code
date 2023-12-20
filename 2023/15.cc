@@ -60,10 +60,9 @@ static int part2(const std::vector<std::string_view> &fields)
 
 void run_2023_15(FILE *f)
 {
-    std::string s;
-    getline(f, s);
+    auto [buf, lines] = slurp_lines(f);
     std::vector<std::string_view> fields;
-    split(s, fields, ',');
+    split(lines[0], fields, ',');
 
     fmt::print("{}\n", part1(fields));
     fmt::print("{}\n", part2(fields));

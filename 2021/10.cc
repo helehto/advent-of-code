@@ -2,12 +2,12 @@
 
 void run_2021_10(FILE *f)
 {
-    std::string s;
+    auto [buf, lines] = slurp_lines(f);
     int score1 = 0;
     std::vector<char> stack;
     std::vector<uint64_t> scores2;
 
-    while (getline(f, s)) {
+    for (std::string_view s : lines) {
         stack.clear();
         bool incorrect = false;
 

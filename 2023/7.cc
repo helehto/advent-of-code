@@ -93,10 +93,10 @@ constexpr std::array<uint8_t, 256> ascii_card_value_table = [] {
 
 void run_2023_7(FILE *f)
 {
-    std::string s;
+    auto [buf, lines] = slurp_lines(f);
     std::vector<std::string_view> sv;
     std::vector<Hand> hands;
-    while (getline(f, s)) {
+    for (std::string_view s : lines) {
         split(s, sv, ' ');
         Hand hand;
         hand.counts.fill(0);

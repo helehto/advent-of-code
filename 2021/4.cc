@@ -52,15 +52,15 @@ static int unmarked_sum(const Board &b)
 
 void run_2021_4(FILE *f)
 {
-    std::string s;
-    getline(f, s);
+    auto [buf, lines] = slurp_lines(f);
     std::vector<int> called;
-    find_numbers(s, called);
+    find_numbers(lines[0], called);
 
     std::vector<Board> boards;
     std::vector<uint8_t> curr_board;
     std::vector<uint8_t> curr_line;
-    while (getline(f, s)) {
+    for (size_t i = 1; i < lines.size(); i++) {
+        std::string_view s = lines[i];
         if (!s.empty()) {
             curr_line.clear();
             find_numbers(s, curr_line);

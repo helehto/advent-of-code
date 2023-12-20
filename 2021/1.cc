@@ -1,4 +1,5 @@
 #include "common.h"
+#include <vector>
 
 static int solve(std::span<int> input, size_t window_size)
 {
@@ -20,10 +21,10 @@ static int solve(std::span<int> input, size_t window_size)
 
 void run_2021_1(FILE *f)
 {
-    std::string s;
+    auto [buf, lines] = slurp_lines(f);
     std::vector<int> xs;
 
-    while (getline(f, s)) {
+    for (std::string_view s : lines) {
         int x = 0;
         std::from_chars(s.data(), s.data() + s.size(), x);
         xs.push_back(x);

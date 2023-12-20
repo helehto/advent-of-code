@@ -2,10 +2,10 @@
 
 void run_2022_8(FILE *f)
 {
-    std::vector<std::string> trees;
-    std::string s;
+    std::vector<std::string_view> trees;
+    auto [buf, lines] = slurp_lines(f);
 
-    while (getline(f, s)) {
+    for (std::string_view s : lines) {
         if (!s.empty())
             trees.push_back(std::move(s));
     }

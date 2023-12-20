@@ -46,13 +46,11 @@ static uint64_t search(const SearchParameters12 &sp, size_t si, size_t bi)
 
 void run_2023_12(FILE *f)
 {
-    std::string s;
+    auto [buf, lines] = slurp_lines(f);
     uint64_t sum1 = 0;
     uint64_t sum2 = 0;
 
-    while (getline(f, s)) {
-        std::string_view sv = s;
-
+    for (std::string_view sv : lines) {
         auto n = find_numbers<uint32_t>(sv);
         std::string q(sv.substr(0, sv.find(' ')));
         cache.clear();

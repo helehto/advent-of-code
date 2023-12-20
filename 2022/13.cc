@@ -79,8 +79,8 @@ void run_2022_13(FILE *f)
 {
     std::vector<Packet> packets;
 
-    std::string s;
-    while (getline(f, s)) {
+    auto [buf, lines] = slurp_lines(f);
+    for (std::string_view s : lines) {
         if (!s.empty())
             packets.push_back(parse_line(s));
     }

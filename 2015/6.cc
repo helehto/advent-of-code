@@ -6,9 +6,9 @@ void run_2015_6(FILE *f)
     std::vector<int8_t> lights(1'000'000);
     std::vector<int16_t> brightness(1'000'000);
 
-    std::string s;
+    auto [buf, lines] = slurp_lines(f);
     std::vector<int> words;
-    while (getline(f, s)) {
+    for (std::string_view s : lines) {
         find_numbers(s, words);
 
         const int x0 = words[0];

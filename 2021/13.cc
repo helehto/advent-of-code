@@ -3,10 +3,11 @@
 void run_2021_13(FILE *f)
 {
     std::vector<std::pair<int, int>> pairs;
-    std::string s;
+    auto [buf, lines] = slurp_lines(f);
     std::vector<int> v;
-    while (getline(f, s) && !s.empty()) {
-        find_numbers(s, v);
+    size_t i=0;
+    for (; !lines[i].empty(); i++) {
+        find_numbers(lines[i], v);
         pairs.emplace_back(v[0], v[1]);
     }
 
@@ -21,7 +22,8 @@ void run_2021_13(FILE *f)
     for (auto [x, y] : pairs)
         grid(x, y) = 1;
 
-    while (getline(f, s)) {
+    for (; i < lines.size(); i++) {
+        std::string_view s = lines[i];
         find_numbers(s, v);
         int w = v[0];
 

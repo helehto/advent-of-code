@@ -55,8 +55,8 @@ void run_2015_5(FILE *f)
     int count1 = 0;
     int count2 = 0;
 
-    std::string s;
-    while (getline(f, s)) {
+    auto [buf, lines] = slurp_lines(f);
+    for (std::string_view s : lines) {
         count1 += part1(s);
         count2 += part2(s);
     }

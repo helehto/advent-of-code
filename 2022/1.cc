@@ -5,10 +5,10 @@ using namespace std;
 
 void run_2022_1(FILE *f)
 {
-    std::string s;
+    auto [buf, lines] = slurp_lines(f);
     std::vector<int> calories{0};
 
-    while (getline(f, s)) {
+    for (std::string_view s : lines) {
         if (s.empty()) {
             calories.push_back(0);
         } else {

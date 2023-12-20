@@ -12,16 +12,9 @@ void run_2022_10(FILE *f)
     int signal_strength = 0;
     std::string crt;
     Instruction pending{-1, 0};
-    std::vector<std::string> lines;
 
-    std::string s;
-    while (getline(f, s)) {
-        if (!s.empty())
-            lines.push_back(std::move(s));
-    }
-
-    size_t i = 0;
-    while (i < lines.size()) {
+    auto [buf, lines] = slurp_lines(f);
+    for (size_t i = 0; i < lines.size();) {
         // Start of the cycle. If nothing is executing, fetch an instruction.
         if (pending.due < 0) {
             auto &line = lines[i++];

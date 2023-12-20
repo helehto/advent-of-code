@@ -72,9 +72,8 @@ int part2(std::span<int> crabs)
 
 void run_2021_7(FILE *f)
 {
-    std::string s;
-    getline(f, s);
-    auto crabs = find_numbers<int>(s);
+    auto [buf, lines] = slurp_lines(f);
+    auto crabs = find_numbers<int>(lines[0]);
     std::sort(begin(crabs), end(crabs));
 
     printf("%d\n", part1(crabs));

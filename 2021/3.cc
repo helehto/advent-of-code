@@ -14,8 +14,8 @@ void run_2021_3(FILE *f)
     std::vector<uint16_t> xs;
     size_t bit_length = 0;
 
-    std::string s;
-    while (getline(f, s)) {
+    auto [buf, lines] = slurp_lines(f);
+    for (std::string_view s : lines) {
         uint32_t x = 0;
         for (char c : s)
             x = x << 1 | (c - '0');

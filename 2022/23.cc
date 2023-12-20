@@ -62,10 +62,10 @@ constexpr uint64_t gen_mask(int x1, int x2, int x3)
 
 void run_2022_23(FILE *f)
 {
-    std::string s;
+    auto [buf, lines] = slurp_lines(f);
     std::vector<Point<int>> elves;
     int i = 0;
-    while (getline(f, s)) {
+    for (std::string_view s : lines) {
         for (size_t j = 0; j < s.size(); j++) {
             if (s[j] == '#')
                 elves.push_back(Point{static_cast<int>(j), i});

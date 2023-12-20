@@ -9,11 +9,11 @@ struct Reindeer {
 
 static std::vector<Reindeer> parse_input(FILE *f)
 {
-    std::string s;
+    auto [buf, lines] = slurp_lines(f);
     std::vector<int> nums;
     std::vector<Reindeer> reindeer;
 
-    while (getline(f, s)) {
+    for (std::string_view s : lines) {
         find_numbers(s, nums);
         reindeer.push_back({
             .velocity = nums[0],

@@ -4,9 +4,9 @@
 void run_2023_4(FILE *f)
 {
     std::vector<int> matches;
-    std::string s;
+    auto [buf, lines] = slurp_lines(f);
     std::vector<int> v;
-    while (getline(f, s)) {
+    for (std::string_view s : lines) {
         find_numbers(s, v);
 
         uint64_t winning[2] = {0};

@@ -17,7 +17,6 @@ void run_2023_6(FILE *f)
     int prod = 1;
     for (size_t i = 0; i < ts.size(); i++)
         prod *= ways(ts[i], ds[i]);
-    fmt::print("{}\n", prod);
 
     uint64_t t = 0;
     uint64_t d = 0;
@@ -25,5 +24,5 @@ void run_2023_6(FILE *f)
         t = pow(10, ceil(log10(ts[i]))) * t + ts[i];
         d = pow(10, ceil(log10(ds[i]))) * d + ds[i];
     }
-    fmt::print("{}\n", ways(t, d));
+    fmt::print("{}\n{}\n", prod, ways(t, d));
 }

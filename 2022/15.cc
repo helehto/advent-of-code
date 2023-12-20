@@ -75,8 +75,8 @@ static Point<int> intersect(std::vector<Point<int>> &a, std::vector<Point<int>> 
 void run_2022_15(FILE *f)
 {
     std::vector<Sensor> sensors;
-    std::string s;
-    while (getline(f, s)) {
+    auto [buf, lines] = slurp_lines(f);
+    for (std::string_view s : lines) {
         auto v = find_numbers<int>(s);
         sensors.push_back(Sensor{
             .p = {v[0], v[1]},

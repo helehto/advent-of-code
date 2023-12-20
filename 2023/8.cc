@@ -8,15 +8,13 @@ constexpr uint16_t encode_name(std::string_view sv)
 
 void run_2023_8(FILE *f)
 {
-    std::string directions;
-    getline(f, directions);
-    std::string s;
-    getline(f, s);
+    auto [buf, lines] = slurp_lines(f);
+    std::string_view directions = lines[0];
 
     std::vector<std::array<uint16_t, 2>> next(1 << 15);
     std::vector<size_t> starts;
-    while (getline(f, s)) {
-        std::string_view sv = s;
+    for (size_t i = 2; i < lines.size(); i++) {
+        std::string_view sv = lines[i];
         const uint16_t ai = encode_name(sv.substr(0, 3));
         const uint16_t bi = encode_name(sv.substr(7, 3));
         const uint16_t ci = encode_name(sv.substr(12, 3));

@@ -3,15 +3,14 @@
 
 void run_2015_3(FILE *f)
 {
-    std::string s;
-    getline(f, s);
+    auto [buf, lines] = slurp_lines(f);
 
     {
         dense_set<Point<int>> points;
         points.insert({0, 0});
 
         Point<int> p = {0, 0};
-        for (auto c : s) {
+        for (auto c : lines[0]) {
             switch (c) {
             case '>':
                 p.x++;
@@ -38,7 +37,7 @@ void run_2015_3(FILE *f)
 
         Point<int> ps[2] = {};
         size_t i = 0;
-        for (auto c : s) {
+        for (auto c : lines[0]) {
             switch (c) {
             case '>':
                 ps[i & 1].x++;

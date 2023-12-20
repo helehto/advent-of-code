@@ -4,12 +4,12 @@
 
 void run_2022_7(FILE *f)
 {
-    std::string s;
+    auto [buf, lines] = slurp_lines(f);
     std::unordered_map<std::string, int> sizes;
-    std::vector<std::string> cwd;
+    std::vector<std::string_view> cwd;
     std::string path;
 
-    while (getline(f, s)) {
+    for (std::string_view s : lines) {
         if (s == "$ cd /") {
             cwd = {""};
         } else if (s == "$ cd ..") {

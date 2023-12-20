@@ -140,8 +140,8 @@ void run_2022_19(FILE *f)
 {
     std::vector<Blueprint> blueprints;
 
-    std::string s;
-    while (getline(f, s)) {
+    auto [buf, lines] = slurp_lines(f);
+    for (std::string_view s : lines) {
         auto v = find_numbers<int>(s);
         Blueprint &b = blueprints.emplace_back();
         b.costs[ORE][ORE] = v[1];

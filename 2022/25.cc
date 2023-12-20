@@ -5,9 +5,9 @@ using namespace std::literals;
 
 void run_2022_25(FILE *f)
 {
-    std::string s;
+    auto [buf, lines] = slurp_lines(f);
     int64_t n = 0;
-    while (getline(f, s)) {
+    for (std::string_view s : lines) {
         int64_t exp = 1;
         for (size_t i = s.size(); i--; exp *= 5)
             n += ("=-012"sv.find(s[i]) - 2) * exp;

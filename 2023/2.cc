@@ -16,13 +16,12 @@ static void strip(std::string_view &sv)
 
 void run_2023_2(FILE *f)
 {
+    auto [buf,lines]=slurp_lines(f);
     std::vector<std::vector<Outcome>> games;
     std::vector<std::string_view> tmp;
     std::vector<std::string_view> tmp2;
 
-    std::string s;
-    while (getline(f, s)) {
-        std::string_view sv = s;
+    for (std::string_view sv : lines) {
         sv.remove_prefix(sv.find(": ") + 2);
 
         std::vector<Outcome> outcomes;

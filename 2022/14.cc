@@ -15,8 +15,8 @@ static Cave make_cave(FILE *f)
     Cave cave;
     std::vector<int> nums;
 
-    std::string s;
-    while (getline(f, s)) {
+    auto [buf, lines] = slurp_lines(f);
+    for (std::string_view s : lines) {
         find_numbers(s, nums);
 
         for (size_t i = 0; i + 3 < nums.size(); i += 2) {
