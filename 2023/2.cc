@@ -6,14 +6,6 @@ struct Outcome {
     int b;
 };
 
-static void strip(std::string_view &sv)
-{
-    while (!sv.empty() && isspace(sv.front()))
-        sv.remove_prefix(1);
-    while (!sv.empty() && isspace(sv.back()))
-        sv.remove_suffix(1);
-}
-
 void run_2023_2(FILE *f)
 {
     auto [buf,lines]=slurp_lines(f);
@@ -27,10 +19,10 @@ void run_2023_2(FILE *f)
         std::vector<Outcome> outcomes;
         for (std::string_view game : split(sv, tmp, ';')) {
             Outcome outcome{};
-            strip(game);
+            game = strip(game);
 
             for (std::string_view c : split(game, tmp2, ',')) {
-                strip(c);
+                c = strip(c);
                 int n;
                 std::from_chars(c.begin(), c.end(), n);
                 std::string_view color = c.substr(c.find(' ') + 1);

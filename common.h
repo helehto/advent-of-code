@@ -410,6 +410,15 @@ static inline std::vector<std::string_view> split(std::string_view s)
     return out;
 }
 
+static inline std::string_view strip(std::string_view s)
+{
+    while (!s.empty() && s.front() == ' ')
+        s.remove_prefix(1);
+    while (!s.empty() && s.back() == ' ')
+        s.remove_suffix(1);
+    return s;
+}
+
 struct Ndindex2DRange {
     size_t rows;
     size_t cols;
