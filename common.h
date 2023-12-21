@@ -45,7 +45,7 @@
     } while (0)
 
 #ifdef DEBUG
-#define D(x, ...) fmt::print(x "\n" __VA_OPT__(,)__VA_ARGS__)
+#define D(x, ...) fmt::print("[DEBUG] " x "\n" __VA_OPT__(,)__VA_ARGS__)
 #else
 #define D(...)
 #endif
@@ -94,6 +94,16 @@ struct Point {
     template <typename U>
     constexpr Point<T> translate(U dx, U dy) const {
         return {static_cast<T>(x + dx), static_cast<T>(y + dy)};
+    }
+
+    template <typename U>
+    constexpr Point<U> cast() const {
+        ASSERT(static_cast<T>(x) == x);
+        ASSERT(static_cast<T>(y) == y);
+        return Point<U>{
+            static_cast<U>(x),
+            static_cast<U>(y),
+        };
     }
 };
 
@@ -419,23 +429,24 @@ static inline std::string_view strip(std::string_view s)
     return s;
 }
 
+template <typename T>
 struct Ndindex2DRange {
     size_t rows;
     size_t cols;
-    size_t i = 0;
-    size_t j = 0;
+    T i = 0;
+    T j = 0;
 
     struct sentinel {};
 
     Ndindex2DRange begin() { return *this; }
     sentinel end() { return {}; }
 
-    Point<size_t> operator*() const { return {j, i}; }
-    bool operator==(sentinel) const { return i >= rows; }
+    Point<T> operator*() const { return {j, i}; }
+    bool operator==(sentinel) const { return static_cast<size_t>(i) >= rows; }
 
     Ndindex2DRange &operator++()
     {
-        if (j < cols - 1) {
+        if (static_cast<size_t>(j) < cols - 1) {
             j++;
         } else {
             i++;
@@ -523,7 +534,11 @@ struct Matrix {
     constexpr const T *begin() const { return data.get(); }
     constexpr const T *end() const { return data.get() + rows * cols; }
 
-    Ndindex2DRange ndindex() const { return {rows, cols}; }
+    template <typename U = size_t>
+    Ndindex2DRange<U> ndindex() const
+    {
+        return {rows, cols};
+    }
 
     template <typename U>
     bool in_bounds(Point<U> p) const {
@@ -539,7 +554,8 @@ static void erase_if(std::vector<T> &v, Predicate &&predicate)
     v.erase(it, end(v));
 }
 
-constexpr static std::array<Point<size_t>, 4> neighbors4(Point<size_t> p)
+template <typename T>
+constexpr static std::array<Point<T>, 4> neighbors4(Point<T> p)
 {
     return {{
         p.translate(0, -1),
@@ -549,11 +565,11 @@ constexpr static std::array<Point<size_t>, 4> neighbors4(Point<size_t> p)
     }};
 }
 
-template <typename T>
-static boost::container::static_vector<Point<size_t>, 4>
-neighbors4(const Matrix<T> &chart, Point<size_t> p)
+template <typename T, typename U>
+static boost::container::static_vector<Point<U>, 4>
+neighbors4(const Matrix<T> &chart, Point<U> p)
 {
-    boost::container::static_vector<Point<size_t>, 4> result;
+    boost::container::static_vector<Point<U>, 4> result;
     for (auto n : neighbors4(p))
         if (chart.in_bounds(n))
             result.push_back(n);
@@ -561,7 +577,8 @@ neighbors4(const Matrix<T> &chart, Point<size_t> p)
     return result;
 }
 
-constexpr static std::array<Point<size_t>, 8> neighbors8(Point<size_t> p)
+template <typename T>
+constexpr static std::array<Point<T>, 8> neighbors8(Point<T> p)
 {
     return {{
         p.translate(-1, -1),
@@ -575,11 +592,11 @@ constexpr static std::array<Point<size_t>, 8> neighbors8(Point<size_t> p)
     }};
 }
 
-template <typename T>
-static boost::container::static_vector<Point<size_t>, 8> neighbors8(const Matrix<T> &grid,
-                                                                    Point<size_t> p)
+template <typename T, typename U>
+static boost::container::static_vector<Point<U>, 8> neighbors8(const Matrix<T> &grid,
+                                                               Point<U> p)
 {
-    boost::container::static_vector<Point<size_t>, 8> result;
+    boost::container::static_vector<Point<U>, 8> result;
     for (auto n : neighbors8(p))
         if (grid.in_bounds(n))
             result.push_back(n);
