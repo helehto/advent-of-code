@@ -107,21 +107,26 @@ struct fmt::formatter<TimingData> {
 
 int main(int argc, char **argv)
 {
+    const char *input_file = nullptr;
     bool read_from_stdin = false;
     int iterations = 1;
 
     while (true) {
         static struct option long_options[] = {
+            {"input-file", required_argument, 0, 'f'},
             {"iterations", required_argument, 0, 'i'},
             {"stdin", no_argument, 0, 's'},
         };
 
         int option_index;
-        int c = getopt_long(argc, argv, "i:st", long_options, &option_index);
+        int c = getopt_long(argc, argv, "f:i:st", long_options, &option_index);
         if (c == -1)
             break;
 
         switch (c) {
+        case 'f':
+            input_file = optarg;
+            break;
         case 'i':
             iterations = atoi(optarg);
             assert(iterations > 0);
@@ -153,7 +158,9 @@ int main(int argc, char **argv)
 
     std::vector<TimingData> timings;
     for (const auto *p : problems_to_run) {
-        auto input_path = fmt::format("../inputs/input-{}-{}.txt", p->year, p->day);
+        auto input_path = input_file
+                              ? input_file
+                              : fmt::format("../inputs/input-{}-{}.txt", p->year, p->day);
         timings.push_back({p->year, p->day, run_problem(*p, input_path, iterations)});
     }
 
