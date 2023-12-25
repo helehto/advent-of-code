@@ -1,6 +1,8 @@
 #include "common.h"
 #include <unordered_map>
 
+namespace aoc_2022_21 {
+
 enum {
     OP_CONSTANT = 1,
     OP_VARIABLE,
@@ -14,7 +16,7 @@ enum : int64_t {
     NO_VALUE = INT64_MIN,
 };
 
-struct Monkey21 {
+struct Monkey {
     uint16_t type;
     union {
         uint16_t op[2];
@@ -23,7 +25,7 @@ struct Monkey21 {
 };
 
 struct Input {
-    std::vector<Monkey21> monkeys;
+    std::vector<Monkey> monkeys;
     size_t humn_index;
     size_t root_index;
 };
@@ -166,10 +168,12 @@ static int64_t part2(const Input &input)
     return k;
 }
 
-void run_2022_21(FILE *f)
+void run(FILE *f)
 {
     Input input = parse_monkeys(f);
     fmt::print("{}\n", part1(input));
     input.monkeys[input.humn_index].type = OP_VARIABLE;
     fmt::print("{}\n", part2(input));
+}
+
 }

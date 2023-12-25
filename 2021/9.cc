@@ -3,7 +3,9 @@
 #include <ranges>
 #include <unordered_set>
 
-void run_2021_9(FILE *f)
+namespace aoc_2021_9 {
+
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     auto chart = Matrix<char>::from_lines(lines);
@@ -75,4 +77,6 @@ void run_2021_9(FILE *f)
     }
     std::sort(begin(sizes), end(sizes), std::greater<int>());
     fmt::print("{}\n", sizes[0] * sizes[1] * sizes[2]);
+}
+
 }

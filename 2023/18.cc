@@ -1,5 +1,7 @@
 #include "common.h"
 
+namespace aoc_2023_18 {
+
 static int64_t signed_area(std::span<const Point<int64_t>> points)
 {
     int64_t result = 0;
@@ -11,7 +13,7 @@ static int64_t signed_area(std::span<const Point<int64_t>> points)
     return result;
 }
 
-void run_2023_18(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     int n = 0;
@@ -43,4 +45,6 @@ void run_2023_18(FILE *f)
         curr = next;
     }
     fmt::print("{}\n", signed_area(polygon) / 2 + npoints / 2 + 1);
+}
+
 }

@@ -3,7 +3,9 @@
 #include <algorithm>
 #include <ranges>
 
-void run_2021_11(FILE *f)
+namespace aoc_2021_11 {
+
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     auto grid = Matrix<char>::from_lines(lines, [](char c) { return c - '0'; });
@@ -48,4 +50,6 @@ void run_2021_11(FILE *f)
             return;
         }
     }
+}
+
 }

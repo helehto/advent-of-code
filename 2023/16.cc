@@ -2,6 +2,8 @@
 #include "dense_set.h"
 #include "dense_map.h"
 
+namespace aoc_2023_16 {
+
 enum { N, E, S, W };
 
 static Point<uint8_t> step(Point<uint8_t> p, int d)
@@ -52,7 +54,7 @@ fire(dense_map<uint16_t, dense_set<Point<uint8_t>>> &cache,
     return visited;
 }
 
-void run_2023_16(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     auto grid = Matrix<char>::from_lines(lines);
@@ -74,4 +76,6 @@ void run_2023_16(FILE *f)
         part2 = std::max(part2, fire_from_edge(grid.cols - 1, y, W));
     }
     fmt::print("{}\n", part2);
+}
+
 }

@@ -1,12 +1,14 @@
 #include "common.h"
 #include <numeric>
 
+namespace aoc_2023_8 {
+
 constexpr uint16_t encode_name(std::string_view sv)
 {
     return (sv[0] - 'A') << 10 | (sv[1] - 'A') << 5 | (sv[2] - 'A');
 }
 
-void run_2023_8(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     std::string_view directions = lines[0];
@@ -39,4 +41,6 @@ void run_2023_8(FILE *f)
     for (size_t k : starts)
         part2 = std::lcm(part2, walk(k));
     fmt::print("{}\n", part2);
+}
+
 }

@@ -3,6 +3,8 @@
 #include <optional>
 #include <variant>
 
+namespace aoc_2023_19 {
+
 constexpr int ACCEPTED = -1;
 constexpr int REJECTED = -2;
 
@@ -133,7 +135,7 @@ static int64_t part2(std::span<const Workflow> workflows, int start_workflow)
     return volume;
 }
 
-void run_2023_19(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     dense_map<std::string_view, int> workflow_index;
@@ -159,4 +161,6 @@ void run_2023_19(FILE *f)
     const auto in = workflow_index.at("in");
     fmt::print("{}\n", part1(workflows, std::span(lines.begin() + i, lines.end()), in));
     fmt::print("{}\n", part2(workflows, in));
+}
+
 }

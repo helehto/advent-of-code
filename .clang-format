@@ -7,5 +7,6 @@ BinPackParameters: false
 BreakBeforeBraces: WebKit
 BreakConstructorInitializers: BeforeComma
 ColumnLimit: 90
+FixNamespaceComments: false
 IndentWidth: 4
 UseTab: Never

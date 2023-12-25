@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <ranges>
 
+namespace aoc_2023_22 {
+
 struct Brick {
     uint16_t x0;
     uint16_t y0;
@@ -15,7 +17,7 @@ struct Brick {
     std::vector<Brick *> supporting;
 };
 
-void run_2023_22(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
 
@@ -132,4 +134,6 @@ void run_2023_22(FILE *f)
     }
 
     fmt::print("{}\n", sum);
+}
+
 }

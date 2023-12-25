@@ -6,6 +6,8 @@
 #include <queue>
 #include <ranges>
 
+namespace aoc_2023_21 {
+
 static dense_map<Point<int>, int>
 walk(const Matrix<char> &grid, Point<int> start, int max_steps)
 {
@@ -29,7 +31,7 @@ walk(const Matrix<char> &grid, Point<int> start, int max_steps)
     return dist;
 }
 
-void run_2023_21(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     auto grid = Matrix<char>::from_lines(lines);
@@ -66,4 +68,6 @@ void run_2023_21(FILE *f)
     };
     fmt::print("{}\n", part1);
     fmt::print("{}\n", P((steps - N / 2) / N));
+}
+
 }

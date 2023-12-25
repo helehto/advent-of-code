@@ -1,5 +1,7 @@
 #include "common.h"
 
+namespace aoc_2021_4 {
+
 struct Board {
     std::array<uint8_t, 25> nums;
     std::array<int8_t, 100> index;
@@ -50,7 +52,7 @@ static int unmarked_sum(const Board &b)
     return sum;
 }
 
-void run_2021_4(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     std::vector<int> called;
@@ -97,4 +99,6 @@ void run_2021_4(FILE *f)
             }
         }
     }
+}
+
 }

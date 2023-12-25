@@ -3,6 +3,8 @@
 #include <array>
 #include <cctype>
 
+namespace aoc_2022_5 {
+
 static void move_crates(std::string &src, std::string &dst, int n, bool reverse)
 {
     dst.insert(dst.begin(), src.begin(), src.begin() + n);
@@ -20,7 +22,7 @@ static void print_crates(std::span<std::string> crates)
     putc('\n', stdout);
 }
 
-void run_2022_5(FILE *f)
+void run(FILE *f)
 {
     std::string s;
     std::array<std::string, 30> crates1;
@@ -45,4 +47,6 @@ void run_2022_5(FILE *f)
 
     print_crates(crates1);
     print_crates(crates2);
+}
+
 }

@@ -1,12 +1,14 @@
 #include "common.h"
 
+namespace aoc_2023_2 {
+
 struct Outcome {
     int r;
     int g;
     int b;
 };
 
-void run_2023_2(FILE *f)
+void run(FILE *f)
 {
     auto [buf,lines]=slurp_lines(f);
     std::vector<std::vector<Outcome>> games;
@@ -63,4 +65,6 @@ void run_2023_2(FILE *f)
         power_sum += maxr * maxg * maxb;
     }
     fmt::print("{}\n", power_sum);
+}
+
 }

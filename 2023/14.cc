@@ -3,6 +3,8 @@
 #include <ranges>
 #include <unordered_set>
 
+namespace aoc_2023_14 {
+
 static size_t scan_x(Matrix<char> &grid, Point<size_t> p, int dx)
 {
     auto [i, j] = p;
@@ -69,6 +71,8 @@ static void roll_e(Matrix<char> &grid)
     }
 }
 
+} // namespace aoc_2023_14
+
 template <>
 struct std::hash<Matrix<char>> {
     size_t operator()(Matrix<char> m) const noexcept
@@ -76,6 +80,8 @@ struct std::hash<Matrix<char>> {
         return std::hash<std::string_view>{}({m.data.get(), m.size()});
     }
 };
+
+namespace aoc_2023_14 {
 
 static Matrix<char> find_cycle(Matrix<char> grid, int which)
 {
@@ -108,7 +114,7 @@ static int total_load(const Matrix<char> &grid)
     return sum;
 }
 
-void run_2023_14(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     auto grid = Matrix<char>::from_lines(lines);
@@ -116,4 +122,6 @@ void run_2023_14(FILE *f)
     roll_n(grid);
     fmt::print("{}\n", total_load(grid));
     fmt::print("{}\n", total_load(find_cycle(grid2, 1000000000)));
+}
+
 }

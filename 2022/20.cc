@@ -4,6 +4,8 @@
 #include <cstring>
 #include <x86intrin.h>
 
+namespace aoc_2022_20 {
+
 constexpr int index_shift = 16;
 
 static size_t find_avx(const int64_t *p, const size_t n, const int64_t needle)
@@ -93,7 +95,7 @@ static int64_t solve(std::vector<int64_t> nums, int key, int rounds, int64_t zer
            (nums[(zero_index + 3000) % nums.size()] >> index_shift);
 }
 
-void run_2022_20(FILE *f)
+void run(FILE *f)
 {
     std::vector<int64_t> nums;
 
@@ -110,4 +112,6 @@ void run_2022_20(FILE *f)
 
     fmt::print("{}\n", solve(nums, 1, 1, zero));
     fmt::print("{}\n", solve(nums, 811589153, 10, zero));
+}
+
 }

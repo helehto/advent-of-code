@@ -1,6 +1,8 @@
 #include "common.h"
 #include <numeric>
 
+namespace aoc_2021_7 {
+
 static int cost1(std::span<int> crabs, int goal)
 {
     int cost = 0;
@@ -70,7 +72,7 @@ int part2(std::span<int> crabs)
     return std::min(cost2(crabs, ceilf(goal)), cost2(crabs, floorf(goal)));
 }
 
-void run_2021_7(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     auto crabs = find_numbers<int>(lines[0]);
@@ -78,4 +80,6 @@ void run_2021_7(FILE *f)
 
     printf("%d\n", part1(crabs));
     printf("%d\n", part2(crabs));
+}
+
 }

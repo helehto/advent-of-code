@@ -1,7 +1,9 @@
 #include "common.h"
 #include <unordered_map>
 
-void run_2021_5(FILE *f)
+namespace aoc_2021_5 {
+
+void run(FILE *f)
 {
     struct Pair {
         Point<int> a;
@@ -66,4 +68,6 @@ void run_2021_5(FILE *f)
 
     fmt::print("{}\n", part1);
     fmt::print("{}\n", part2);
+}
+
 }

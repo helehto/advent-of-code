@@ -1,6 +1,8 @@
 #include "common.h"
 #include <cinttypes>
 
+namespace aoc_2022_3 {
+
 static uint64_t make_mask(std::string_view s)
 {
     uint64_t mask = 0;
@@ -14,7 +16,7 @@ static uint64_t make_mask(std::string_view s)
     return mask;
 }
 
-void run_2022_3(FILE *f)
+void run(FILE *f)
 {
     auto [buf, strings] = slurp_lines(f);
 
@@ -36,4 +38,6 @@ void run_2022_3(FILE *f)
 
     fmt::print("{}\n", part1);
     fmt::print("{}\n", part2);
+}
+
 }

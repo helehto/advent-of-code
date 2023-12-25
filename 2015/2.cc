@@ -1,6 +1,8 @@
 #include "common.h"
 
-void run_2015_2(FILE *f)
+namespace aoc_2015_2 {
+
+void run(FILE *f)
 {
     std::vector<std::tuple<int, int, int>> input;
 
@@ -18,4 +20,6 @@ void run_2015_2(FILE *f)
     }
     fmt::print("{}\n", part1);
     fmt::print("{}\n", part2);
+}
+
 }

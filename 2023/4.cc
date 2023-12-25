@@ -1,7 +1,9 @@
 #include "common.h"
 #include <numeric>
 
-void run_2023_4(FILE *f)
+namespace aoc_2023_4 {
+
+void run(FILE *f)
 {
     std::vector<int> matches;
     auto [buf, lines] = slurp_lines(f);
@@ -35,4 +37,6 @@ void run_2023_4(FILE *f)
             n_cards[i + j + 1] += n_cards[i];
     }
     fmt::print("{}\n", std::accumulate(n_cards.begin(), n_cards.end(), 0));
+}
+
 }

@@ -1,7 +1,9 @@
 #include "common.h"
 #include <numeric>
 
-void run_2015_6(FILE *f)
+namespace aoc_2015_6 {
+
+void run(FILE *f)
 {
     std::vector<int8_t> lights(1'000'000);
     std::vector<int16_t> brightness(1'000'000);
@@ -43,4 +45,6 @@ void run_2015_6(FILE *f)
 
     fmt::print("{}\n", std::count(begin(lights), end(lights), 1));
     fmt::print("{}\n", std::accumulate(begin(brightness), end(brightness), 0));
+}
+
 }

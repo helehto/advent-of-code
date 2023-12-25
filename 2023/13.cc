@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <ranges>
 
+namespace aoc_2023_13 {
+
 using namespace std::ranges;
 using namespace std::views;
 
@@ -59,7 +61,7 @@ static ScanResult scanv(const Matrix<uint8_t> &m, size_t i, size_t j)
     return {0, 0, 0, 0};
 }
 
-void run_2023_13(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     int part1 = 0;
@@ -118,4 +120,6 @@ void run_2023_13(FILE *f)
 
     fmt::print("{}\n", part1);
     fmt::print("{}\n", part2);
+}
+
 }

@@ -1,6 +1,8 @@
 #include "common.h"
 
-void run_2022_8(FILE *f)
+namespace aoc_2022_8 {
+
+void run(FILE *f)
 {
     std::vector<std::string_view> trees;
     auto [buf, lines] = slurp_lines(f);
@@ -88,4 +90,6 @@ void run_2022_8(FILE *f)
         }
     }
     fmt::print("{}\n", max_scenic_score);
+}
+
 }

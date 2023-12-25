@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <climits>
 
+namespace aoc_2022_12 {
+
 static int dijkstra(const Matrix<char> &m, size_t target, std::vector<int> &dist)
 {
     auto cmp = [&](size_t a, size_t b) { return dist[a] < dist[b]; };
@@ -42,7 +44,7 @@ static int dijkstra(const Matrix<char> &m, size_t target, std::vector<int> &dist
     return dist[target];
 }
 
-void run_2022_12(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     auto m = Matrix<char>::from_lines(lines);
@@ -80,4 +82,6 @@ void run_2022_12(FILE *f)
 
         fmt::print("{}\n", dijkstra(m, end_index, dist));
     }
+}
+
 }

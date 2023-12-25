@@ -1,6 +1,8 @@
 #include "common.h"
 #include "dense_map.h"
 
+namespace aoc_2023_15 {
+
 namespace r = std::ranges;
 
 static int hash(std::string_view f)
@@ -58,7 +60,7 @@ static int part2(const std::vector<std::string_view> &fields)
     return sum;
 }
 
-void run_2023_15(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     std::vector<std::string_view> fields;
@@ -66,4 +68,6 @@ void run_2023_15(FILE *f)
 
     fmt::print("{}\n", part1(fields));
     fmt::print("{}\n", part2(fields));
+}
+
 }

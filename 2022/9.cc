@@ -1,6 +1,8 @@
 #include "common.h"
 #include "dense_set.h"
 
+namespace aoc_2022_9 {
+
 static Point<int> move_knot(const Point<int> &dst, Point<int> src)
 {
     const int dx = dst.x - src.x;
@@ -32,7 +34,7 @@ static void move(std::span<Point<int>> pos,
     }
 }
 
-void run_2022_9(FILE *f)
+void run(FILE *f)
 {
     std::array<Point<int>, 2> s1{};
     std::array<Point<int>, 10> s2{};
@@ -60,4 +62,6 @@ void run_2022_9(FILE *f)
 
     fmt::print("{}\n", p1.size());
     fmt::print("{}\n", p2.size());
+}
+
 }

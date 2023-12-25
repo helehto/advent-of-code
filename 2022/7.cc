@@ -2,7 +2,9 @@
 #include <climits>
 #include <unordered_map>
 
-void run_2022_7(FILE *f)
+namespace aoc_2022_7 {
+
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     std::unordered_map<std::string, int> sizes;
@@ -41,4 +43,6 @@ void run_2022_7(FILE *f)
     }
     fmt::print("{}\n", part1);
     fmt::print("{}\n", part2);
+}
+
 }

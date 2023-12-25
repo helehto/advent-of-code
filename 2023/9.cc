@@ -1,6 +1,8 @@
 #include "common.h"
 #include <numeric>
 
+namespace aoc_2023_9 {
+
 static double basis(int64_t k, int64_t x, int64_t j)
 {
     // I'm kind of lucky that the intermediate values in the polynomial
@@ -27,7 +29,7 @@ static std::vector<double> lagrange_basis(int64_t k, int64_t x)
     return result;
 }
 
-void run_2023_9(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     auto nums = find_numbers<int>(lines[0]);
@@ -48,4 +50,6 @@ void run_2023_9(FILE *f)
     }
     fmt::print("{}\n", part1);
     fmt::print("{}\n", part2);
+}
+
 }

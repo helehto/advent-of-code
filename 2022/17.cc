@@ -5,6 +5,8 @@
 #include <numeric>
 #include <optional>
 
+namespace aoc_2022_17 {
+
 static std::vector<Point<int>> rock_templates[] = {
     // clang-format off
     {{0, 0}, {1, 0}, {2, 0}, {3, 0}},
@@ -33,23 +35,27 @@ static bool try_move(const dense_set<Point<int>> &occupied,
     return true;
 }
 
-struct CacheKey17 {
+struct CacheKey {
     size_t rock_idx;
     size_t jet_idx;
 
-    constexpr bool operator==(const CacheKey17 &) const noexcept = default;
+    constexpr bool operator==(const CacheKey &) const noexcept = default;
 };
 
+} // namespace aoc_2022_17
+
 template <>
-struct std::hash<CacheKey17> {
-    size_t operator()(const CacheKey17 &k) const noexcept
+struct std::hash<aoc_2022_17::CacheKey> {
+    size_t operator()(const aoc_2022_17::CacheKey &k) const noexcept
     {
         auto h = std::hash<size_t>{};
         return h(k.rock_idx) ^ h(k.jet_idx);
     }
 };
 
-struct State17 {
+namespace aoc_2022_17 {
+
+struct State {
     int n;
     int height;
 };
@@ -60,7 +66,7 @@ struct Cycle {
     int height;
 };
 
-static std::optional<Cycle> detect_cycle(const std::vector<State17> &state_vec)
+static std::optional<Cycle> detect_cycle(const std::vector<State> &state_vec)
 {
     // This has a boatload of stupid assumptions that happened to work on the
     // input, but I can't be bothered to go back and rework this now.
@@ -87,12 +93,12 @@ static std::optional<Cycle> detect_cycle(const std::vector<State17> &state_vec)
     };
 }
 
-void run_2022_17(FILE *f)
+void run(FILE *f)
 {
     std::string jets;
     getline(f, jets);
 
-    dense_map<CacheKey17, std::vector<State17>> past_states;
+    dense_map<CacheKey, std::vector<State>> past_states;
     dense_set<Point<int>> occupied;
     std::vector<int> heights;
     size_t rock_idx = 0;
@@ -159,4 +165,6 @@ void run_2022_17(FILE *f)
 
     fmt::print("{}\n", solve(2022));
     fmt::print("{}\n", solve(1000000000000));
+}
+
 }

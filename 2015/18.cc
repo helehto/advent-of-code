@@ -1,5 +1,7 @@
 #include "common.h"
 
+namespace aoc_2015_18 {
+
 static int count_neighbors(const std::vector<std::string> &g, size_t x, size_t y)
 {
     auto c = [&](int dx, int dy) {
@@ -58,7 +60,7 @@ static int solve(std::vector<std::string> grid, int iterations, bool stuck)
     return count_on(grid);
 }
 
-void run_2015_18(FILE *f)
+void run(FILE *f)
 {
     std::vector<std::string> grid;
     std::string s;
@@ -69,4 +71,6 @@ void run_2015_18(FILE *f)
     constexpr int iterations = 100;
     fmt::print("{}\n", solve(grid, iterations, false));
     fmt::print("{}\n", solve(grid, iterations, true));
+}
+
 }

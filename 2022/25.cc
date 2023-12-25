@@ -1,9 +1,11 @@
 #include "common.h"
 #include <algorithm>
 
+namespace aoc_2022_25 {
+
 using namespace std::literals;
 
-void run_2022_25(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     int64_t n = 0;
@@ -22,4 +24,6 @@ void run_2022_25(FILE *f)
 
     std::reverse(begin(result), end(result));
     fmt::print("{}\n", result);
+}
+
 }

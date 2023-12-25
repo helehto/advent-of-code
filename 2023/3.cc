@@ -1,6 +1,8 @@
 #include "common.h"
 #include "dense_set.h"
 
+namespace aoc_2023_3 {
+
 static boost::container::static_vector<Point<size_t>, 8>
 surrounding_part_numbers(const Matrix<char> &grid, Point<size_t> p)
 {
@@ -27,7 +29,7 @@ static int read_number(const Matrix<char> &grid, Point<size_t> p)
     return n;
 }
 
-void run_2023_3(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     auto grid = Matrix<char>::from_lines(lines);
@@ -53,4 +55,6 @@ void run_2023_3(FILE *f)
         }
     }
     fmt::print("{}\n", ratio_sum);
+}
+
 }

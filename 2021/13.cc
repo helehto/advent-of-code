@@ -1,6 +1,8 @@
 #include "common.h"
 
-void run_2021_13(FILE *f)
+namespace aoc_2021_13 {
+
+void run(FILE *f)
 {
     std::vector<std::pair<int, int>> pairs;
     auto [buf, lines] = slurp_lines(f);
@@ -53,4 +55,6 @@ void run_2021_13(FILE *f)
             fmt::print("{}", grid(x, y) ? '#' : '.');
         fmt::print("{}\n", "");
     }
+}
+
 }

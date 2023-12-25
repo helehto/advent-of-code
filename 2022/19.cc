@@ -1,6 +1,8 @@
 #include "common.h"
 #include "dense_map.h"
 
+namespace aoc_2022_19 {
+
 enum {
     ORE,
     CLAY,
@@ -26,9 +28,11 @@ struct alignas(8) CacheKey19 {
     }
 };
 
+} // namespace aoc_2022_19
+
 template <>
-struct std::hash<CacheKey19> {
-    constexpr size_t operator()(const CacheKey19 &k) const
+struct std::hash<aoc_2022_19::CacheKey19> {
+    constexpr size_t operator()(const aoc_2022_19::CacheKey19 &k) const
     {
         size_t h = 0;
         for (int x : k.income)
@@ -38,6 +42,8 @@ struct std::hash<CacheKey19> {
         return h;
     }
 };
+
+namespace aoc_2022_19 {
 
 struct SearchParameters {
     Blueprint blueprint;
@@ -136,7 +142,7 @@ static int search(SearchParameters &p, const SearchState &state = {})
     return score;
 }
 
-void run_2022_19(FILE *f)
+void run(FILE *f)
 {
     std::vector<Blueprint> blueprints;
 
@@ -185,4 +191,6 @@ void run_2022_19(FILE *f)
 
     fmt::print("{}\n", part1);
     fmt::print("{}\n", part2);
+}
+
 }

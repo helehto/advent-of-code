@@ -1,5 +1,7 @@
 #include "common.h"
 
+namespace aoc_2015_11 {
+
 static void increment(std::string &s)
 {
     for (size_t i = s.size(); i--;) {
@@ -41,7 +43,7 @@ static bool is_valid(std::string_view s)
     return has_increasing_triple(s) && has_nonoverlapping_pairs(s);
 }
 
-void run_2015_11(FILE *f)
+void run(FILE *f)
 {
     std::string s;
     getline(f, s);
@@ -52,4 +54,6 @@ void run_2015_11(FILE *f)
         } while (!is_valid(s));
         fmt::print("{}\n", s);
     }
+}
+
 }

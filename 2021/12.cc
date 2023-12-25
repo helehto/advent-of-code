@@ -1,6 +1,8 @@
 #include "common.h"
 #include <cctype>
 
+namespace aoc_2021_12 {
+
 static bool is_big(const char *p)
 {
     for (; *p; p++)
@@ -10,7 +12,7 @@ static bool is_big(const char *p)
     return true;
 }
 
-struct SearchParameters12 {
+struct SearchParameters {
     std::vector<std::vector<uint8_t>> neighbors;
     uint8_t start_index;
     uint8_t end_index;
@@ -19,7 +21,7 @@ struct SearchParameters12 {
 };
 
 template <bool AllowRevisit>
-static void search(SearchParameters12 &sp,
+static void search(SearchParameters &sp,
                    uint8_t current,
                    uint64_t visited_mask,
                    bool any_revisited = false)
@@ -43,7 +45,7 @@ static void search(SearchParameters12 &sp,
     }
 }
 
-void run_2021_12(FILE *f)
+void run(FILE *f)
 {
     std::string s;
     char a[16], b[16];
@@ -89,14 +91,16 @@ void run_2021_12(FILE *f)
     }
 
     {
-        SearchParameters12 sp{neighbors, start_index, end_index, big_mask};
+        SearchParameters sp{neighbors, start_index, end_index, big_mask};
         search<false>(sp, sp.start_index, UINT64_C(1) << sp.start_index);
         fmt::print("{}\n", sp.count);
     }
 
     {
-        SearchParameters12 sp{neighbors, start_index, end_index, big_mask};
+        SearchParameters sp{neighbors, start_index, end_index, big_mask};
         search<true>(sp, sp.start_index, UINT64_C(1) << sp.start_index);
         fmt::print("{}\n", sp.count);
     }
+}
+
 }

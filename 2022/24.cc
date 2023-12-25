@@ -3,6 +3,8 @@
 #include <numeric>
 #include <tuple>
 
+namespace aoc_2022_24 {
+
 enum { U, D, L, R };
 using boost::container::static_vector;
 
@@ -64,9 +66,11 @@ struct GMapEntry {
     constexpr bool operator==(const GMapEntry &) const = default;
 };
 
+} // namespace aoc_2022_24
+
 template <>
-struct std::hash<QueueEntry> {
-    constexpr size_t operator()(const QueueEntry &e) const
+struct std::hash<aoc_2022_24::QueueEntry> {
+    constexpr size_t operator()(const aoc_2022_24::QueueEntry &e) const
     {
         size_t h = 0;
         hash_combine(h, e.v, e.heuristic, e.time);
@@ -74,9 +78,10 @@ struct std::hash<QueueEntry> {
     }
 };
 
+
 template <>
-struct std::hash<GMapEntry> {
-    constexpr size_t operator()(const GMapEntry &q) const
+struct std::hash<aoc_2022_24::GMapEntry> {
+    constexpr size_t operator()(const aoc_2022_24::GMapEntry &q) const
     {
         size_t h = 0;
         hash_combine(h, q.start, q.time);
@@ -84,7 +89,9 @@ struct std::hash<GMapEntry> {
     }
 };
 
-void run_2022_24(FILE *f)
+namespace aoc_2022_24 {
+
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     const size_t n = lines.size();
@@ -147,4 +154,6 @@ void run_2022_24(FILE *f)
     auto [cost3, t3] = search(t2, start_p, goal_p);
     fmt::print("{}\n", cost1);
     fmt::print("{}\n", cost1 + cost2 + cost3);
+}
+
 }

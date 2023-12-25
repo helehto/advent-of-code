@@ -2,6 +2,8 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 
+namespace aoc_2023_24 {
+
 struct Hailstone {
     Eigen::Vector3d p;
     Eigen::Vector3d v;
@@ -77,7 +79,7 @@ static int64_t part2(std::span<const Hailstone> hailstones)
     return round(x[0]) + round(x[1]) + round(x[2]);
 }
 
-void run_2023_24(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     std::vector<Hailstone> hailstones;
@@ -100,4 +102,6 @@ void run_2023_24(FILE *f)
 
     fmt::print("{}\n", part1(hailstones));
     fmt::print("{}\n", part2(hailstones));
+}
+
 }

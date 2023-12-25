@@ -5,6 +5,8 @@
 #include <thread>
 #include <x86intrin.h>
 
+namespace aoc_2015_4 {
+
 static __m256i mm256_rol(__m256i a, int n)
 {
     return _mm256_or_si256(_mm256_slli_epi32(a, n), _mm256_srli_epi32(a, 32 - n));
@@ -111,6 +113,12 @@ static __m256i md5_block_avx2(uint8_t *messages, uint32_t *lengths)
         QUARTER_ROUND(I, C, D, A, B, (7 * (i + 2)) & 15, i + 2, 15);
         QUARTER_ROUND(I, B, C, D, A, (7 * (i + 3)) & 15, i + 3, 21);
     }
+
+#undef F
+#undef G
+#undef H
+#undef I
+#undef QUARTER_ROUND
 
     return _mm256_add_epi32(A, _mm256_set1_epi32(0x67452301));
 }
@@ -249,7 +257,7 @@ hash_search(std::string_view s, int n, int stride, std::atomic_int &limit)
     return {part1, part2};
 }
 
-void run_2015_4(FILE *f)
+void run(FILE *f)
 {
     std::string s;
     getline(f, s);
@@ -275,4 +283,6 @@ void run_2015_4(FILE *f)
 
     fmt::print("{}\n", part1);
     fmt::print("{}\n", part2);
+}
+
 }

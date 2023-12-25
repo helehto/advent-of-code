@@ -1,6 +1,8 @@
 #include "common.h"
 
-void run_2021_2(FILE *f)
+namespace aoc_2021_2 {
+
+void run(FILE *f)
 {
     int x1 = 0;
     int y1 = 0;
@@ -27,4 +29,6 @@ void run_2021_2(FILE *f)
 
     fmt::print("{}\n", x1 * y1);
     fmt::print("{}\n", x2 * y2);
+}
+
 }

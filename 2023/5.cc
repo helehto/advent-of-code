@@ -1,6 +1,8 @@
 #include "common.h"
 #include <optional>
 
+namespace aoc_2023_5 {
+
 struct Range {
     uint64_t to;
     uint64_t from;
@@ -53,7 +55,7 @@ static void search(std::span<const std::vector<Range>> tables,
     }
 }
 
-void run_2023_5(FILE *f)
+void run(FILE *f)
 {
     std::string s;
     getline(f, s);
@@ -83,4 +85,6 @@ void run_2023_5(FILE *f)
     for (size_t i = 0; i < seeds.size(); i += 2)
         search(tables, 0, seeds[i], seeds[i] + seeds[i + 1], part2);
     fmt::print("{}\n", part2);
+}
+
 }

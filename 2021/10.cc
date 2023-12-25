@@ -1,6 +1,8 @@
 #include "common.h"
 
-void run_2021_10(FILE *f)
+namespace aoc_2021_10 {
+
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     int score1 = 0;
@@ -56,4 +58,6 @@ void run_2021_10(FILE *f)
     fmt::print("{}\n", score1);
     std::sort(begin(scores2), end(scores2));
     fmt::print("{}\n", scores2[scores2.size() / 2]);
+}
+
 }

@@ -1,5 +1,7 @@
 #include "common.h"
 
+namespace aoc_2015_17 {
+
 static int
 part1(const std::vector<int> &containers, uint64_t used_mask, int left, size_t start)
 {
@@ -52,7 +54,7 @@ static int part2(const std::vector<int> &containers, int target)
     return -1;
 }
 
-void run_2015_17(FILE *f)
+void run(FILE *f)
 {
     std::vector<int> containers;
 
@@ -63,4 +65,6 @@ void run_2015_17(FILE *f)
 
     fmt::print("{}\n", part1(containers, 0, 150, 0));
     fmt::print("{}\n", part2(containers, 150));
+}
+
 }

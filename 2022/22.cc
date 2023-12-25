@@ -1,5 +1,7 @@
 #include "common.h"
 
+namespace aoc_2022_22 {
+
 enum { U, L, D, R };
 
 static constexpr std::pair<int, int> face_orientations[6][4] = {
@@ -184,7 +186,7 @@ static std::vector<Move> parse_moves(const std::string_view &s)
     return moves;
 }
 
-void run_2022_22(FILE *f)
+void run(FILE *f)
 {
     std::vector<std::string> map;
     std::string s;
@@ -204,4 +206,6 @@ void run_2022_22(FILE *f)
 
     fmt::print("{}\n", part1(map, moves));
     fmt::print("{}\n", part2(map, moves));
+}
+
 }

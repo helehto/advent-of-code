@@ -22,10 +22,14 @@ using namespace std::literals;
 #define GLUE(x, y) GLUE_(x, y)
 #define GLUE3(x, y, z) GLUE(GLUE(x, y), z)
 
-#define PROBLEM_FUNC_NAME(year, day) GLUE(run_, GLUE3(year, _, day))
+#define PROBLEM_NAMESPACE(year, day) GLUE(aoc_, GLUE3(year, _, day))
 
-#define X_DECLARE_RUN_FUNCS(year, day) extern void PROBLEM_FUNC_NAME(year, day)(FILE *);
-#define X_PROBLEM_TABLE_INITIALIZERS(year, day) {year, day, PROBLEM_FUNC_NAME(year, day)},
+#define X_DECLARE_RUN_FUNCS(year, day)                                                   \
+    namespace GLUE(aoc_, GLUE3(year, _, day)) {                                          \
+    extern void run(FILE *);                                                             \
+    }
+#define X_PROBLEM_TABLE_INITIALIZERS(year, day)                                          \
+    {year, day, PROBLEM_NAMESPACE(year, day)::run},
 
 struct Problem {
     int year;

@@ -4,6 +4,8 @@
 #include <climits>
 #include <numeric>
 
+namespace aoc_2022_18 {
+
 using Cube = std::array<int, 3>;
 
 static Cube with_offset(Cube c, int dim, int delta)
@@ -82,7 +84,7 @@ static boost::unordered_set<Cube> flood(boost::unordered_set<Cube> occupied)
     return unvisited;
 }
 
-void run_2022_18(FILE *f)
+void run(FILE *f)
 {
     boost::unordered_set<Cube> cubes;
     int x, y, z;
@@ -95,4 +97,6 @@ void run_2022_18(FILE *f)
 
     const auto unvisited = flood(cubes);
     fmt::print("{}\n", area - sum_surface_area(unvisited));
+}
+
 }

@@ -1,6 +1,8 @@
 #include "common.h"
 #include "dense_map.h"
 
+namespace aoc_2015_14 {
+
 struct Reindeer {
     int velocity;
     int duration;
@@ -55,7 +57,7 @@ static int part2(const std::vector<Reindeer> &reindeer, int time)
     return *std::max_element(begin(scores), end(scores));
 }
 
-void run_2015_14(FILE *f)
+void run(FILE *f)
 {
     const auto reindeer = parse_input(f);
 
@@ -65,4 +67,6 @@ void run_2015_14(FILE *f)
 
     fmt::print("{}\n", distance);
     fmt::print("{}\n", part2(reindeer, 2503));
+}
+
 }

@@ -1,13 +1,15 @@
 #include "common.h"
 #include <unordered_map>
 
+namespace aoc_2021_14 {
+
 auto increment_count(std::unordered_map<std::string, int> &map, const std::string &key)
 {
     if (auto [it, inserted] = map.emplace(key, 1); !inserted)
         it->second++;
 }
 
-void run_2021_14(FILE *f)
+void run(FILE *f)
 {
     std::string tpl;
     std::string s;
@@ -52,4 +54,6 @@ void run_2021_14(FILE *f)
 
         bigrams.swap(new_bigrams);
     }
+}
+
 }

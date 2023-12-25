@@ -1,6 +1,8 @@
 #include "common.h"
 #include "dense_map.h"
 
+namespace aoc_2015_13 {
+
 static Matrix<int> get_happiness_matrix(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
@@ -64,7 +66,7 @@ static int max_happiness(const Matrix<int> &matrix)
     return max_happiness;
 }
 
-void run_2015_13(FILE *f)
+void run(FILE *f)
 {
     auto matrix = get_happiness_matrix(f);
     fmt::print("{}\n", max_happiness(matrix));
@@ -76,4 +78,6 @@ void run_2015_13(FILE *f)
         }
     }
     fmt::print("{}\n", max_happiness(augmented));
+}
+
 }

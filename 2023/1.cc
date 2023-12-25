@@ -1,5 +1,7 @@
 #include "common.h"
 
+namespace aoc_2023_1 {
+
 constexpr uint64_t pack(std::string_view p)
 {
     uint64_t r = 0;
@@ -8,7 +10,7 @@ constexpr uint64_t pack(std::string_view p)
     return r;
 }
 
-void run_2023_1(FILE *f)
+void run(FILE *f)
 {
     int part1 = 0;
     int part2 = 0;
@@ -62,4 +64,6 @@ void run_2023_1(FILE *f)
 
     fmt::print("{}\n", part1);
     fmt::print("{}\n", part2);
+}
+
 }

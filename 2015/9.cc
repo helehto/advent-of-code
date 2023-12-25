@@ -1,6 +1,8 @@
 #include "common.h"
 #include "dense_map.h"
 
+namespace aoc_2015_9 {
+
 static Matrix<int> get_distance_matrix(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
@@ -56,9 +58,11 @@ static int solve(const Matrix<int> &dist, Compare comp)
     return cost;
 }
 
-void run_2015_9(FILE *f)
+void run(FILE *f)
 {
     const auto dist = get_distance_matrix(f);
     fmt::print("{}\n", solve(dist, std::less<>()));
     fmt::print("{}\n", solve(dist, std::greater<>()));
+}
+
 }

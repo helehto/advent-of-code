@@ -1,6 +1,8 @@
 #include "common.h"
 #include "dense_map.h"
 
+namespace aoc_2015_8 {
+
 static int count_mem(std::string_view v)
 {
     int mem_size = 0;
@@ -65,10 +67,12 @@ static int part2(std::span<const std::string_view> lines)
     return count;
 }
 
-void run_2015_8(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     auto [total_code, total_mem] = part1(lines);
     fmt::print("{}\n", total_code - total_mem);
     fmt::print("{}\n", part2(lines) - total_code);
+}
+
 }

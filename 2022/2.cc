@@ -1,6 +1,8 @@
 #include "common.h"
 
-void run_2022_2(FILE *f)
+namespace aoc_2022_2 {
+
+void run(FILE *f)
 {
     static constexpr int loses_to[] = {1, 2, 0};
     static constexpr int wins_against[] = {2, 0, 1};
@@ -31,4 +33,6 @@ void run_2022_2(FILE *f)
 
     fmt::print("{}\n", score1);
     fmt::print("{}\n", score2);
+}
+
 }

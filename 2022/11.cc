@@ -1,13 +1,15 @@
 #include "common.h"
 #include <numeric>
 
+namespace aoc_2022_11 {
+
 enum class Operation {
     add,
     mul,
     square,
 };
 
-struct Monkey11 {
+struct Monkey {
     std::vector<int64_t> items;
     Operation op;
     int operand;
@@ -17,7 +19,7 @@ struct Monkey11 {
 };
 
 template <int Rounds, int ItemDivisor>
-static int64_t run(std::vector<Monkey11> monkeys)
+static int64_t run(std::vector<Monkey> monkeys)
 {
     int lcm = 1;
     for (const auto &m : monkeys)
@@ -55,13 +57,13 @@ static int64_t run(std::vector<Monkey11> monkeys)
     return monkeys[0].inspections * monkeys[1].inspections;
 }
 
-static std::vector<Monkey11> parse_monkeys(FILE *f)
+static std::vector<Monkey> parse_monkeys(FILE *f)
 {
-    std::vector<Monkey11> monkeys;
+    std::vector<Monkey> monkeys;
 
     std::string s;
     while (getline(f, s)) {
-        Monkey11 &m = monkeys.emplace_back();
+        Monkey &m = monkeys.emplace_back();
 
         // Starting items
         getline(f, s);
@@ -102,9 +104,11 @@ static std::vector<Monkey11> parse_monkeys(FILE *f)
     return monkeys;
 }
 
-void run_2022_11(FILE *f)
+void run(FILE *f)
 {
     auto monkeys = parse_monkeys(f);
     fmt::print("{}\n", run<20, 3>(monkeys));
     fmt::print("{}\n", run<10000, 1>(std::move(monkeys)));
+}
+
 }

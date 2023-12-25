@@ -3,6 +3,8 @@
 #include <optional>
 #include <x86intrin.h>
 
+namespace aoc_2023_7 {
+
 enum : uint8_t {
     high_card,
     one_pair,
@@ -91,7 +93,7 @@ constexpr std::array<uint8_t, 256> ascii_card_value_table = [] {
     return v;
 }();
 
-void run_2023_7(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     std::vector<std::string_view> sv;
@@ -116,4 +118,6 @@ void run_2023_7(FILE *f)
         h.eval = evaluate_hand_with_jokers(h.counts.data());
     }
     fmt::print("{}\n", total_winnings(std::move(hands)));
+}
+
 }

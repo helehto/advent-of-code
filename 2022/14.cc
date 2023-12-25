@@ -2,6 +2,8 @@
 #include "dense_set.h"
 #include <climits>
 
+namespace aoc_2022_14 {
+
 struct Cave {
     dense_set<Point<int>> occupied;
     int min_x;
@@ -106,9 +108,11 @@ static int solve(Cave cave, bool abyss)
     return cave.occupied.size() - num_walls;
 }
 
-void run_2022_14(FILE *f)
+void run(FILE *f)
 {
     Cave cave = make_cave(f);
     fmt::print("{}\n", solve(cave, true));
     fmt::print("{}\n", solve(cave, false));
+}
+
 }

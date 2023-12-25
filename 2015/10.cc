@@ -1,5 +1,7 @@
 #include "common.h"
 
+namespace aoc_2015_10 {
+
 // See the 'Cosmological decay' section on Wikipedia:
 // https://en.wikipedia.org/wiki/Look-and-say_sequence
 
@@ -263,7 +265,7 @@ static size_t length_of(std::span<int> counts)
     return length;
 }
 
-void run_2015_10(FILE *f)
+void run(FILE *f)
 {
     std::string s;
     getline(f, s);
@@ -289,4 +291,6 @@ void run_2015_10(FILE *f)
         std::swap(new_counts, counts);
     }
     fmt::print("{}\n", length_of(counts));
+}
+
 }

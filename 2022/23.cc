@@ -1,6 +1,8 @@
 #include "common.h"
 #include <climits>
 
+namespace aoc_2022_23 {
+
 namespace {
 
 struct Map {
@@ -60,7 +62,7 @@ constexpr uint64_t gen_mask(int x1, int x2, int x3)
            UINT64_C(0xff) << (8 * x3);
 }
 
-void run_2022_23(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     std::vector<Point<int>> elves;
@@ -148,4 +150,6 @@ void run_2022_23(FILE *f)
 
         std::rotate(std::begin(dirs), std::begin(dirs) + 1, std::end(dirs));
     }
+}
+
 }

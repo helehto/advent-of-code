@@ -3,6 +3,8 @@
 #include <optional>
 #include <variant>
 
+namespace aoc_2022_13 {
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 struct Packet {
@@ -75,7 +77,7 @@ static Packet parse_line(std::string_view s)
     return *p;
 }
 
-void run_2022_13(FILE *f)
+void run(FILE *f)
 {
     std::vector<Packet> packets;
 
@@ -106,4 +108,6 @@ void run_2022_13(FILE *f)
         }
     }
     fmt::print("{}\n", key);
+}
+
 }

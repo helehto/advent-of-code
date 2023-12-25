@@ -1,6 +1,8 @@
 #include "common.h"
 
-void run_2022_4(FILE *f)
+namespace aoc_2022_4 {
+
+void run(FILE *f)
 {
     int a0, a1, b0, b1;
     int part1 = 0;
@@ -13,4 +15,6 @@ void run_2022_4(FILE *f)
 
     fmt::print("{}\n", part1);
     fmt::print("{}\n", part2);
+}
+
 }

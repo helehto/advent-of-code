@@ -1,5 +1,7 @@
 #include "common.h"
 
+namespace aoc_2015_5 {
+
 static bool part1(std::string_view s)
 {
     int vowels = 0;
@@ -50,7 +52,7 @@ static bool part2(std::string_view s)
     return has_repeated && has_pair;
 }
 
-void run_2015_5(FILE *f)
+void run(FILE *f)
 {
     int count1 = 0;
     int count2 = 0;
@@ -63,4 +65,6 @@ void run_2015_5(FILE *f)
 
     fmt::print("{}\n", count1);
     fmt::print("{}\n", count2);
+}
+
 }

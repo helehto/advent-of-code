@@ -7,6 +7,8 @@
 #include <numeric>
 #include <ranges>
 
+namespace aoc_2023_20 {
+
 enum {
     BROADCASTER,
     FLIPFLOP,
@@ -164,7 +166,7 @@ static void press_button(State &state, Circuit &circuit)
     }
 };
 
-void run_2023_20(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     auto circuit = parse_input(lines);
@@ -183,4 +185,6 @@ void run_2023_20(FILE *f)
             press_button(state, circuit);
         fmt::print("{}\n", state.total_cycle_length);
     }
+}
+
 }

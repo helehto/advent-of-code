@@ -1,9 +1,11 @@
 #include "common.h"
 #include <algorithm>
 
+namespace aoc_2022_1 {
+
 using namespace std;
 
-void run_2022_1(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     std::vector<int> calories{0};
@@ -24,4 +26,6 @@ void run_2022_1(FILE *f)
 
     fmt::print("{}\n", calories[0]);
     fmt::print("{}\n", calories[0] + calories[1] + calories[2]);
+}
+
 }

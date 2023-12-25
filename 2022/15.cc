@@ -2,6 +2,8 @@
 #include <climits>
 #include <set>
 
+namespace aoc_2022_15 {
+
 struct Sensor {
     Point<int> p;
     int d;
@@ -72,7 +74,7 @@ static Point<int> intersect(std::vector<Point<int>> &a, std::vector<Point<int>> 
     return a[ai];
 }
 
-void run_2022_15(FILE *f)
+void run(FILE *f)
 {
     std::vector<Sensor> sensors;
     auto [buf, lines] = slurp_lines(f);
@@ -110,4 +112,6 @@ void run_2022_15(FILE *f)
 
     auto [x, y] = intersect(bps[0], bps[1]);
     fmt::print("{}\n", (x * UINT64_C(4'000'000) + y));
+}
+
 }

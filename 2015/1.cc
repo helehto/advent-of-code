@@ -1,6 +1,8 @@
 #include "common.h"
 
-void run_2015_1(FILE *f)
+namespace aoc_2015_1 {
+
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
 
@@ -13,4 +15,6 @@ void run_2015_1(FILE *f)
     }
     fmt::print("{}\n", p1);
     fmt::print("{}\n", p2);
+}
+
 }

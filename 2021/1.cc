@@ -1,6 +1,8 @@
 #include "common.h"
 #include <vector>
 
+namespace aoc_2021_1 {
+
 static int solve(std::span<int> input, size_t window_size)
 {
     int count = 0;
@@ -19,7 +21,7 @@ static int solve(std::span<int> input, size_t window_size)
     return count;
 }
 
-void run_2021_1(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     std::vector<int> xs;
@@ -32,4 +34,6 @@ void run_2021_1(FILE *f)
 
     fmt::print("{}\n", solve(xs, 1));
     fmt::print("{}\n", solve(xs, 3));
+}
+
 }

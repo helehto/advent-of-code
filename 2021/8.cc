@@ -1,7 +1,9 @@
 #include "common.h"
 #include <array>
 
-void run_2021_8(FILE *f)
+namespace aoc_2021_8 {
+
+void run(FILE *f)
 {
     std::string s;
     int part1 = 0;
@@ -93,4 +95,6 @@ void run_2021_8(FILE *f)
 
     fmt::print("{}\n", part1);
     fmt::print("{}\n", part2);
+}
+
 }

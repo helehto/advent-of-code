@@ -1,11 +1,13 @@
 #include "common.h"
 
+namespace aoc_2022_10 {
+
 struct Instruction {
     int due;
     int addend;
 };
 
-void run_2022_10(FILE *f)
+void run(FILE *f)
 {
     int X = 1;
     int cycle = 1;
@@ -49,4 +51,6 @@ void run_2022_10(FILE *f)
 
     fmt::print("{}\n", signal_strength);
     fmt::print("{}\n", crt);
+}
+
 }

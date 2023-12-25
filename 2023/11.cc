@@ -1,6 +1,8 @@
 #include "common.h"
 #include <algorithm>
 
+namespace aoc_2023_11 {
+
 static void expand_dimension(std::span<std::array<int, 2>> galaxies, int factor, int dim)
 {
     std::vector<int> empty;
@@ -36,7 +38,7 @@ static int64_t solve(std::vector<std::array<int, 2>> galaxies, int factor)
     return sum;
 }
 
-void run_2023_11(FILE *f)
+void run(FILE *f)
 {
     std::vector<std::array<int, 2>> galaxies;
 
@@ -50,4 +52,6 @@ void run_2023_11(FILE *f)
 
     fmt::print("{}\n", solve(galaxies, 2));
     fmt::print("{}\n", solve(galaxies, 1'000'000));
+}
+
 }

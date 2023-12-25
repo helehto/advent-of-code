@@ -2,6 +2,8 @@
 #include "dense_set.h"
 #include <algorithm>
 
+namespace aoc_2023_23 {
+
 struct Node {
     std::vector<std::pair<uint8_t, uint16_t>> pred;
     std::vector<std::pair<uint8_t, uint16_t>> succ;
@@ -127,7 +129,7 @@ build_graph(const Matrix<char> &grid, const Point<size_t> start, const Point<siz
     return graph;
 }
 
-void run_2023_23(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     auto grid = Matrix<char>::from_lines(lines);
@@ -151,4 +153,6 @@ void run_2023_23(FILE *f)
 
     fmt::print("{}\n", search<false>(graph, 0, graph.start_index, 0) - 1);
     fmt::print("{}\n", search<true>(graph, 0, graph.start_index, 0) - 1);
+}
+
 }

@@ -2,6 +2,8 @@
 #include "dense_map.h"
 #include <boost/heap/fibonacci_heap.hpp>
 
+namespace aoc_2023_17 {
+
 enum { N, E, S, W };
 
 struct Vertex {
@@ -11,15 +13,19 @@ struct Vertex {
     bool operator==(const Vertex &v) const = default;
 };
 
+} // namespace aoc_2023_17
+
 template <>
-struct std::hash<Vertex> {
-    constexpr size_t operator()(const Vertex &v) const
+struct std::hash<aoc_2023_17::Vertex> {
+    constexpr size_t operator()(const aoc_2023_17::Vertex &v) const
     {
         size_t h = 0;
         hash_combine(h, v.p, v.direction);
         return h;
     }
 };
+
+namespace aoc_2023_17 {
 
 static Point<uint8_t> step(Point<uint8_t> p, uint8_t d, int n)
 {
@@ -99,7 +105,7 @@ static int dijkstra(const Matrix<uint8_t> &m,
     ASSERT_MSG(false, "Path to {} not found!", goal);
 }
 
-void run_2023_17(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     auto grid = Matrix<uint8_t>::from_lines(lines, [&](auto c) { return c - '0'; });
@@ -112,4 +118,6 @@ void run_2023_17(FILE *f)
     fmt::print("{}\n", dijkstra(grid, dist, 0, 3, goal));
     dist.clear();
     fmt::print("{}\n", dijkstra(grid, dist, 4, 10, goal));
+}
+
 }

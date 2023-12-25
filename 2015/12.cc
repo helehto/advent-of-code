@@ -1,6 +1,8 @@
 #include "common.h"
 #include <variant>
 
+namespace aoc_2015_12 {
+
 using Entity = std::variant<int64_t, std::string_view>;
 
 struct Parser {
@@ -94,7 +96,7 @@ Entity Parser::parse_entity()
     }
 }
 
-void run_2015_12(FILE *f)
+void run(FILE *f)
 {
     std::string document;
     getline(f, document);
@@ -105,4 +107,6 @@ void run_2015_12(FILE *f)
 
     fmt::print("{}\n", sum);
     fmt::print("{}\n", std::get<int64_t>(Parser{document}.parse_entity()));
+}
+
 }

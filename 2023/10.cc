@@ -2,6 +2,8 @@
 #include "dense_set.h"
 #include <queue>
 
+namespace aoc_2023_10 {
+
 static std::array<Point<size_t>, 2> get_pipe_neighbors(Point<size_t> p, char c)
 {
     switch (c) {
@@ -36,7 +38,7 @@ static int64_t signed_area(std::span<const Point<size_t>> points)
     return result;
 }
 
-void run_2023_10(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     auto grid = Matrix<char>::from_lines(lines);
@@ -127,4 +129,6 @@ void run_2023_10(FILE *f)
             fill(q);
     }
     fmt::print("{}\n", area);
+}
+
 }

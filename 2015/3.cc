@@ -1,7 +1,9 @@
 #include "common.h"
 #include "dense_set.h"
 
-void run_2015_3(FILE *f)
+namespace aoc_2015_3 {
+
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
 
@@ -58,4 +60,6 @@ void run_2015_3(FILE *f)
 
         fmt::print("{}\n", points.size());
     }
+}
+
 }

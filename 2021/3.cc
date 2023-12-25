@@ -1,5 +1,7 @@
 #include "common.h"
 
+namespace aoc_2021_3 {
+
 static int most_common_bit(std::span<uint16_t> xs, size_t bit)
 {
     uint32_t sum = 0;
@@ -9,7 +11,7 @@ static int most_common_bit(std::span<uint16_t> xs, size_t bit)
     return 2 * sum >= xs.size();
 }
 
-void run_2021_3(FILE *f)
+void run(FILE *f)
 {
     std::vector<uint16_t> xs;
     size_t bit_length = 0;
@@ -50,4 +52,6 @@ void run_2021_3(FILE *f)
     co2_rating = candidates.front();
 
     fmt::print("{}\n", oxygen_rating * co2_rating);
+}
+
 }

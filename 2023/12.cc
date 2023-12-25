@@ -1,14 +1,16 @@
 #include "common.h"
 #include <unordered_map>
 
+namespace aoc_2023_12 {
+
 static std::unordered_map<uint16_t, uint64_t> cache;
 
-struct SearchParameters12 {
+struct SearchParameters {
     std::string_view str;
     std::span<const uint32_t> block_sizes;
 };
 
-static uint64_t search(const SearchParameters12 &sp, size_t si, size_t bi)
+static uint64_t search(const SearchParameters &sp, size_t si, size_t bi)
 {
     std::string_view s(sp.str.substr(si));
 
@@ -44,7 +46,7 @@ static uint64_t search(const SearchParameters12 &sp, size_t si, size_t bi)
     return solutions;
 }
 
-void run_2023_12(FILE *f)
+void run(FILE *f)
 {
     auto [buf, lines] = slurp_lines(f);
     uint64_t sum1 = 0;
@@ -71,4 +73,6 @@ void run_2023_12(FILE *f)
     }
     fmt::print("{}\n", sum1);
     fmt::print("{}\n", sum2);
+}
+
 }

@@ -1,12 +1,14 @@
 #include "common.h"
 
+namespace aoc_2023_6 {
+
 static uint64_t ways(uint64_t t, uint64_t d)
 {
     return std::floor(t / 2. + sqrt(t * t / 4 - d) - 1e-6) -
            std::ceil(t / 2. - sqrt(t * t / 4 - d) + 1e-6) + 1;
 }
 
-void run_2023_6(FILE *f)
+void run(FILE *f)
 {
     std::string s;
     getline(f, s);
@@ -25,4 +27,6 @@ void run_2023_6(FILE *f)
         d = pow(10, ceil(log10(ds[i]))) * d + ds[i];
     }
     fmt::print("{}\n{}\n", prod, ways(t, d));
+}
+
 }
