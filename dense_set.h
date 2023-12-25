@@ -95,7 +95,7 @@ public:
               size_type bucket_count = 0,
               const Hash &hash = Hash(),
               const KeyEqual &equal = KeyEqual())
-        : map_(list.begin(), list.end(), std::max(bucket_count, list.size()), hash, equal)
+        : dense_set(list.begin(), list.end(), std::max(bucket_count, list.size()), hash, equal)
     {
     }
 
