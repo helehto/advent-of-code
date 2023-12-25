@@ -554,6 +554,13 @@ static void erase_if(Container &v, Predicate &&predicate)
     v.erase(it, end(v));
 }
 
+template <typename Container>
+void erase_swap(Container &c, size_t i)
+{
+    std::swap(c[i], c.back());
+    c.pop_back();
+}
+
 template <typename T>
 constexpr static std::array<Point<T>, 4> neighbors4(Point<T> p)
 {
