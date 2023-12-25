@@ -547,8 +547,8 @@ struct Matrix {
     }
 };
 
-template <typename T, typename Predicate>
-static void erase_if(std::vector<T> &v, Predicate &&predicate)
+template <typename Container, typename Predicate>
+static void erase_if(Container &v, Predicate &&predicate)
 {
     auto it = std::remove_if(begin(v), end(v), std::forward<Predicate>(predicate));
     v.erase(it, end(v));
