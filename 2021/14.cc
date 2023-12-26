@@ -1,9 +1,9 @@
 #include "common.h"
-#include <unordered_map>
+#include "dense_map.h"
 
 namespace aoc_2021_14 {
 
-auto increment_count(std::unordered_map<std::string, int> &map, const std::string &key)
+auto increment_count(dense_map<std::string, int> &map, const std::string &key)
 {
     if (auto [it, inserted] = map.emplace(key, 1); !inserted)
         it->second++;
@@ -16,7 +16,7 @@ void run(FILE *f)
     getline(f, tpl);
     getline(f, s);
 
-    std::unordered_map<std::string, std::string> rules;
+    dense_map<std::string, std::string> rules;
 
     char a[16], b[16];
     while (getline(f, s)) {
@@ -24,15 +24,15 @@ void run(FILE *f)
         rules.emplace(a, b);
     }
 
-    std::unordered_map<std::string, uint64_t> elements;
-    std::unordered_map<std::string, uint64_t> bigrams;
+    dense_map<std::string, uint64_t> elements;
+    dense_map<std::string, uint64_t> bigrams;
     for (size_t i = 1; i < tpl.size(); i++) {
         elements[std::string(tpl.data() + i - 1, tpl.data() + i)]++;
         bigrams[std::string(tpl.data() + i - 1, tpl.data() + i + 1)]++;
     }
 
     for (int i = 0; i < 40; ++i) {
-        std::unordered_map<std::string, uint64_t> new_bigrams;
+        dense_map<std::string, uint64_t> new_bigrams;
 
         for (auto &[bigram, count] : bigrams) {
             auto &t = rules[bigram];

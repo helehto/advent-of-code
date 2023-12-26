@@ -1,4 +1,5 @@
 #include "common.h"
+#include "dense_map.h"
 #include <cctype>
 
 namespace aoc_2021_12 {
@@ -50,7 +51,7 @@ void run(FILE *f)
     std::string s;
     char a[16], b[16];
 
-    std::unordered_map<std::string, uint8_t> name_to_index;
+    dense_map<std::string, uint8_t> name_to_index;
     int current_index = 0;
 
     std::vector<std::pair<uint8_t, uint8_t>> pairs;

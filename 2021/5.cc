@@ -1,5 +1,4 @@
 #include "common.h"
-#include <unordered_map>
 
 namespace aoc_2021_5 {
 

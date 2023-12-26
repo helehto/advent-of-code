@@ -1,5 +1,5 @@
 #include "common.h"
-#include <unordered_map>
+#include "dense_map.h"
 
 namespace aoc_2022_21 {
 
@@ -61,7 +61,7 @@ static Input parse_monkeys(FILE *f)
         }
     }
 
-    std::unordered_map<std::string_view, int> name_map;
+    dense_map<std::string_view, int> name_map;
     name_map.reserve(parsed_monkeys.size());
     for (size_t i = 0; i < parsed_monkeys.size(); i++)
         name_map[parsed_monkeys[i].name] = i;
