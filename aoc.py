@@ -13,7 +13,7 @@ def main():
     parser.add_argument("other_args", nargs="+")
     args = parser.parse_args()
 
-    cmd = ["./aoc", *args.other_args]
+    cmd = ["./aoc", "--json", *args.other_args]
 
     a = subprocess.check_output(cmd).strip()
 

@@ -41,6 +41,7 @@ struct Options {
     const char *input_file = nullptr;
     int iterations = 1;
     double target_time = -1;
+    bool json = false;
     std::vector<const Problem *> problems_to_run;
 };
 
@@ -127,11 +128,12 @@ int main(int argc, char **argv)
         static struct option long_options[] = {
             {"input-file", required_argument, 0, 'f'},
             {"iterations", required_argument, 0, 'i'},
+            {"json", no_argument, 0, 'j'},
             {"target-time", required_argument, 0, 't'},
         };
 
         int option_index;
-        int c = getopt_long(argc, argv, "f:i:t:", long_options, &option_index);
+        int c = getopt_long(argc, argv, "f:i:jt:", long_options, &option_index);
         if (c == -1)
             break;
 
@@ -142,6 +144,9 @@ int main(int argc, char **argv)
         case 'i':
             opts.iterations = atoi(optarg);
             assert(opts.iterations > 0);
+            break;
+        case 'j':
+            opts.json = true;
             break;
         case 't':
             opts.target_time = strtod(optarg, nullptr);
@@ -169,11 +174,13 @@ int main(int argc, char **argv)
         timings.push_back({p->year, p->day, run_problem(*p, input_path, opts)});
     }
 
-    const char *separator = "";
-    fmt::print("[");
-    for (auto &td : timings) {
-        fmt::print("{}{}", separator, td);
-        separator = ",";
+    if (opts.json) {
+        const char *separator = "";
+        fmt::print("[");
+        for (auto &td : timings) {
+            fmt::print("{}{}", separator, td);
+            separator = ",";
+        }
+        fmt::print("]\n");
     }
-    fmt::print("]\n");
 }
