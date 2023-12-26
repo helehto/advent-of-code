@@ -37,6 +37,13 @@ struct Problem {
     void (*func)(FILE *);
 };
 
+struct Options {
+    const char *input_file = nullptr;
+    int iterations = 1;
+    double target_time = -1;
+    std::vector<const Problem *> problems_to_run;
+};
+
 X_FOR_EACH_PROBLEM(X_DECLARE_RUN_FUNCS);
 static constexpr Problem problems[] = {X_FOR_EACH_PROBLEM(X_PROBLEM_TABLE_INITIALIZERS)};
 
@@ -55,24 +62,27 @@ static std::vector<const Problem *> glob_problem(const char *pattern)
 }
 
 static std::vector<uint64_t>
-run_problem(const Problem &p, std::string input_path, int iterations)
+run_problem(const Problem &p, std::string input_path, const Options &opts)
 {
     using namespace std::chrono;
 
-    FILE *f = input_path.empty() ? stdin : fopen(input_path.c_str(), "r");
+    FILE *f = fopen(input_path.c_str(), "r");
 
     std::vector<uint64_t> durations;
-    durations.reserve(iterations);
+    durations.reserve(opts.iterations);
+    uint64_t total_duration = 0;
 
     auto run = [&] {
         const auto start = high_resolution_clock::now();
         p.func(f);
         const auto end = high_resolution_clock::now();
-        durations.push_back(duration_cast<nanoseconds>(end - start).count());
+        uint64_t duration = duration_cast<nanoseconds>(end - start).count();
+        durations.push_back(duration);
+        total_duration += duration;
     };
 
     run();
-    for (int i = 1; i < iterations; i++) {
+    for (int i = 1; i < opts.iterations || total_duration < opts.target_time * 1e9; i++) {
         rewind(f);
         run();
     }
@@ -111,61 +121,52 @@ struct fmt::formatter<TimingData> {
 
 int main(int argc, char **argv)
 {
-    const char *input_file = nullptr;
-    bool read_from_stdin = false;
-    int iterations = 1;
+    Options opts;
 
     while (true) {
         static struct option long_options[] = {
             {"input-file", required_argument, 0, 'f'},
             {"iterations", required_argument, 0, 'i'},
-            {"stdin", no_argument, 0, 's'},
+            {"target-time", required_argument, 0, 't'},
         };
 
         int option_index;
-        int c = getopt_long(argc, argv, "f:i:st", long_options, &option_index);
+        int c = getopt_long(argc, argv, "f:i:t:", long_options, &option_index);
         if (c == -1)
             break;
 
         switch (c) {
         case 'f':
-            input_file = optarg;
+            opts.input_file = optarg;
             break;
         case 'i':
-            iterations = atoi(optarg);
-            assert(iterations > 0);
-            break;
-        case 's':
-            read_from_stdin = true;
+            opts.iterations = atoi(optarg);
+            assert(opts.iterations > 0);
             break;
         case 't':
+            opts.target_time = strtod(optarg, nullptr);
+            if (opts.target_time <= 0)
+                die("invalid target time '%s'", optarg);
             break;
         }
     }
 
-    std::vector<const Problem *> problems_to_run;
     for (int i = optind; i < argc; i++) {
         std::vector<const Problem *> problems = glob_problem(argv[i]);
         if (problems.empty())
             die("invalid problem or pattern '%s'", argv[i]);
-        problems_to_run.insert(end(problems_to_run), begin(problems), end(problems));
+        opts.problems_to_run.insert(end(opts.problems_to_run), begin(problems),
+                                    end(problems));
     }
-    if (problems_to_run.empty())
+    if (opts.problems_to_run.empty())
         die("no problems specified");
 
-    if (read_from_stdin) {
-        if (problems_to_run.size() > 1)
-            die("can only specify one problem with -s, got %zu", problems_to_run.size());
-        run_problem(*problems_to_run[0], "", 1);
-        return 0;
-    }
-
     std::vector<TimingData> timings;
-    for (const auto *p : problems_to_run) {
-        auto input_path = input_file
-                              ? input_file
+    for (const auto *p : opts.problems_to_run) {
+        auto input_path = opts.input_file
+                              ? opts.input_file
                               : fmt::format("../inputs/input-{}-{}.txt", p->year, p->day);
-        timings.push_back({p->year, p->day, run_problem(*p, input_path, iterations)});
+        timings.push_back({p->year, p->day, run_problem(*p, input_path, opts)});
     }
 
     const char *separator = "";

@@ -9,12 +9,11 @@ import subprocess
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--iterations", type=int, default=1)
-    parser.add_argument("-t", "--total-only", action='store_true')
-    parser.add_argument("problems", nargs="+")
+    parser.add_argument("-T", "--total-only", action='store_true')
+    parser.add_argument("other_args", nargs="+")
     args = parser.parse_args()
 
-    cmd = ["./aoc", "-i", str(args.iterations), *args.problems]
+    cmd = ["./aoc", *args.other_args]
 
     a = subprocess.check_output(cmd).strip()
 
@@ -30,15 +29,15 @@ def main():
         def pct(k):
             return ts[int(len(ts) * k)]
 
-        if args.iterations > 1:
+        if len(ts) > 1:
             stddev = math.sqrt(sum((t - mean) ** 2 for t in ts) / (len(ts) - 1))
         else:
-            stddev = "n/a"
+            stddev = 0
 
         pct10 = pct(0.1)
         pct90 = pct(0.9)
         if not args.total_only:
-            rows.append((year, day, mean, stddev, pct10, pct90))
+            rows.append((year, day, len(ts), mean, stddev, pct10, pct90))
 
         means.append(float(mean))
         pct10_sum += float(pct10)
@@ -49,7 +48,7 @@ def main():
             rows.append(SEPARATING_LINE)
         rows.append(["Σ", "", sum(means), 0, pct10_sum, pct90_sum])
 
-    headers = ("Year", "Day", "Mean (μs)", "σ (μs)", "10% (μs)", "90% (μs)")
+    headers = ("Year", "Day", "Iterations", "Mean (μs)", "σ (μs)", "10% (μs)", "90% (μs)")
     print(tabulate(rows, headers))
 
     if len(rows) > 1 or args.total_only:
