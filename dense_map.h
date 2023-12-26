@@ -168,17 +168,16 @@ private:
     std::pair<iterator, bool> do_insert_helper_(const key_type &key,
                                                 ConstructFn &&construct)
     {
-        const auto [i, found] = find_bucket_(key);
+        auto [i, found] = find_bucket_(key);
         if (!found) {
+            if (max_load_.second * (size_with_tombs_ + 1) >= capacity_ * max_load_.first) {
+                rehash(2 * capacity_);
+                i = find_bucket_(key).first;
+            }
             construct(buckets_[i].buffer);
             set_state_of(i, bucket_state::occupied);
             size_++;
             size_with_tombs_++;
-
-            if (max_load_.second * size_with_tombs_ >= capacity_ * max_load_.first) {
-                rehash(2 * capacity_);
-                return {iterator(this, find_bucket_(key).first), !found};
-            }
         }
         return {iterator(this, i), !found};
     }
