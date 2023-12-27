@@ -1,61 +1,315 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+# pylint: disable=invalid-name
+# pylint: disable=line-too-long
+# pylint: disable=missing-class-docstring
+# pylint: disable=missing-function-docstring
+# pylint: disable=missing-module-docstring
+
+from __future__ import annotations
+from pathlib import Path
 import argparse
+from contextlib import contextmanager
+import difflib
 import json
-import math
-import re
+import os
+import subprocess as sp
+import tempfile
+import typing as T
+import random
+import sys
+from dataclasses import dataclass
+
+import numpy as np
+import numpy.typing as npt
 from tabulate import tabulate, SEPARATING_LINE
-import subprocess
+
+T1 = T.TypeVar('T1')
+T2 = T.TypeVar('T2')
+TMPDIR = Path(os.environ.get('TMPDIR', '/tmp'))
 
 
-def main():
+@contextmanager
+def git_worktree(commit: str, patch: T.Optional[bytes], path: Path) -> T.Iterator[Path]:
+    try:
+        sp.check_call(('git', 'worktree', 'add', '--force', '--quiet', path, commit))
+
+        if patch is not None:
+            sp.run(('git', 'apply', '--allow-empty'), cwd=path, input=patch, check=True)
+
+        yield Path(path)
+    finally:
+        sp.run(('git', 'worktree', 'remove', '--force', path), check=False)
+
+
+@contextmanager
+def binary_for_commit(commit: str, patch: T.Optional[bytes] = None) -> T.Iterator[Path]:
+    # Note: we deliberately check out worktree in the same path for all
+    # invocations of binary_for_commit() to maximize ccache compilation cache
+    # hits.
+    worktree = TMPDIR / 'tmpdiff-worktree'
+
+    with tempfile.TemporaryDirectory(prefix='aocdiff-') as d:
+        exe = Path(d) / f'aoc-{commit}'
+
+        with git_worktree(commit, patch, worktree):
+            meson_cmd = 'meson setup --wipe . build -Dbuildtype=release -Dunity=on -Dunity_size=4'.split()
+            sp.check_call(meson_cmd, cwd=worktree, stdout=sp.DEVNULL)
+            sp.check_call('ninja', cwd=worktree / 'build')
+            exe.write_bytes((worktree / 'build' / 'aoc').read_bytes())
+
+        exe.chmod(0o755)
+        yield exe
+
+
+def wrap_color(s: str, r: int, g: int, b: int) -> str:
+    return f'\x1b[38;2;{r};{g};{b}m{s}\x1b[m'
+
+
+def colorize(value: T.Any, fmt: str, is_significant: T.Any = True) -> str:
+    text = f'{value:{fmt}}'
+
+    if is_significant:
+        color = (255, 30, 30) if value >= 0 else (30, 180, 30)
+        text = wrap_color(f'{value:{fmt}}', *color)
+
+    return text
+
+
+@dataclass
+class Measurements:
+    ts: list[npt.NDArray[T.Any]]
+
+    @staticmethod
+    def _massage(t: npt.ArrayLike) -> npt.NDArray[T.Any]:
+        t = np.sort(np.array(t))
+        n_outliers = max(len(t) // 10, 0)
+
+        # Change units: ns -> μs
+        t *= 1e-3
+
+        # Throw away outliers.
+        if n_outliers > 0:
+            t = t[:-n_outliers]
+
+        return t
+
+    def __init__(self, ts: T.Iterable[npt.ArrayLike]) -> None:
+        self.ts = [self._massage(t) for t in ts]
+
+    @staticmethod
+    def merge(ms1: dict[tuple[int, int], Measurements], ms2: dict[tuple[int, int], Measurements]) -> None:
+        for (y, d), m2 in ms2.items():
+            m1 = ms1.get((y, d))
+            assert m1 is not None
+            for i, _ in enumerate(m1.ts):
+                m1.ts[i] = np.sort(np.hstack((m1.ts[i], m2.ts[i])))
+                assert len(m1.ts[i].shape) == 1
+
+    def min_diff(self) -> tuple[float, float]:
+        assert len(self.ts) == 2
+        d = np.min(self.ts[1]) - np.min(self.ts[0])
+        return (d, d / np.min(self.ts[0]))
+
+    def mins(self) -> tuple[float, ...]:
+        return tuple(map(np.min, self.ts))
+
+    def means(self) -> tuple[float, ...]:
+        return tuple(map(np.mean, self.ts))
+
+    def quantiles(self, k: float) -> tuple[float, ...]:
+        return tuple(sorted(t)[int(k * len(t))] for t in self.ts)
+
+    def significant_change(self) -> bool:
+        _, min_rel_diff = self.min_diff()
+        mean_abs_diff = np.mean(self.ts[1]) - np.mean(self.ts[0])
+        mean_rel_diff = mean_abs_diff / np.mean(self.ts[0])
+        return abs(min_rel_diff) >= 0.1 or abs(mean_rel_diff) >= 0.1
+
+    def format_row(self, year: int, day: int) -> tuple[T.Any, ...]:
+        min_diff, min_rel_diff = self.min_diff()
+
+        min_significant = abs(min_rel_diff) >= 0.1
+        mean_abs_diff = np.mean(self.ts[1]) - np.mean(self.ts[0])
+        mean_rel_diff = mean_abs_diff / np.mean(self.ts[0])
+
+        return (
+            year,
+            day,
+            len(self.ts[0]),
+            len(self.ts[1]),
+            *self.mins(),
+            colorize(min_diff, '.2f', min_significant),
+            colorize(min_rel_diff, '+.1%', min_significant),
+            *self.means(),
+            colorize(mean_abs_diff, '.2f', abs(mean_rel_diff) >= 0.1),
+            colorize(mean_rel_diff, '+.1%', abs(mean_rel_diff) >= 0.1),
+        )
+
+    @staticmethod
+    def header_row() -> tuple[str, ...]:
+        return ('Year', 'Day', 'n0', 'n1', 'min t₀', 'min t₁', 'Δmin', 'Δmin%', 'avg t₀', 'avg t₁', 'Δavg', 'Δavg%')
+
+    @staticmethod
+    def format_summary_row(all_measurements: T.Collection[Measurements]) -> tuple[T.Any, ...]:
+        def geomean(x: npt.ArrayLike) -> T.Any:
+            return np.exp(np.mean(np.log(np.array(x))))
+
+        old_mins, new_mins = np.array(tuple(map(Measurements.mins, all_measurements))).T
+        old_means, new_means = np.array(tuple(map(Measurements.means, all_measurements))).T
+        delta_min_pct_gmean = geomean(1 + (new_mins - old_mins) / old_mins) - 1
+        delta_mean_pct_gmean = geomean(1 + (new_means - old_means) / old_means) - 1
+
+        return (('Σ', '', sum(len(m.ts[0]) for m in all_measurements), sum(len(m.ts[1]) for m in all_measurements),
+                 sum(old_mins), sum(new_mins), sum(new_mins)-sum(old_mins), f'{delta_min_pct_gmean:+.1%}',
+                 sum(old_means), sum(new_means), sum(new_means) - sum(old_means), f'{delta_mean_pct_gmean:+.1%}'))
+
+
+@dataclass
+class BenchmarkArgs:
+    iterations: T.Optional[int]
+    target_time: T.Optional[float]
+    problems: T.Sequence[str]
+
+    def to_cmdline(self) -> list[str]:
+        v = ['--json']
+        if self.iterations:
+            v += ['-i', str(self.iterations)]
+        if self.target_time:
+            v += ['-t', str(self.target_time)]
+
+        v += [*self.problems]
+        return v
+
+
+def group_by(iterable: T.Iterable[T1], key: T.Callable[[T1], T2]) -> dict[T2, list[T1]]:
+    groups: dict[T2, list[T1]] = {}
+    for x in iterable:
+        groups.setdefault(key(x), []).append(x)
+    return groups
+
+
+def benchmark_once(args: BenchmarkArgs, binaries: T.Collection[Path]) -> dict[tuple[int, int], Measurements]:
+    def run(binary: Path) -> str:
+        cmd = (str(binary.absolute()), *args.to_cmdline())
+        return sp.check_output(cmd, encoding='utf-8').strip().splitlines()[-1]
+
+    raw_output = map(run, binaries)
+    json_output = tuple(map(json.loads, raw_output))
+
+    # Make sure all binaries output timing information for the same problems.
+    problems = [[(y, d) for y, d, _ in binary] for binary in json_output]
+    assert all(p == problems[0] for p in problems[1:])
+
+    flattened = ((y, d, ts) for binary in json_output for y, d, ts in binary)
+    measurements = {}
+    for (y, d), timing_info in group_by(flattened, lambda x: x[:2]).items():
+        ts = [np.array(t, dtype=np.float64) for _, _, t in timing_info]
+        measurements[(y, d)] = Measurements(ts)
+
+    return measurements
+
+
+def benchmark(args: BenchmarkArgs, max_runs: int, binaries: T.Collection[Path]) -> dict[tuple[int, int], Measurements]:
+    result = benchmark_once(args, binaries)
+
+    for _ in range(1, max_runs):
+        rerun_problems = [f'{y}/{d}' for (y, d), m in result.items() if m.significant_change()]
+        if not rerun_problems:
+            break
+        random.shuffle(rerun_problems)
+        print('Rerunning problems:', rerun_problems)
+
+        new_args = BenchmarkArgs(
+            iterations=args.iterations,
+            target_time=(1 / len(rerun_problems)),
+            problems=rerun_problems,
+        )
+        new_result = benchmark_once(new_args, binaries)
+        Measurements.merge(result, new_result)
+
+    return result
+
+
+def diff_solutions(old_commit: str, problems: T.Collection[str], binaries: T.Iterable[Path]) -> None:
+    problems = problems or ['*']
+
+    outputs = [sp.check_output((path, *problems), encoding='utf-8').strip()
+               for path in map(Path.absolute, binaries)]
+
+    a = outputs[0].splitlines()
+    b = outputs[1].splitlines()
+    diff = tuple(difflib.unified_diff(a, b,
+                                      fromfile=f'old (commit {old_commit})',
+                                      tofile='new (with changes in index)', lineterm=''))
+    if diff:
+        print('\n'.join(diff))
+        sys.exit(1)
+
+
+def one_binary(bargs: BenchmarkArgs, args: T.Any, binary: Path) -> None:
+    if args.diff:
+        print(f'{sys.argv[0]}: no changes in index, nothing to compare to')
+
+    if args.problems:
+        measurements = benchmark_once(bargs, [binary])
+
+        rows: list[T.Any] = []
+
+        for (y, d), m in measurements.items():
+            rows.append([y, d, len(m.ts[0]), m.means()[0], np.std(m.ts[0]), m.quantiles(0.1)[0], m.quantiles(0.9)[0]])
+        if len(measurements) > 1:
+            rows.append(SEPARATING_LINE)
+            rows.append(Measurements.format_summary_row(measurements.values()))
+
+        print(tabulate(rows, headers=(
+            'Year', 'Day', 'Iterations', 'Mean (μs)', 'σ (μs)', '10% (μs)', '90% (μs)')))
+
+
+def two_binaries(bargs: BenchmarkArgs, base_commit_hash: str, args: T.Any, binaries: T.Collection[Path]) -> None:
+    assert len(binaries) == 2
+    diff_solutions(base_commit_hash, args.problems, binaries)
+
+    if args.problems:
+        measurements = benchmark(bargs, args.max_runs, binaries)
+
+        rows: list[T.Any] = []
+        for (y, d), m in measurements.items():
+            rows.append(m.format_row(y, d))
+        if len(measurements) > 1:
+            rows.append(SEPARATING_LINE)
+            rows.append(Measurements.format_summary_row(measurements.values()))
+        print(tabulate(rows, headers=Measurements.header_row()))
+
+
+def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("-T", "--total-only", action='store_true')
-    parser.add_argument("other_args", nargs="+")
+    parser.add_argument('-b', '--base-commit', default='HEAD', metavar='COMMIT')
+    parser.add_argument('-i', '--iterations', default=None, type=int)
+    parser.add_argument('-n', '--max-runs', default=5, type=int)
+    parser.add_argument('-t', '--target-time', default=None, type=float)
+    parser.add_argument('--diff', action='store_true')
+    parser.add_argument('problems', nargs='*')
     args = parser.parse_args()
 
-    cmd = ["./aoc", "--json", *args.other_args]
+    base_commit_hash = sp.check_output(('git', 'rev-parse', args.base_commit), encoding='utf-8').strip()
+    head_commit_hash = sp.check_output(('git', 'rev-parse', 'HEAD'), encoding='utf-8').strip()
+    index_patch = sp.check_output(('git', 'diff'))
 
-    a = subprocess.check_output(cmd).strip()
+    bargs = BenchmarkArgs(
+        iterations=args.iterations,
+        target_time=args.target_time,
+        problems=tuple(args.problems),
+    )
 
-    rows = []
-    means = []
-    pct10_sum = 0
-    pct90_sum = 0
-    for year, day, ts in json.loads(a.split(b"\n")[-1]):
-        scale = 1e-3
-        ts = sorted(t * scale for t in ts)
-        mean = sum(ts) / len(ts)
+    with binary_for_commit(base_commit_hash) as old_binary:
+        have_changes = base_commit_hash != head_commit_hash or index_patch.strip()
 
-        def pct(k):
-            return ts[int(len(ts) * k)]
-
-        if len(ts) > 1:
-            stddev = math.sqrt(sum((t - mean) ** 2 for t in ts) / (len(ts) - 1))
+        if have_changes and args.diff:
+            with binary_for_commit(head_commit_hash, index_patch) as new_binary:
+                two_binaries(bargs, base_commit_hash, args, [old_binary, new_binary])
         else:
-            stddev = 0
-
-        pct10 = pct(0.1)
-        pct90 = pct(0.9)
-        if not args.total_only:
-            rows.append((year, day, len(ts), mean, stddev, pct10, pct90))
-
-        means.append(float(mean))
-        pct10_sum += float(pct10)
-        pct90_sum += pct90
-
-    if len(rows) > 1 or args.total_only:
-        if not args.total_only:
-            rows.append(SEPARATING_LINE)
-        rows.append(["Σ", "", sum(means), 0, pct10_sum, pct90_sum])
-
-    headers = ("Year", "Day", "Iterations", "Mean (μs)", "σ (μs)", "10% (μs)", "90% (μs)")
-    print(tabulate(rows, headers))
-
-    if len(rows) > 1 or args.total_only:
-        print()
-        g = 2 ** (sum(math.log2(m) for m in means) / len(means))
-        print(f"Geometric mean: {g:.2f} μs")
+            one_binary(bargs, args, old_binary)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
