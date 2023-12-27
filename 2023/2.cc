@@ -25,7 +25,7 @@ void run(FILE *f)
 
             for (std::string_view c : split(game, tmp2, ',')) {
                 c = strip(c);
-                int n;
+                int n = 0;
                 std::from_chars(c.begin(), c.end(), n);
                 std::string_view color = c.substr(c.find(' ') + 1);
                 if (color == "red")
