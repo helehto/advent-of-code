@@ -1,4 +1,5 @@
 #include "common.h"
+#include <algorithm>
 #include <cstdlib>
 #include <optional>
 #include <x86intrin.h>
@@ -16,13 +17,22 @@ enum : uint8_t {
 };
 
 struct Hand {
-    alignas(16) std::array<uint8_t, 16> counts;
-    std::array<uint8_t, 5> cards;
-    uint8_t eval;
+    // The evaulation and cards are the key used when sorting the hands, in
+    // that order; if we pack both together as 4-bit quantities in the correct
+    // order, we can compare two hands with a single 32-bit comparison.
+    //
+    // Bits [0:3]   = Card #5
+    // Bits [4:7]   = Card #4
+    // Bits [8:12]  = Card #3
+    // Bits [13:16] = Card #3
+    // Bits [17:20] = Card #1
+    // Bits [20:22] = Hand evaulation
+    uint32_t cards_and_eval;
+
     uint16_t bet;
 };
 
-static std::pair<uint8_t, uint8_t> evaluate_hand(uint8_t *counts)
+static std::pair<uint32_t, uint8_t> evaluate_hand(uint8_t *counts)
 {
     const __m128i vcounts = _mm_lddqu_si128(reinterpret_cast<__m128i *>(counts));
     const int mask5 = _mm_movemask_epi8(_mm_cmpeq_epi8(vcounts, _mm_set1_epi8(5)));
@@ -47,7 +57,7 @@ static std::pair<uint8_t, uint8_t> evaluate_hand(uint8_t *counts)
     return {high_card, __builtin_ctz(mask1)};
 }
 
-static uint8_t evaluate_hand_with_jokers(uint8_t *counts)
+static uint32_t evaluate_hand_with_jokers(std::array<uint8_t, 16> &counts)
 {
     const int n_jokers = std::exchange(counts[11], 0);
 
@@ -55,24 +65,13 @@ static uint8_t evaluate_hand_with_jokers(uint8_t *counts)
     if (n_jokers == 5)
         return five_of_a_kind;
 
-    auto best = evaluate_hand(counts).second;
-    counts[best] += n_jokers;
-    return evaluate_hand(counts).first;
+    counts[std::ranges::max_element(counts) - counts.begin()] += n_jokers;
+    return evaluate_hand(counts.data()).first;
 }
 
 static int total_winnings(std::vector<Hand> hands)
 {
-    std::sort(hands.begin(), hands.end(), [](const Hand &h1, const Hand &h2) {
-        if (h1.eval != h2.eval)
-            return h1.eval < h2.eval;
-
-        for (size_t k = 0; k < h1.cards.size(); k++) {
-            if (h1.cards[k] != h2.cards[k])
-                return h1.cards[k] < h2.cards[k];
-        }
-
-        return false;
-    });
+    std::ranges::sort(hands, {}, [](const Hand &h) { return h.cards_and_eval; });
 
     int sum = 0;
     for (size_t i = 0; i < hands.size(); i++)
@@ -98,24 +97,37 @@ void run(FILE *f)
     auto [buf, lines] = slurp_lines(f);
     std::vector<std::string_view> sv;
     std::vector<Hand> hands;
-    for (std::string_view s : lines) {
+    hands.reserve(lines.size());
+    std::vector<std::array<uint8_t, 16>> counts;
+    counts.resize(lines.size());
+    for (size_t i = 0; std::string_view s : lines) {
         split(s, sv, ' ');
-        Hand hand;
-        hand.counts.fill(0);
-        for (size_t i = 0; i < 5; i++) {
-            hand.cards[i] = ascii_card_value_table[sv[0][i]];
-            hand.counts[hand.cards[i]]++;
+        Hand hand{};
+        counts[i].fill(0);
+        for (size_t j = 0; j < 5; j++) {
+            uint8_t c = ascii_card_value_table[sv[0][4 - j]];
+            hand.cards_and_eval |= static_cast<uint32_t>(c) << (4 * j);
+            counts[i][c]++;
         }
         std::from_chars(sv[1].begin(), sv[1].end(), hand.bet);
-        hand.eval = evaluate_hand(hand.counts.data()).first;
+        hand.cards_and_eval |= evaluate_hand(counts[i].data()).first << 20;
         hands.push_back(hand);
+        i++;
     }
     fmt::print("{}\n", total_winnings(hands));
 
-    for (auto &h : hands) {
-        for (auto &c : h.cards)
-            c = c == 11 ? 0 : c;
-        h.eval = evaluate_hand_with_jokers(h.counts.data());
+    for (size_t i = 0; auto &h : hands) {
+        // Clear jacks/jokers to 0 so that they get compared lower than anything else.
+        for (int i = 0; i < 5; i++) {
+            uint32_t card_mask = 0xf << (4 * i);
+            if (((h.cards_and_eval ^ 0xbbbbb) & card_mask) == 0)
+                h.cards_and_eval &= ~card_mask;
+        }
+
+        // Clear the old evaluation and re-evaluate with jokers.
+        h.cards_and_eval &= ~0xf00000;
+        h.cards_and_eval |= evaluate_hand_with_jokers(counts[i]) << 20;
+        i++;
     }
     fmt::print("{}\n", total_winnings(std::move(hands)));
 }
