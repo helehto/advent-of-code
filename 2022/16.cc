@@ -1,6 +1,6 @@
 #include "common.h"
 #include <algorithm>
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
 #include <climits>
 
 namespace aoc_2022_16 {
@@ -31,7 +31,7 @@ static Valves parse_valves(FILE *f)
 
     Valves result;
 
-    boost::unordered_map<std::string, size_t> name_map;
+    std::unordered_map<std::string, size_t> name_map;
     std::string s;
     size_t i = 0;
     std::vector<ParsedValve> parsed_valves;
@@ -109,7 +109,7 @@ static std::vector<int> floyd_warshall(const std::vector<Valve> &valves)
 struct SearchParameters {
     const Valves &input;
     const std::vector<int> &costs;
-    boost::unordered_map<uint64_t, int> &path_scores;
+    std::unordered_map<uint64_t, int> &path_scores;
     uint64_t nonzero_mask;
 };
 
@@ -174,7 +174,7 @@ void run(FILE *f)
 
     // Part 1:
     {
-        boost::unordered_map<uint64_t, int> path_scores;
+        std::unordered_map<uint64_t, int> path_scores;
         SearchParameters p{input, costs, path_scores, nonzero_mask};
         search(p, State{.u = input.start_index, .remaining = 30});
         int m = 0;
@@ -185,7 +185,7 @@ void run(FILE *f)
 
     // Part 2:
     {
-        boost::unordered_map<uint64_t, int> path_scores;
+        std::unordered_map<uint64_t, int> path_scores;
         SearchParameters p{input, costs, path_scores, nonzero_mask};
         search(p, State{.u = input.start_index, .remaining = 26});
 

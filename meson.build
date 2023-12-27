@@ -8,6 +8,7 @@ if get_option('buildtype') == 'debug'
 endif
 
 add_project_arguments('-fno-omit-frame-pointer', language: 'cpp')
+add_project_arguments('-fno-exceptions', language: 'cpp')
 add_project_arguments('-Wno-stringop-overflow', language: 'cpp')
 
 solutions = [

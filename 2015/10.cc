@@ -28,7 +28,7 @@ static consteval uint64_t lookup(std::string_view v)
         i++;
     }
 
-    throw "bad atom name";
+    abort();
 }
 
 static consteval uint64_t make_decay(std::string_view a0,

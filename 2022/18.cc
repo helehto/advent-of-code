@@ -1,8 +1,18 @@
 #include "common.h"
-#include <boost/unordered_map.hpp>
-#include <boost/unordered_set.hpp>
+#include <unordered_map>
+#include <unordered_set>
 #include <climits>
 #include <numeric>
+
+template <>
+struct std::hash<std::array<int, 3>> {
+    constexpr size_t operator()(const std::array<int, 3> a) const
+    {
+        size_t h = 0;
+        hash_combine(h,a[0],a[1],a[2]);
+        return h;
+    }
+};
 
 namespace aoc_2022_18 {
 
@@ -14,7 +24,7 @@ static Cube with_offset(Cube c, int dim, int delta)
     return c;
 }
 
-static int sum_surface_area(const boost::unordered_set<Cube> &cubes)
+static int sum_surface_area(const std::unordered_set<Cube> &cubes)
 {
     int sum = 0;
     for (auto &c : cubes) {
@@ -31,7 +41,7 @@ static int sum_surface_area(const boost::unordered_set<Cube> &cubes)
     return sum;
 }
 
-static boost::unordered_set<Cube> flood(boost::unordered_set<Cube> occupied)
+static std::unordered_set<Cube> flood(std::unordered_set<Cube> occupied)
 {
     int min[3] = {INT_MAX, INT_MAX, INT_MAX};
     int max[3] = {INT_MIN, INT_MIN, INT_MIN};
@@ -69,7 +79,7 @@ static boost::unordered_set<Cube> flood(boost::unordered_set<Cube> occupied)
         }
     }
 
-    boost::unordered_set<Cube> unvisited;
+    std::unordered_set<Cube> unvisited;
 
     for (int x = min[0]; x < max[0]; x++) {
         for (int y = min[1]; y < max[1]; y++) {
@@ -86,7 +96,7 @@ static boost::unordered_set<Cube> flood(boost::unordered_set<Cube> occupied)
 
 void run(FILE *f)
 {
-    boost::unordered_set<Cube> cubes;
+    std::unordered_set<Cube> cubes;
     int x, y, z;
     while (fscanf(f, "%d,%d,%d", &x, &y, &z) == 3) {
         cubes.insert({x, y, z});
