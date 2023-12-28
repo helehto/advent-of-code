@@ -1,49 +1,73 @@
 #include "common.h"
 #include "dense_set.h"
 #include <algorithm>
+#include <vector>
 
 namespace aoc_2023_23 {
 
-struct Node {
-    std::vector<std::pair<uint8_t, uint16_t>> pred;
-    std::vector<std::pair<uint8_t, uint16_t>> succ;
+struct alignas(16) Node {
+    uint8_t n_edges = 0;
+    uint8_t edges[4];
+    uint16_t weights[4];
 };
 
 struct Graph {
     std::vector<Node> nodes;
     dense_map<Point<size_t>, size_t> node_map;
-    size_t start_index;
-    size_t goal_index;
+    uint8_t start_index;
+    uint8_t goal_index;
 };
 
-template <bool IncludePredecessors>
-static int64_t search(const Graph &graph,
-                      const uint64_t visited_mask,
-                      const size_t curr_index,
-                      const int64_t curr_length)
+static constexpr uint64_t bit(int i)
 {
-    if (curr_index == graph.goal_index)
-        return curr_length;
+    return UINT64_C(1) << i;
+}
 
-    int64_t max_length = 0;
+template <bool IncludePredecessors>
+__attribute__((noinline)) static int64_t search(const Graph &graph)
+{
+    struct State {
+        uint64_t visited_mask;
+        const Node *node;
+        uint16_t total_weight;
+    };
 
-    if constexpr (IncludePredecessors) {
-        for (auto &[next, weight] : graph.nodes[curr_index].pred) {
-            auto bit = UINT64_C(1) << next;
-            if ((visited_mask & bit) == 0) {
-                auto r = search<IncludePredecessors>(graph, visited_mask | bit, next,
-                                                     curr_length + weight);
-                max_length = std::max(max_length, r);
-            }
+    auto stack = std::make_unique<State[]>(16384);
+    State *p = stack.get();
+
+    *p++ = State{
+        .visited_mask = 0,
+        .node = &graph.nodes[graph.start_index],
+        .total_weight = 0,
+    };
+
+    uint16_t max_length = 0;
+
+    while (p != stack.get()) {
+        auto [visited_mask, node, total_weight] = *--p;
+        const auto this_mask = bit(node - graph.nodes.data());
+
+        if (node == &graph.nodes[graph.goal_index]) {
+            max_length = std::max(max_length, total_weight);
+            continue;
         }
-    }
 
-    for (auto &[next, weight] : graph.nodes[curr_index].succ) {
-        auto bit = UINT64_C(1) << next;
-        if ((visited_mask & bit) == 0) {
-            auto r = search<IncludePredecessors>(graph, visited_mask | bit, next,
-                                                 curr_length + weight);
-            max_length = std::max(max_length, r);
+        for (size_t i = 0; i < node->n_edges; ++i) {
+            const auto next = node->edges[i] & ~0x80;
+            const auto weight = node->weights[i];
+
+            if constexpr (!IncludePredecessors) {
+                if (node->edges[i] & 0x80)
+                    continue;
+            }
+
+            if ((visited_mask & bit(next)) == 0) {
+                *p++ = State{
+                    .visited_mask = visited_mask | this_mask,
+                    .node = &graph.nodes[next],
+                    .total_weight = static_cast<uint16_t>(total_weight + weight),
+                };
+            }
         }
     }
 
@@ -63,17 +87,20 @@ static size_t get_node(Graph &graph, Point<size_t> p)
 
 static void add_edge(Graph &graph, Point<size_t> p, Point<size_t> q, int weight)
 {
-    auto add_unique = [&](auto &edges, size_t v) {
-        for (auto &[w, _] : edges)
-            if (v == w)
+    auto add_unique = [&](Node &node, uint8_t v) {
+        for (size_t i = 0; i < node.n_edges; i++) {
+            if (node.edges[i] == v)
                 return;
-        edges.emplace_back(v, weight);
+        }
+        node.edges[node.n_edges] = v;
+        node.weights[node.n_edges] = weight;
+        node.n_edges++;
     };
 
     const auto pn = get_node(graph, p);
     const auto qn = get_node(graph, q);
-    add_unique(graph.nodes[pn].succ, qn);
-    add_unique(graph.nodes[qn].pred, pn);
+    add_unique(graph.nodes[pn], qn);
+    add_unique(graph.nodes[qn], pn | 0x80);
 }
 
 static Graph
@@ -151,8 +178,8 @@ void run(FILE *f)
     auto graph = build_graph(grid, start, goal);
     ASSERT(graph.nodes.size() < 64);
 
-    fmt::print("{}\n", search<false>(graph, 0, graph.start_index, 0) - 1);
-    fmt::print("{}\n", search<true>(graph, 0, graph.start_index, 0) - 1);
+    fmt::print("{}\n", search<false>(graph) - 1);
+    fmt::print("{}\n", search<true>(graph) - 1);
 }
 
 }
