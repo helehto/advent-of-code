@@ -120,8 +120,8 @@ private:
     uint32_t capacity_;
     uint32_t size_;
     uint32_t size_with_tombs_;
-    hasher hash_;
-    key_equal equal_;
+    [[no_unique_address]] hasher hash_;
+    [[no_unique_address]] key_equal equal_;
 
     bucket_state state_of(size_t i) const
     {
