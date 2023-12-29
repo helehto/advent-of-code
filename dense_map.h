@@ -26,7 +26,10 @@ enum class bucket_state : uint8_t {
 };
 // clang-format on
 
-__attribute__((noinline)) inline size_t find_occupied(uint8_t *states, size_t i)
+// How things should be aligned due to SIMD.
+constexpr static size_t simd_align = 16;
+
+__attribute__((noinline)) inline size_t find_occupied(const uint8_t *states, size_t i)
 {
     for (;; i += 16) {
         const auto *p = reinterpret_cast<const __m128i *>(states + i);
@@ -41,6 +44,45 @@ struct bucket {
     T &data() { return *reinterpret_cast<T *>(buffer); }
     const T &data() const { return *reinterpret_cast<const T *>(buffer); }
 };
+
+/// Given the size and allocation requirements described in `fields`, returns a
+/// unique_ptr to a single allocation block that is large enough to contain all
+/// of the described fields with the given alignments.
+///
+/// A pointer to each of the described fields is assigned to the corresponding
+/// pointer argument given in `ptrs`; the number of pointer arguments must be
+/// the same as the number of fields.
+template <typename... Pointers>
+__attribute__((flatten)) std::unique_ptr<std::byte[]>
+compound_allocate(std::span<const std::pair<size_t, size_t>> fields, Pointers... ptrs)
+{
+    static_assert(sizeof...(ptrs) > 0);
+    static_assert((std::is_pointer_v<Pointers> && ...));
+    ASSERT(sizeof...(ptrs) == fields.size());
+
+    // Compute the total allocation size needed.
+    size_t allocation_size = fields[0].second - 1;
+    for (auto [field_size, align] : fields) {
+        allocation_size = (allocation_size + align - 1) & -align;
+        allocation_size += field_size;
+    }
+
+    // Allocate.
+    auto storage = std::make_unique_for_overwrite<std::byte[]>(allocation_size);
+
+    // Assign the field pointers to the arguments in `ptrs'.
+    uintptr_t p = reinterpret_cast<uintptr_t>(storage.get());
+    size_t i = 0;
+    auto assign = [&]<typename T>(T **ptr) {
+        auto [size, align] = fields[i++];
+        p = (p + align - 1) & -align;
+        *ptr = reinterpret_cast<T *>(p);
+        p += size;
+    };
+    (assign(ptrs), ...);
+
+    return storage;
+}
 
 } // namespace detail
 
@@ -94,7 +136,7 @@ private:
         pointer operator->() const { return &set_->buckets_[index_].data(); }
         Derived &operator++()
         {
-            index_ = detail::find_occupied(set_->states_.get(),index_ + 1);
+            index_ = detail::find_occupied(set_->states_, index_ + 1);
             return static_cast<Derived &>(*this);
         }
         Derived operator++(int) { return ++Derived(*this); }
@@ -115,8 +157,9 @@ public:
     };
 
 private:
-    std::unique_ptr<bucket[]> buckets_;
-    std::unique_ptr<uint8_t[]> states_; // TODO: pack?
+    std::unique_ptr<std::byte[]> storage_;
+    bucket *buckets_;
+    uint8_t *states_;
     uint32_t capacity_;
     uint32_t size_;
     uint32_t size_with_tombs_;
@@ -135,7 +178,7 @@ private:
 
     size_t find_occupied_(size_t i) const
     {
-        return detail::find_occupied(states_.get(),i);
+        return detail::find_occupied(states_,i);
     }
 
     std::pair<size_t, bool> find_bucket_(const Key &key) const
@@ -207,16 +250,21 @@ private:
               size_type bucket_count,
               const Hash &hash = Hash(),
               const KeyEqual &equal = KeyEqual())
-        : size_(0)
+        : capacity_(bucket_count)
+        , size_(0)
         , size_with_tombs_(0)
         , hash_(hash)
         , equal_(equal)
     {
-        buckets_ = std::unique_ptr<bucket[]>(new bucket[bucket_count + 16]);
-        states_ = std::make_unique<uint8_t[]>(bucket_count + 16);
-        capacity_ = bucket_count;
-        for (int i = 0; i < 15; i++)
-            set_state_of(capacity_ + i, bucket_state::sentinel);
+        const std::pair<size_t, size_t> fields[] = {
+            {sizeof(bucket) * capacity_, alignof(bucket)},
+            {sizeof(bucket_state) * (capacity_ + detail::simd_align), detail::simd_align},
+        };
+        storage_ = detail::compound_allocate(fields, &buckets_, &states_);
+
+        memset(states_, 0, capacity_);
+        for (size_t i = 0; i < detail::simd_align; i++)
+            set_state_of(capacity_ + i, bucket_state::occupied);
     }
 
 public:
@@ -256,7 +304,8 @@ public:
     }
 
     dense_map(dense_map &&other)
-        : buckets_(std::exchange(other.buckets_, nullptr))
+        : storage_(std::exchange(other.storage_, nullptr))
+        , buckets_(std::exchange(other.buckets_, nullptr))
         , states_(std::exchange(other.states_, nullptr))
         , capacity_(std::exchange(other.capacity_, 0))
         , size_(std::exchange(other.size_, 0))
@@ -336,7 +385,7 @@ public:
                     buckets_[i].data().~value_type();
             }
         }
-        memset(states_.get(), 0, capacity_);
+        memset(states_, 0, capacity_);
 
         size_ = 0;
         size_with_tombs_ = 0;
@@ -443,6 +492,7 @@ public:
     void swap(dense_map &other)
     {
         using std::swap;
+        swap(storage_, other.storage_);
         swap(buckets_, other.buckets_);
         swap(states_, other.states_);
         swap(capacity_, other.capacity_);
