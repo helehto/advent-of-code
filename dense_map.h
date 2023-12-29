@@ -117,9 +117,9 @@ public:
 private:
     std::unique_ptr<bucket[]> buckets_;
     std::unique_ptr<uint8_t[]> states_; // TODO: pack?
-    size_t capacity_;
-    size_t size_;
-    size_t size_with_tombs_;
+    uint32_t capacity_;
+    uint32_t size_;
+    uint32_t size_with_tombs_;
     hasher hash_;
     key_equal equal_;
 
