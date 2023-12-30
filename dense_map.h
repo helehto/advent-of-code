@@ -306,6 +306,14 @@ private:
             set_state_of(capacity_ + i, bucket_state::occupied);
     }
 
+    void rehash(size_type count)
+    {
+        dense_map new_set(internal_tag{}, count, hash_, equal_);
+        for (auto &elem : *this)
+            new_set.insert(std::move(elem));
+        swap(new_set);
+    }
+
 public:
     //-------------------------------------------------------------------------
     // Construction and destruction.
@@ -599,14 +607,6 @@ public:
     float max_load_factor() const noexcept
     {
         return static_cast<float>(max_load_.first) / max_load_.second;
-    }
-
-    void rehash(size_type count)
-    {
-        dense_map new_set(internal_tag{}, count, hash_, equal_);
-        for (auto &elem : *this)
-            new_set.insert(std::move(elem));
-        swap(new_set);
     }
 
     void reserve(size_type count)
