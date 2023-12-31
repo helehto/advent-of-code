@@ -24,9 +24,12 @@ static void print_crates(std::span<std::string> crates)
 
 void run(FILE *f)
 {
-    std::string s;
+    auto [buf, lines] = slurp_lines(f);
+    size_t i = 0;
+
     std::array<std::string, 30> crates1;
-    while (getline(f, s)) {
+    for (i = 0; i < lines.size(); i++) {
+        std::string_view s = lines[i];
         if (s.empty() || isdigit(s[1]))
             break;
         for (size_t i = 1; i < s.size(); i += 4) {
@@ -34,15 +37,15 @@ void run(FILE *f)
                 crates1[(i + 3) / 4] += s[i];
         }
     }
+    i += 2;
 
     auto crates2 = crates1;
-    while (getline(f, s)) {
-        int n, f, t;
-        if (sscanf(s.c_str(), "move %d from %d to %d", &n, &f, &t) != 3)
-            continue;
-
-        move_crates(crates1[f], crates1[t], n, true);
-        move_crates(crates2[f], crates2[t], n, false);
+    std::vector<int> nums;
+    nums.reserve(3);
+    for (; i < lines.size(); i++) {
+        find_numbers(lines[i], nums);
+        move_crates(crates1[nums[1]], crates1[nums[2]], nums[0], true);
+        move_crates(crates2[nums[1]], crates2[nums[2]], nums[0], false);
     }
 
     print_crates(crates1);
