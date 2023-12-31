@@ -34,7 +34,7 @@ struct Hand {
 
 static std::pair<uint32_t, uint8_t> evaluate_hand(uint8_t *counts)
 {
-    const __m128i vcounts = _mm_lddqu_si128(reinterpret_cast<__m128i *>(counts));
+    const __m128i vcounts = _mm_loadu_si128(reinterpret_cast<__m128i *>(counts));
     const int mask5 = _mm_movemask_epi8(_mm_cmpeq_epi8(vcounts, _mm_set1_epi8(5)));
     const int mask4 = _mm_movemask_epi8(_mm_cmpeq_epi8(vcounts, _mm_set1_epi8(4)));
     const int mask3 = _mm_movemask_epi8(_mm_cmpeq_epi8(vcounts, _mm_set1_epi8(3)));

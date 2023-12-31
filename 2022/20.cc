@@ -15,10 +15,10 @@ static size_t find_avx(const int64_t *p, const size_t n, const int64_t needle)
 
     // 4-way unrolled loop, comparing 16 elements at time.
     for (; k + 15 < n; k += 16) {
-        const auto v0 = _mm256_lddqu_si256((const __m256i *)&p[k + 0]);
-        const auto v1 = _mm256_lddqu_si256((const __m256i *)&p[k + 4]);
-        const auto v2 = _mm256_lddqu_si256((const __m256i *)&p[k + 8]);
-        const auto v3 = _mm256_lddqu_si256((const __m256i *)&p[k + 12]);
+        const auto v0 = _mm256_loadu_si256((const __m256i *)&p[k + 0]);
+        const auto v1 = _mm256_loadu_si256((const __m256i *)&p[k + 4]);
+        const auto v2 = _mm256_loadu_si256((const __m256i *)&p[k + 8]);
+        const auto v3 = _mm256_loadu_si256((const __m256i *)&p[k + 12]);
 
         const auto eq0 = _mm256_cmpeq_epi64(v0, vneedle);
         const auto eq1 = _mm256_cmpeq_epi64(v1, vneedle);
@@ -46,7 +46,7 @@ static size_t find_avx(const int64_t *p, const size_t n, const int64_t needle)
 
     // Vectorized loop for 4-15 remaining elements.
     for (; k + 4 < n; k += 4) {
-        const auto v = _mm256_lddqu_si256((const __m256i *)&p[k]);
+        const auto v = _mm256_loadu_si256((const __m256i *)&p[k]);
         const auto eq = _mm256_cmpeq_epi64(v, vneedle);
 
         if (const auto mask = _mm256_movemask_epi8(eq))

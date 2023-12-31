@@ -37,7 +37,7 @@ __attribute__((noinline)) inline size_t find_occupied(const uint8_t *states, siz
 {
     for (;; i += 16) {
         const auto *p = reinterpret_cast<const __m128i *>(states + i);
-        if (unsigned int mask = _mm_movemask_epi8(_mm_lddqu_si128(p)))
+        if (unsigned int mask = _mm_movemask_epi8(_mm_loadu_si128(p)))
             return i + std::countr_zero(mask);
     }
 }

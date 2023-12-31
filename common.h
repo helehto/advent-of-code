@@ -269,7 +269,7 @@ inline bool getline(FILE *f, std::string &s)
         // No break condition, the null byte added by fgets() will break the
         // loop if we reach the end of the chunk.
         for (size_t j = offset;; j += 32) {
-            auto bytes = _mm256_lddqu_si256(reinterpret_cast<__m256i *>(s.data() + j));
+            auto bytes = _mm256_loadu_si256(reinterpret_cast<__m256i *>(s.data() + j));
 
             if (int mask = _mm256_movemask_epi8(_mm256_cmpeq_epi8(bytes, vnl))) {
                 offset = j + __builtin_ctz(mask);
@@ -351,7 +351,7 @@ split(std::string_view s, std::vector<std::string_view> &out, char c)
     size_t curr_field_start = 0;
 
     for (; i + 31 < s.size(); i += 32) {
-        __m256i m = _mm256_lddqu_si256(reinterpret_cast<const __m256i *>(s.data() + i));
+        __m256i m = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(s.data() + i));
         unsigned int mask = _mm256_movemask_epi8(_mm256_cmpeq_epi8(m, _mm256_set1_epi8(c)));
 
         for (; mask != 0; mask &= mask - 1) {
@@ -362,7 +362,7 @@ split(std::string_view s, std::vector<std::string_view> &out, char c)
     }
 
     for (; i + 15 < s.size(); i += 16) {
-        __m128i m = _mm_lddqu_si128(reinterpret_cast<const __m128i *>(s.data() + i));
+        __m128i m = _mm_loadu_si128(reinterpret_cast<const __m128i *>(s.data() + i));
         unsigned int mask = _mm_movemask_epi8(_mm_cmpeq_epi8(m, _mm_set1_epi8(c)));
 
         for (; mask != 0; mask &= mask - 1) {
