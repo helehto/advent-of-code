@@ -24,6 +24,7 @@
 #define ASSERT(x)                                                                        \
     do {                                                                                 \
         if (!(x)) {                                                                      \
+            fflush(stdout);                                                              \
             fprintf(stderr,                                                              \
                     "\x1b[1;31m" __FILE__                                                \
                     ":" STRINGIFY(__LINE__) ": %s: Assertion `%s' failed.\x1b[m\n",      \
@@ -35,6 +36,7 @@
 #define ASSERT_MSG(x, format, ...)                                                       \
     do {                                                                                 \
         if (!(x)) {                                                                      \
+            fflush(stdout);                                                              \
             fprintf(stderr,                                                              \
                     "\x1b[1;31m" __FILE__                                                \
                     ":" STRINGIFY(__LINE__) ": %s: Assertion `%s' failed:\x1b[m ",       \
