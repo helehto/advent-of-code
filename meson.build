@@ -5,6 +5,7 @@ add_project_arguments('-march=native', language: 'cpp')
 if get_option('buildtype') == 'debug'
   # AVX-512 breaks Valgrind.
   add_project_arguments('-mno-avx512f', language: 'cpp')
+  add_project_arguments('-D_GLIBCXX_DEBUG', language: 'cpp')
 endif
 
 add_project_arguments('-fno-omit-frame-pointer', language: 'cpp')
