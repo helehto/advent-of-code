@@ -127,7 +127,7 @@ private:
 
     public:
         using difference_type = std::ptrdiff_t;
-        using iterator_category = std::input_iterator_tag;
+        using iterator_category = std::forward_iterator_tag;
         using value_type = std::pair<const Key, T>;
         using pointer = Const<value_type> *;
         using reference = Const<value_type> &;
