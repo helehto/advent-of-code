@@ -590,6 +590,52 @@ struct Ndindex2DRange {
 };
 
 template <typename T>
+struct StridedIterator {
+    using difference_type = std::ptrdiff_t;
+    using iterator_category = std::random_access_iterator_tag;
+    using value_type = T;
+    using pointer = value_type *;
+    using reference = value_type &;
+
+    T *p;
+    size_t stride;
+
+    std::strong_ordering operator<=>(const StridedIterator &other) const = default;
+    reference operator*() const { return *p; }
+    pointer operator->() const { return p; }
+    reference operator[](difference_type n) const { return p[stride * n]; }
+    StridedIterator &operator++() { return p += stride, *this; }
+    StridedIterator operator++(int) { StridedIterator copy(*this); p += stride; return copy; }
+    StridedIterator &operator--() { return p -= stride, *this; }
+    StridedIterator operator--(int) {  StridedIterator copy(*this); p -= stride; return copy; }
+    StridedIterator &operator+=(difference_type n) { return p += stride * n, *this; }
+    StridedIterator operator+(difference_type n) const { return StridedIterator(*this) += n; }
+    StridedIterator &operator-=(difference_type n) { return p -= stride * n, *this; }
+    StridedIterator operator-(difference_type n) const { return StridedIterator(*this) -= n; }
+
+    difference_type operator-(const StridedIterator &o) const
+    {
+        return (p - o.p) / static_cast<ssize_t>(stride);
+    }
+
+    friend StridedIterator operator+(difference_type n, const StridedIterator &it) {
+        return it + n;
+    }
+};
+static_assert(std::random_access_iterator<StridedIterator<int>>);
+
+template <typename T>
+struct StridedRange : std::ranges::view_interface<StridedRange<T>> {
+    T *p;
+    size_t n;
+    size_t stride;
+
+    StridedIterator<T> begin() { return {p, stride}; }
+    StridedIterator<T> end() { return {p + n * stride, stride}; }
+};
+static_assert(std::ranges::random_access_range<StridedRange<int>>);
+
+template <typename T>
 struct Matrix {
     std::unique_ptr<T[]> data;
     size_t rows;
@@ -660,6 +706,11 @@ struct Matrix {
 
     constexpr std::span<T> all() { return {data.get(), data.get() + rows * cols}; }
     constexpr std::span<const T> all() const { return {data.get(), data.get() + rows * cols}; }
+
+    constexpr StridedRange<T> col(size_t i) { return {{}, data.get() + i, rows, cols}; }
+    constexpr StridedRange<const T> col(size_t i) const { return {{}, data.get() + i, rows, cols}; }
+    constexpr StridedRange<T> row(size_t i) { return {{}, data.get() + i * cols, cols, 1}; }
+    constexpr StridedRange<const T> row(size_t i) const { return {{}, data.get() + i * cols, cols, 1}; }
 
     template <typename U = size_t>
     Ndindex2DRange<U> ndindex() const
