@@ -725,6 +725,21 @@ struct Matrix {
     }
 };
 
+template <typename T>
+struct fmt::formatter<Matrix<T>> : fmt::formatter<T> {
+    template <typename FormatContext>
+    auto format(const Matrix<T> &m, FormatContext &ctx) const
+    {
+        for (size_t i = 0; i < m.rows; i++) {
+            for (size_t j = 0; j < m.cols; j++)
+                fmt::formatter<T>::format(m(i, j), ctx);
+            fmt::format_to(ctx.out(), "\n");
+        }
+
+        return ctx.out();
+    }
+};
+
 template <typename Container, typename Predicate>
 static void erase_if(Container &v, Predicate &&predicate)
 {
