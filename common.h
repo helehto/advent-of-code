@@ -426,19 +426,25 @@ split(std::string_view s, std::vector<std::string_view> &out, char c);
 
 inline SlurpResult slurp_lines(FILE *f)
 {
+    SlurpResult result;
     int fd = fileno(f);
 
     off_t size = lseek(fd, 0, SEEK_END);
     ASSERT(size > 0);
 
-    std::string buf;
-    buf.resize(size);
-    ASSERT(pread(fd, buf.data(), size, 0) == size);
+    // Work around any small string optimization. In this case, it is actively
+    // harmful; we will split the file contents into lines, and if the file is
+    // small enough, the resulting std::string_view instances would point
+    // inside the string's in-place buffer. Doing anything that changes the
+    // identity of the std::string afterwards, such as returning it without
+    // (N)RVO, would leave the string_views dangling.
+    result.contents.reserve(std::max<size_t>(size, sizeof(std::string)));
 
-    std::vector<std::string_view> lines;
-    split(buf, lines, '\n');
+    result.contents.resize(size);
+    ASSERT(pread(fd, result.contents.data(), size, 0) == size);
+    split(result.contents, result.lines, '\n');
 
-    return {std::move(buf), std::move(lines)};
+    return result;
 }
 
 template <typename T>
