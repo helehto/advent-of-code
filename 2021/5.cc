@@ -56,12 +56,12 @@ void run(FILE *f)
     }
 
     int part1 = 0;
-    for (auto n : count1)
+    for (auto n : count1.all())
         if (n >= 2)
             part1++;
 
     int part2 = 0;
-    for (auto n : count2)
+    for (auto n : count2.all())
         if (n >= 2)
             part2++;
 

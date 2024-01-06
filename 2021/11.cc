@@ -17,7 +17,7 @@ void run(FILE *f)
         queue.clear();
         flashed.clear();
 
-        for (auto &v : grid)
+        for (auto &v : grid.all())
             v += 1;
 
         for (auto p : grid.ndindex()) {

@@ -71,7 +71,7 @@ void run(FILE *f)
     }
 
     std::vector<int> sizes(next_basin);
-    for (auto b : basins) {
+    for (auto b : basins.all()) {
         if (b >= 0)
             sizes[b]++;
     }

@@ -10,6 +10,7 @@
 #include <fmt/ranges.h>
 #include <functional>
 #include <memory>
+#include <ranges>
 #include <span>
 #include <string>
 #include <string_view>
@@ -601,8 +602,7 @@ struct Matrix {
         , rows(rows_)
         , cols(cols_)
     {
-        for (auto &v : *this)
-            v = value;
+        std::ranges::fill(all(), value);
     }
 
     Matrix(const Matrix &other)
@@ -610,7 +610,7 @@ struct Matrix {
         , rows(other.rows)
         , cols(other.cols)
     {
-        std::copy(other.begin(), other.end(), data.get());
+        std::ranges::copy(other.all(), data.get());
     }
 
     Matrix &operator=(const Matrix &other)
@@ -637,7 +637,7 @@ struct Matrix {
 
     bool operator==(const Matrix &other) const noexcept
     {
-        return std::equal(begin(), end(), other.begin());
+        return std::ranges::equal(all(), other.all());
     }
     bool operator!=(const Matrix &other) const noexcept { return !(*this == other); }
 
@@ -658,10 +658,8 @@ struct Matrix {
 
     constexpr size_t size() const { return rows * cols; }
 
-    constexpr T *begin() { return data.get(); }
-    constexpr T *end() { return data.get() + rows * cols; }
-    constexpr const T *begin() const { return data.get(); }
-    constexpr const T *end() const { return data.get() + rows * cols; }
+    constexpr std::span<T> all() { return {data.get(), data.get() + rows * cols}; }
+    constexpr std::span<const T> all() const { return {data.get(), data.get() + rows * cols}; }
 
     template <typename U = size_t>
     Ndindex2DRange<U> ndindex() const
