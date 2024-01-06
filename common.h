@@ -643,6 +643,8 @@ struct Matrix {
 
     constexpr Matrix() = default;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Walloc-size-larger-than="
     Matrix(size_t rows_, size_t cols_, T value = T())
         : data(new T[rows_ * cols_])
         , rows(rows_)
@@ -650,6 +652,7 @@ struct Matrix {
     {
         std::ranges::fill(all(), value);
     }
+#pragma GCC diagnostic pop
 
     Matrix(const Matrix &other)
         : data(new T[other.rows * other.cols])
