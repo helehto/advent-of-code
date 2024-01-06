@@ -12,6 +12,7 @@ void run(FILE *f)
         find_numbers(lines[i], v);
         pairs.emplace_back(v[0], v[1]);
     }
+    i++;
 
     int rows = 0;
     int cols = 0;

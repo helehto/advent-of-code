@@ -73,7 +73,8 @@ void run(FILE *f)
         while (next < lines.size() && !lines[next].empty())
             next++;
 
-        auto grid = Matrix<uint8_t>::from_lines(std::span(&lines[curr], &lines[next]));
+        auto grid = Matrix<uint8_t>::from_lines(
+            std::span(lines.begin() + curr, lines.begin() + next));
 
         // look for vertical reflection lines
         for (size_t j = 0; j + 1 < grid.cols; j++) {

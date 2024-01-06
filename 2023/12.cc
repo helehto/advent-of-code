@@ -36,7 +36,7 @@ static uint64_t search(const SearchParameters &sp, size_t si, size_t bi)
     ASSERT(c == '#' || c == '?');
     if (block_size <= s.size() &&
         s.substr(0, block_size).find('.') == std::string_view::npos &&
-        s[block_size] != '#')
+        (block_size == s.size() || s[block_size] != '#'))
         solutions += search(sp, si + std::min<size_t>(block_size + 1, s.size()), bi + 1);
 
     if (s.front() == '?')
