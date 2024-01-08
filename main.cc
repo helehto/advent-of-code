@@ -18,10 +18,6 @@ using namespace std::literals;
         exit(EXIT_FAILURE);                                                              \
     } while (0)
 
-#define GLUE_(x, y) x##y
-#define GLUE(x, y) GLUE_(x, y)
-#define GLUE3(x, y, z) GLUE(GLUE(x, y), z)
-
 #define PROBLEM_NAMESPACE(year, day) GLUE(aoc_, GLUE3(year, _, day))
 
 #define X_DECLARE_RUN_FUNCS(year, day)                                                   \
