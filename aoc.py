@@ -10,6 +10,7 @@ from pathlib import Path
 import argparse
 from contextlib import contextmanager
 import difflib
+import itertools
 import json
 import os
 import subprocess as sp
@@ -23,54 +24,65 @@ import numpy as np
 import numpy.typing as npt
 from tabulate import tabulate, SEPARATING_LINE
 
-T1 = T.TypeVar('T1')
-T2 = T.TypeVar('T2')
-TMPDIR = Path(os.environ.get('TMPDIR', '/tmp'))
+T1 = T.TypeVar("T1")
+T2 = T.TypeVar("T2")
+TMPDIR = Path(os.environ.get("TMPDIR", "/tmp"))
+
+
+@dataclass
+class AocBinary:
+    path: Path
+    commit: str
+    description: T.Optional[str]
 
 
 @contextmanager
 def git_worktree(commit: str, patch: T.Optional[bytes], path: Path) -> T.Iterator[Path]:
     try:
-        sp.check_call(('git', 'worktree', 'add', '--force', '--quiet', path, commit))
+        sp.run(("git", "worktree", "add", "--force", "--quiet", path, commit), check=True)
 
         if patch is not None:
-            sp.run(('git', 'apply', '--allow-empty'), cwd=path, input=patch, check=True)
+            sp.run(("git", "apply", "--allow-empty"), cwd=path, input=patch, check=True)
 
         yield Path(path)
     finally:
-        sp.run(('git', 'worktree', 'remove', '--force', path), check=False)
+        sp.run(("git", "worktree", "remove", "--force", path), check=False)
 
 
 @contextmanager
-def binary_for_commit(commit: str, patch: T.Optional[bytes] = None) -> T.Iterator[Path]:
+def binary_for_commit(commit: str, patch: T.Optional[bytes] = None) -> T.Iterator[AocBinary]:
     # Note: we deliberately check out worktree in the same path for all
     # invocations of binary_for_commit() to maximize ccache compilation cache
     # hits.
-    worktree = TMPDIR / 'tmpdiff-worktree'
+    worktree = TMPDIR / "tmpdiff-worktree"
 
-    with tempfile.TemporaryDirectory(prefix='aocdiff-') as d:
-        exe = Path(d) / f'aoc-{commit}'
+    with tempfile.TemporaryDirectory(prefix="aocdiff-") as d:
+        exe = Path(d) / f"aoc-{commit}"
 
         with git_worktree(commit, patch, worktree):
-            meson_cmd = 'meson setup --wipe . build -Dbuildtype=release -Dunity=on -Dunity_size=4'.split()
-            sp.check_call(meson_cmd, cwd=worktree, stdout=sp.DEVNULL)
-            sp.check_call('ninja', cwd=worktree / 'build')
-            exe.write_bytes((worktree / 'build' / 'aoc').read_bytes())
+            meson_cmd = "meson setup --wipe . build -Dbuildtype=release -Dunity=on -Dunity_size=4".split()
+            sp.run(meson_cmd, cwd=worktree, stdout=sp.DEVNULL, check=True)
+            sp.run("ninja", cwd=worktree / "build", check=True)
+            exe.write_bytes((worktree / "build" / "aoc").read_bytes())
 
         exe.chmod(0o755)
-        yield exe
+        yield AocBinary(exe, commit, None)
 
 
-def wrap_color(s: str, r: int, g: int, b: int) -> str:
-    return f'\x1b[38;2;{r};{g};{b}m{s}\x1b[m'
+def wrap_ansi(s: str, code: str) -> str:
+    return f"\x1b[{code}m{s}\x1b[m"
+
+
+def wrap_color_rgb(s: str, r: int, g: int, b: int) -> str:
+    return wrap_ansi(s, f'38;2;{r};{g};{b}')
 
 
 def colorize(value: T.Any, fmt: str, is_significant: T.Any = True) -> str:
-    text = f'{value:{fmt}}'
+    text = f"{value:{fmt}}"
 
     if is_significant:
         color = (255, 30, 30) if value >= 0 else (30, 180, 30)
-        text = wrap_color(f'{value:{fmt}}', *color)
+        text = wrap_color_rgb(f"{value:{fmt}}", *color)
 
     return text
 
@@ -97,7 +109,10 @@ class Measurements:
         self.ts = [self._massage(t) for t in ts]
 
     @staticmethod
-    def merge(ms1: dict[tuple[int, int], Measurements], ms2: dict[tuple[int, int], Measurements]) -> None:
+    def merge(
+        ms1: dict[tuple[int, int], Measurements],
+        ms2: dict[tuple[int, int], Measurements],
+    ) -> None:
         for (y, d), m2 in ms2.items():
             m1 = ms1.get((y, d))
             assert m1 is not None
@@ -138,44 +153,72 @@ class Measurements:
             len(self.ts[0]),
             len(self.ts[1]),
             *self.mins(),
-            colorize(min_diff, '.2f', min_significant),
-            colorize(min_rel_diff, '+.1%', min_significant),
+            colorize(min_diff, ".2f", min_significant),
+            colorize(min_rel_diff, "+.1%", min_significant),
             *self.means(),
-            colorize(mean_abs_diff, '.2f', abs(mean_rel_diff) >= 0.1),
-            colorize(mean_rel_diff, '+.1%', abs(mean_rel_diff) >= 0.1),
+            colorize(mean_abs_diff, ".2f", abs(mean_rel_diff) >= 0.1),
+            colorize(mean_rel_diff, "+.1%", abs(mean_rel_diff) >= 0.1),
         )
 
     @staticmethod
     def header_row() -> tuple[str, ...]:
-        return ('Year', 'Day', 'n0', 'n1', 'min t₀', 'min t₁', 'Δmin', 'Δmin%', 'avg t₀', 'avg t₁', 'Δavg', 'Δavg%')
+        return (
+            "Year",
+            "Day",
+            "n0",
+            "n1",
+            "min t₀",
+            "min t₁",
+            "Δmin",
+            "Δmin%",
+            "avg t₀",
+            "avg t₁",
+            "Δavg",
+            "Δavg%",
+        )
 
     @staticmethod
-    def format_summary_row(all_measurements: T.Collection[Measurements]) -> tuple[T.Any, ...]:
+    def format_summary_row(
+        all_measurements: T.Collection[Measurements],
+    ) -> tuple[T.Any, ...]:
         def geomean(x: npt.ArrayLike) -> T.Any:
             return np.exp(np.mean(np.log(np.array(x))))
 
         old_mins, new_mins = np.array(tuple(map(Measurements.mins, all_measurements))).T
-        old_means, new_means = np.array(tuple(map(Measurements.means, all_measurements))).T
+        old_means, new_means = np.array(
+            tuple(map(Measurements.means, all_measurements))
+        ).T
         delta_min_pct_gmean = geomean(1 + (new_mins - old_mins) / old_mins) - 1
         delta_mean_pct_gmean = geomean(1 + (new_means - old_means) / old_means) - 1
 
-        return (('Σ', '', sum(len(m.ts[0]) for m in all_measurements), sum(len(m.ts[1]) for m in all_measurements),
-                 sum(old_mins), sum(new_mins), sum(new_mins)-sum(old_mins), f'{delta_min_pct_gmean:+.1%}',
-                 sum(old_means), sum(new_means), sum(new_means) - sum(old_means), f'{delta_mean_pct_gmean:+.1%}'))
+        return (
+            "Σ",
+            "",
+            sum(len(m.ts[0]) for m in all_measurements),
+            sum(len(m.ts[1]) for m in all_measurements),
+            sum(old_mins),
+            sum(new_mins),
+            sum(new_mins) - sum(old_mins),
+            f"{delta_min_pct_gmean:+.1%}",
+            sum(old_means),
+            sum(new_means),
+            sum(new_means) - sum(old_means),
+            f"{delta_mean_pct_gmean:+.1%}",
+        )
 
 
 @dataclass
 class BenchmarkArgs:
     iterations: T.Optional[int]
     target_time: T.Optional[float]
-    problems: T.Sequence[str]
+    problems: T.Collection[str]
 
     def to_cmdline(self) -> list[str]:
-        v = ['--json']
+        v = ["--json"]
         if self.iterations:
-            v += ['-i', str(self.iterations)]
+            v += ["-i", str(self.iterations)]
         if self.target_time:
-            v += ['-t', str(self.target_time)]
+            v += ["-t", str(self.target_time)]
 
         v += [*self.problems]
         return v
@@ -188,84 +231,161 @@ def group_by(iterable: T.Iterable[T1], key: T.Callable[[T1], T2]) -> dict[T2, li
     return groups
 
 
-def benchmark_once(args: BenchmarkArgs, binaries: T.Collection[Path]) -> dict[tuple[int, int], Measurements]:
-    def run(binary: Path) -> str:
-        cmd = (str(binary.absolute()), *args.to_cmdline())
-        return sp.check_output(cmd, encoding='utf-8').strip().splitlines()[-1]
+def run_binaries(
+    args: BenchmarkArgs, binaries: T.Collection[AocBinary]
+) -> tuple[dict[tuple[int, int], Measurements], dict[tuple[int, int], list[str]]]:
+    def _run(binary: AocBinary) -> str:
+        cmd = (str(binary.path.absolute()), *args.to_cmdline())
+        return sp.check_output(cmd, encoding="utf-8").strip().splitlines()[-1]
 
-    raw_output = map(run, binaries)
+    raw_output = map(_run, binaries)
     json_output = tuple(map(json.loads, raw_output))
 
     # Make sure all binaries output timing information for the same problems.
-    problems = [[(y, d) for y, d, _ in binary] for binary in json_output]
+    problems = [[(y, d) for y, d, _, _ in binary] for binary in json_output]
     assert all(p == problems[0] for p in problems[1:])
 
-    flattened = ((y, d, ts) for binary in json_output for y, d, ts in binary)
+    flattened = itertools.chain.from_iterable(json_output)
+    grouped = group_by(flattened, lambda x: tuple(x[:2]))
+    outputs = {(y, d): [x[3] for x in data] for (y, d), data in grouped.items()}
+
     measurements = {}
-    for (y, d), timing_info in group_by(flattened, lambda x: x[:2]).items():
-        ts = [np.array(t, dtype=np.float64) for _, _, t in timing_info]
+    for (y, d), timing_info in grouped.items():
+        ts = [np.array(t, dtype=np.float64) for _, _, t, _ in timing_info]
         measurements[(y, d)] = Measurements(ts)
 
-    return measurements
+    return measurements, outputs
 
 
-def benchmark(args: BenchmarkArgs, max_runs: int, binaries: T.Collection[Path]) -> dict[tuple[int, int], Measurements]:
-    result = benchmark_once(args, binaries)
+def benchmark(
+    args: BenchmarkArgs, max_runs: int, binaries: T.Collection[AocBinary]
+) -> dict[tuple[int, int], Measurements]:
+    result, _ = run_binaries(args, binaries)
 
     for _ in range(1, max_runs):
-        rerun_problems = [f'{y}/{d}' for (y, d), m in result.items() if m.significant_change()]
+        rerun_problems = [
+            f"{y}/{d}" for (y, d), m in result.items() if m.significant_change()
+        ]
         if not rerun_problems:
             break
         random.shuffle(rerun_problems)
-        print('Rerunning problems:', rerun_problems)
+        print("Rerunning problems:", rerun_problems)
 
         new_args = BenchmarkArgs(
             iterations=args.iterations,
             target_time=(1 / len(rerun_problems)),
             problems=rerun_problems,
         )
-        new_result = benchmark_once(new_args, binaries)
+        new_result, _ = run_binaries(new_args, binaries)
         Measurements.merge(result, new_result)
 
     return result
 
 
-def diff_solutions(old_commit: str, problems: T.Collection[str], binaries: T.Iterable[Path]) -> None:
-    problems = problems or ['*']
+def color_diff(diff: T.Sequence[str]) -> list[str]:
+    def color_line(s: str) -> str:
+        if s.startswith("---") or s.startswith("+++"):
+            return wrap_ansi(s, '1')
+        if s.startswith("@@"):
+            return wrap_ansi(s, '36')
+        if s.startswith("-"):
+            return wrap_ansi(s, '31')
+        if s.startswith("+"):
+            return wrap_ansi(s, '32')
 
-    outputs = [sp.check_output((path, *problems), encoding='utf-8').strip()
-               for path in map(Path.absolute, binaries)]
+        return s
 
-    a = outputs[0].splitlines()
-    b = outputs[1].splitlines()
-    diff = tuple(difflib.unified_diff(a, b,
-                                      fromfile=f'old (commit {old_commit})',
-                                      tofile='new (with changes in index)', lineterm=''))
-    if diff:
-        print('\n'.join(diff))
+    return list(map(color_line, diff))
+
+
+def diff_solutions(
+    old_commit: str, problems: T.Collection[str], binaries: T.Collection[AocBinary]
+) -> None:
+    assert len(binaries) == 2
+
+    problems = problems or ["*"]
+    bargs = BenchmarkArgs(iterations=1, target_time=None, problems=problems)
+    _, outputs = run_binaries(bargs, binaries)
+
+    ok = True
+    for (y, d), o in outputs.items():
+        if o[0] != o[1]:
+            a = o[0].splitlines()
+            b = o[1].splitlines()
+            diff = tuple(
+                difflib.unified_diff(
+                    a,
+                    b,
+                    fromfile=f"{y}/{d}: commit {old_commit}",
+                    tofile=f"{y}/{d}: new (with changes in index)",
+                    lineterm="",
+                )
+            )
+            if diff:
+                ok = False
+                print("\n".join(color_diff(diff)))
+
+    if not ok:
         sys.exit(1)
 
 
-def one_binary(bargs: BenchmarkArgs, args: T.Any, binary: Path) -> None:
+def one_binary(bargs: BenchmarkArgs, args: T.Any, binary: AocBinary) -> None:
     if args.diff:
-        print(f'{sys.argv[0]}: no changes in index, nothing to compare to')
+        print(f"{sys.argv[0]}: no changes in index, nothing to compare to")
 
     if args.problems:
-        measurements = benchmark_once(bargs, [binary])
+        measurements, _ = run_binaries(bargs, [binary])
 
         rows: list[T.Any] = []
 
         for (y, d), m in measurements.items():
-            rows.append([y, d, len(m.ts[0]), m.means()[0], np.std(m.ts[0]), m.quantiles(0.1)[0], m.quantiles(0.9)[0]])
+            rows.append(
+                [
+                    y,
+                    d,
+                    len(m.ts[0]),
+                    m.means()[0],
+                    np.std(m.ts[0]),
+                    m.quantiles(0.1)[0],
+                    m.quantiles(0.9)[0],
+                ]
+            )
         if len(measurements) > 1:
             rows.append(SEPARATING_LINE)
-            rows.append(Measurements.format_summary_row(measurements.values()))
+            rows.append(
+                (
+                    "",
+                    "",
+                    sum(len(x.ts[0]) for x in measurements.values()),
+                    np.mean([x.means()[0] for x in measurements.values()]),
+                    0.0,
+                    np.mean([x.quantiles(0.1)[0] for x in measurements.values()]),
+                    np.mean([x.quantiles(0.9)[0] for x in measurements.values()]),
+                )
+            )
 
-        print(tabulate(rows, headers=(
-            'Year', 'Day', 'Iterations', 'Mean (μs)', 'σ (μs)', '10% (μs)', '90% (μs)')))
+        print(
+            tabulate(
+                rows,
+                headers=(
+                    "Year",
+                    "Day",
+                    "Iterations",
+                    "Mean (μs)",
+                    "σ (μs)",
+                    "10% (μs)",
+                    "90% (μs)",
+                ),
+            )
+        )
 
 
-def two_binaries(bargs: BenchmarkArgs, base_commit_hash: str, args: T.Any, binaries: T.Collection[Path]) -> None:
+def two_binaries(
+    bargs: BenchmarkArgs,
+    base_commit_hash: str,
+    args: T.Any,
+    binaries: T.Collection[AocBinary],
+) -> None:
     assert len(binaries) == 2
     diff_solutions(base_commit_hash, args.problems, binaries)
 
@@ -283,17 +403,21 @@ def two_binaries(bargs: BenchmarkArgs, base_commit_hash: str, args: T.Any, binar
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument('-b', '--base-commit', default='HEAD', metavar='COMMIT')
-    parser.add_argument('-i', '--iterations', default=None, type=int)
-    parser.add_argument('-n', '--max-runs', default=5, type=int)
-    parser.add_argument('-t', '--target-time', default=None, type=float)
-    parser.add_argument('--diff', action='store_true')
-    parser.add_argument('problems', nargs='*')
+    parser.add_argument("-b", "--base-commit", default="HEAD", metavar="COMMIT")
+    parser.add_argument("-i", "--iterations", default=1, type=int)
+    parser.add_argument("-n", "--max-runs", default=5, type=int)
+    parser.add_argument("-t", "--target-time", default=None, type=float)
+    parser.add_argument("--diff", action="store_true")
+    parser.add_argument("problems", nargs="*")
     args = parser.parse_args()
 
-    base_commit_hash = sp.check_output(('git', 'rev-parse', args.base_commit), encoding='utf-8').strip()
-    head_commit_hash = sp.check_output(('git', 'rev-parse', 'HEAD'), encoding='utf-8').strip()
-    index_patch = sp.check_output(('git', 'diff'))
+    base_commit_hash = sp.check_output(
+        ("git", "rev-parse", args.base_commit), encoding="utf-8"
+    ).strip()
+    head_commit_hash = sp.check_output(
+        ("git", "rev-parse", "HEAD"), encoding="utf-8"
+    ).strip()
+    index_patch = sp.check_output(("git", "diff"))
 
     bargs = BenchmarkArgs(
         iterations=args.iterations,
@@ -311,5 +435,5 @@ def main() -> None:
             one_binary(bargs, args, old_binary)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

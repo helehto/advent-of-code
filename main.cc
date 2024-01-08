@@ -1,3 +1,4 @@
+#include "common.h"
 #include "config.h"
 #include <cassert>
 #include <chrono>
@@ -7,6 +8,7 @@
 #include <fnmatch.h>
 #include <getopt.h>
 #include <string_view>
+#include <sys/mman.h>
 #include <tuple>
 #include <vector>
 
@@ -26,6 +28,8 @@ using namespace std::literals;
     }
 #define X_PROBLEM_TABLE_INITIALIZERS(year, day)                                          \
     {year, day, PROBLEM_NAMESPACE(year, day)::run},
+
+#define ASSERT_ERRNO_MSG(expr, func) ASSERT_MSG(expr, #func ": {}", strerror(errno))
 
 struct Problem {
     int year;
@@ -58,7 +62,43 @@ static std::vector<const Problem *> glob_problem(const char *pattern)
     return result;
 }
 
-static std::vector<uint64_t>
+struct ProblemData {
+    int year;
+    int day;
+    std::vector<uint64_t> durations;
+    std::string output;
+};
+
+static void redirect_stdout(int &memfd, int &original_stdout)
+{
+    fflush(stdout);
+
+    if (original_stdout < 0) {
+        original_stdout = dup(STDOUT_FILENO);
+        ASSERT_ERRNO_MSG(original_stdout >= 0, "dup");
+    }
+
+    if (memfd >= 0) {
+        ASSERT_ERRNO_MSG(lseek(memfd, 0, SEEK_SET) >= 0, "lseek");
+    } else {
+        memfd = memfd_create("output", MFD_CLOEXEC);
+        ASSERT_ERRNO_MSG(memfd >= 0, "memfd_create");
+    }
+
+    ASSERT_ERRNO_MSG(dup2(memfd, STDOUT_FILENO) == STDOUT_FILENO, "dup2");
+}
+
+static std::string restore_stdout(int memfd, int original_stdout)
+{
+    fflush(stdout);
+    ASSERT_ERRNO_MSG(dup2(original_stdout, STDOUT_FILENO) == STDOUT_FILENO, "dup2");
+    char buf[4096];
+    ssize_t bytes_read = pread(memfd, buf, sizeof(buf), 0);
+    ASSERT(bytes_read >= 0 && bytes_read < 4096);
+    return std::string(buf, buf + bytes_read);
+}
+
+static std::pair<std::vector<uint64_t>, std::string>
 run_problem(const Problem &p, std::string input_path, const Options &opts)
 {
     using namespace std::chrono;
@@ -78,7 +118,18 @@ run_problem(const Problem &p, std::string input_path, const Options &opts)
         total_duration += duration;
     };
 
-    run();
+    std::string output;
+    if (opts.json) {
+        // Capture the output of the first output if we're dumping JSON.
+        static int memfd = -1;
+        static int original_stdout = -1;
+        redirect_stdout(memfd, original_stdout);
+        run();
+        output = restore_stdout(memfd, original_stdout);
+    } else {
+        run();
+    }
+
     for (int i = 1; i < opts.iterations || total_duration < opts.target_time * 1e9; i++) {
         rewind(f);
         run();
@@ -86,32 +137,36 @@ run_problem(const Problem &p, std::string input_path, const Options &opts)
 
     fclose(f);
 
-    return durations;
+    return {durations, output};
 }
 
-struct TimingData {
-    int year;
-    int day;
-    std::vector<uint64_t> durations;
-};
-
 template <>
-struct fmt::formatter<TimingData> {
+struct fmt::formatter<ProblemData> {
     constexpr auto parse(format_parse_context &ctx) { return ctx.begin(); }
 
     template <typename FormatContext>
-    auto format(const TimingData &td, FormatContext &ctx) const
+    auto format(const ProblemData &p, FormatContext &ctx) const
     {
         auto out = ctx.out();
 
         const char *separator = "";
-        out = fmt::format_to(out, "[{},{},[", td.year, td.day);
-        for (auto &t : td.durations) {
+        out = fmt::format_to(out, "[{},{},[", p.year, p.day);
+        for (auto &t : p.durations) {
             out = fmt::format_to(out, "{}{}", separator, t);
             separator = ",";
         }
-        out = fmt::format_to(out, "]]");
+        out = fmt::format_to(out, "],\"");
 
+        for (char c : p.output) {
+            if (c == '\n')
+                out = fmt::format_to(out, "\\n");
+            else if (isprint(c) && c != '"')
+                out = fmt::format_to(out, "{}", c);
+            else
+                out = fmt::format_to(out, "\\x{:02x}", (uint8_t)c);
+        }
+
+        out = fmt::format_to(out, "\"]");
         return out;
     }
 };
@@ -162,12 +217,13 @@ int main(int argc, char **argv)
     if (opts.problems_to_run.empty())
         die("no problems specified");
 
-    std::vector<TimingData> timings;
+    std::vector<ProblemData> timings;
     for (const auto *p : opts.problems_to_run) {
         auto input_path = opts.input_file
                               ? opts.input_file
                               : fmt::format("../inputs/input-{}-{}.txt", p->year, p->day);
-        timings.push_back({p->year, p->day, run_problem(*p, input_path, opts)});
+        auto [times, output] = run_problem(*p, input_path, opts);
+        timings.push_back({p->year, p->day, std::move(times), std::move(output)});
     }
 
     if (opts.json) {
