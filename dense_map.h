@@ -11,6 +11,7 @@
 #include <initializer_list>
 #include <iterator>
 #include <memory>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 
@@ -25,6 +26,8 @@ enum class bucket_state : uint8_t {
     occupied  = 0b11000000,
 };
 // clang-format on
+
+constexpr static uint8_t state_hash_mask = 0b00111111;
 
 // How things should be aligned due to SIMD.
 constexpr static size_t simd_align = 16;
@@ -168,12 +171,12 @@ private:
 
     bucket_state state_of(size_t i) const
     {
-        return static_cast<bucket_state>(states_[i]);
+        return static_cast<bucket_state>(states_[i] & ~detail::state_hash_mask);
     }
 
-    void set_state_of(size_t i, bucket_state state)
+    void set_state_of(size_t i, bucket_state state, uint8_t hash_bits = 0)
     {
-        states_[i] = static_cast<uint8_t>(state);
+        states_[i] = static_cast<uint8_t>(state) | hash_bits;
     }
 
     size_t find_occupied_(size_t i) const
@@ -181,21 +184,22 @@ private:
         return detail::find_occupied(states_,i);
     }
 
-    std::pair<size_t, bool> find_bucket_(const Key &key) const
+    std::tuple<size_t, bool, size_t> find_bucket_(const Key &key) const
     {
         const size_t hash = hash_(key);
         const auto mask = capacity_ - 1;
         size_t i = hash & mask;
+        uint8_t expected_state = 0b11000000 | (hash & detail::state_hash_mask);
 
         while (1) {
             switch (state_of(i)) {
             case bucket_state::occupied:
-                if (equal_(buckets_[i].data().first, key))
-                    return {i, true};
+                if (states_[i] == expected_state && equal_(buckets_[i].data().first, key))
+                    return {i, true, hash};
                 break;
 
             case bucket_state::empty:
-                return {i, false};
+                return {i, false, hash};
 
             case bucket_state::tombstone:
             case bucket_state::sentinel:
@@ -211,14 +215,14 @@ private:
     std::pair<iterator, bool> do_insert_helper_(const key_type &key,
                                                 ConstructFn &&construct)
     {
-        auto [i, found] = find_bucket_(key);
+        auto [i, found, hash] = find_bucket_(key);
         if (!found) {
             if (max_load_.second * (size_with_tombs_ + 1) >= capacity_ * max_load_.first) {
                 rehash(2 * capacity_);
-                i = find_bucket_(key).first;
+                i = std::get<0>(find_bucket_(key));
             }
             construct(buckets_[i].buffer);
-            set_state_of(i, bucket_state::occupied);
+            set_state_of(i, bucket_state::occupied, hash & detail::state_hash_mask);
             size_++;
             size_with_tombs_++;
         }
@@ -480,7 +484,7 @@ public:
 
     size_type erase(const key_type &key)
     {
-        if (const auto [i, found] = find_bucket_(key); found) {
+        if (const auto [i, found, _] = find_bucket_(key); found) {
             buckets_[i].data().~value_type();
             set_state_of(i, bucket_state::tombstone);
             size_--;
@@ -508,7 +512,7 @@ public:
 
     T &at(const key_type &key)
     {
-        const auto [i, found] = find_bucket_(key);
+        const auto [i, found, _] = find_bucket_(key);
         if constexpr (fmt::is_formattable<key_type>::value){
             ASSERT_MSG(found, "Key '{}' not found!", key);
         } else {
@@ -519,7 +523,7 @@ public:
 
     const T &at(const key_type &key) const
     {
-        const auto [i, found] = find_bucket_(key);
+        const auto [i, found, _] = find_bucket_(key);
         if constexpr (fmt::is_formattable<key_type>::value){
             ASSERT_MSG(found, "Key '{}' not found!", key);
         } else {
@@ -530,19 +534,19 @@ public:
 
     size_type count(const key_type &key) const
     {
-        const auto [i, found] = find_bucket_(key);
+        const auto [i, found, _] = find_bucket_(key);
         return found ? 1 : 0;
     }
 
     iterator find(const key_type &key)
     {
-        const auto [i, found] = find_bucket_(key);
+        const auto [i, found, _] = find_bucket_(key);
         return found ? iterator(this, i) : end();
     }
 
     const_iterator find(const key_type &key) const
     {
-        const auto [i, found] = find_bucket_(key);
+        const auto [i, found, _] = find_bucket_(key);
         return found ? const_iterator(this, i) : end();
     }
 
