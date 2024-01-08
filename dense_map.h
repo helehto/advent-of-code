@@ -31,6 +31,7 @@ constexpr static uint8_t state_hash_mask = 0b00111111;
 
 // How things should be aligned due to SIMD.
 constexpr static size_t simd_align = 16;
+constexpr static size_t max_simd_size = 32;
 
 __attribute__((noinline)) inline size_t find_occupied(const uint8_t *states, size_t i)
 {
@@ -190,22 +191,56 @@ private:
         const auto mask = capacity_ - 1;
         size_t i = hash & mask;
         uint8_t expected_state = 0b11000000 | (hash & detail::state_hash_mask);
+        constexpr static size_t stride = 32;
 
-        while (1) {
-            switch (state_of(i)) {
-            case bucket_state::occupied:
-                if (states_[i] == expected_state && equal_(buckets_[i].data().first, key))
-                    return {i, true, hash};
-                break;
+        // Fast path before we drop into the SIMD loop: is the very first
+        // bucket we landed at empty or the key we're looking for?
+        if (states_[i] == 0)
+            return {i, false, hash};
+        if (states_[i] == expected_state && equal_(buckets_[i].data().first, key))
+            return {i, true, hash};
 
-            case bucket_state::empty:
-                return {i, false, hash};
+        // No, unfortunately not. Skip it and start checking buckets en masse.
+        i = (i + 1) & mask;
 
-            case bucket_state::tombstone:
-            case bucket_state::sentinel:
-                break;
+        const __m256i vexpected_state = _mm256_set1_epi8(expected_state);
+        const __m256i vzero = _mm256_set1_epi8(0);
+
+        for (;; i = (i + stride < capacity_) ? i + stride : 0) {
+            // Note that if we are near the end of the table, this load will
+            // also fetch a bunch of sentinel bucket states past the logical
+            // end of the state array. These will never match anything, so we
+            // are effectively checking fewer than 32 buckets in that case.
+            const __m256i *p = reinterpret_cast<const __m256i *>(states_ + i);
+            __m256i v = _mm256_loadu_si256(p);
+            __m256i match = _mm256_cmpeq_epi8(v, vexpected_state);
+            __m256i empty = _mm256_cmpeq_epi8(v, vzero);
+
+            uint32_t match_mask = _mm256_movemask_epi8(match);
+            uint32_t empty_mask = _mm256_movemask_epi8(empty);
+
+            // We want to stop at the first empty bucket; mask out any matches
+            // that occur after it.
+            match_mask &= empty_mask ^ (empty_mask - 1);
+
+            // At this point, `match_mask` has one bit set for each candidate
+            // bucket; that is, buckets that are occupied and whose hash have
+            // the same lowest 6 bits as the hash of the key we are searching
+            // for. Often there will be at most one bit set in this mask, but
+            // in the worst case we may have some false positives, so we need
+            // to check all of them.
+            for (; match_mask != 0; match_mask &= match_mask - 1) {
+                int offset = std::countr_zero(match_mask);
+                if (equal_(buckets_[i + offset].data().first, key))
+                    return {i + offset, true, hash};
             }
-            i = (i + 1) & mask;
+
+            // At this point, none of the candidate buckets we checked matched
+            // the key. If there is *any* empty bucket in this group, we know
+            // the key does not exist in this probe chain, since we would have
+            // stopped there with a linear search.
+            if (empty_mask != 0)
+                return {i + std::countr_zero(empty_mask), false, hash};
         }
     }
 
@@ -262,12 +297,12 @@ private:
     {
         const std::pair<size_t, size_t> fields[] = {
             {sizeof(bucket) * capacity_, alignof(bucket)},
-            {sizeof(bucket_state) * (capacity_ + detail::simd_align), detail::simd_align},
+            {sizeof(bucket_state) * (capacity_ + detail::max_simd_size), detail::simd_align},
         };
         storage_ = detail::compound_allocate(fields, &buckets_, &states_);
 
         memset(states_, 0, capacity_);
-        for (size_t i = 0; i < detail::simd_align; i++)
+        for (size_t i = 0; i < detail::max_simd_size; i++)
             set_state_of(capacity_ + i, bucket_state::occupied);
     }
 
