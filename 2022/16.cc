@@ -1,7 +1,6 @@
 #include "common.h"
-#include <algorithm>
-#include <unordered_map>
 #include <climits>
+#include <unordered_map>
 
 namespace aoc_2022_16 {
 

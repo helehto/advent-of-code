@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <boost/container/static_vector.hpp>
 #include <cassert>
 #include <charconv>
@@ -10,6 +11,7 @@
 #include <fmt/ranges.h>
 #include <functional>
 #include <memory>
+#include <numeric>
 #include <ranges>
 #include <span>
 #include <string>
