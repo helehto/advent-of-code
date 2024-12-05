@@ -1,15 +1,13 @@
 (require '[clojure.string :as str])
 
 (defn parse-input []
-  (->> (java.io.BufferedReader. *in*)
-       line-seq
-       (filter seq)
-       (map #(str/split % #"\s+"))
-       (map #(map Integer/parseInt %))))
+  (for [line (line-seq (java.io.BufferedReader. *in*))]
+    (->> (str/split line #"\s+")
+         (map Integer/parseInt))))
 
 (defn ordered-by? [cmp report]
   (->> (map vector report (drop 1 report) (drop 2 report))
-       (every? (partial apply cmp))))
+       (every? #(apply cmp %))))
 
 (defn monotonic? [report]
   (or (ordered-by? < report)
@@ -24,22 +22,15 @@
        (every? #(<= 1 % 3) (pairwise-differences report))))
 
 (defn drop-nth [i report]
-  (concat (take i report)
-          (drop (+ i 1) report)))
+  (keep-indexed #(if (not= i %1) %2 nil) report))
 
 (defn safe-with-removal? [report]
-  (->> (range (count report))
-       (map #(drop-nth % report))
-       (filter safe?)
-       seq
-       some?))
+  (->> (map-indexed (fn [i _] (drop-nth i report)) report)
+       (some safe?)))
 
-(defn part1 [reports]
-  (count (filter safe? reports)))
-
-(defn part2 [reports]
-  (count (filter safe-with-removal? reports)))
+(defn solve [pred reports]
+  (count (filter pred reports)))
 
 (let [reports (parse-input)]
-  (println (part1 reports))
-  (println (part2 reports)))
+  (println (solve safe? reports))
+  (println (solve safe-with-removal? reports)))

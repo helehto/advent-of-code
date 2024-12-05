@@ -1,24 +1,27 @@
 (require '[clojure.string :as str])
 
 (defn parse-input []
-  (->> (java.io.BufferedReader. *in*)
-       line-seq
+  (->> (line-seq (java.io.BufferedReader. *in*))
        (str/join "")))
 
-(defn make-reducer [always-enabled]
-  (fn [{enabled :enabled sum :sum, :as state} match]
-    (conj state
-          (if (str/starts-with? (match 0) "mul")
-            [:sum (let [product (* (Integer/parseInt (match 1))
-                                   (Integer/parseInt (match 2)))]
-                    (+ sum (if enabled product 0)))]
-            [:enabled (or always-enabled (= (match 0) "do()"))]))))
+(defn eval-mul-clause [[_ & groups]]
+  (apply * (map Integer/parseInt groups)))
 
-(defn solve [prog always-enabled]
+(defn part1 [prog]
+  (->> (re-seq #"mul\((\d+)\s*,\s*(\d+)\)" prog)
+       (map eval-mul-clause)
+       (reduce +)))
+
+(defn update-state [{enabled :enabled, :as state} [op & _ :as clause]]
+  (if (str/starts-with? op "mul")
+    (update state :sum #(if enabled (+ % (eval-mul-clause clause)) %))
+    (assoc state :enabled (= op "do()"))))
+
+(defn part2 [prog]
   (->> (re-seq #"do\(\)|don't\(\)|mul\((\d+)\s*,\s*(\d+)\)" prog)
-       (reduce (make-reducer always-enabled) {:enabled true :sum 0})
-       :sum))
+       (reduce update-state {:enabled true :sum 0})
+       (:sum)))
 
 (let [prog (parse-input)]
-  (println (solve prog true))
-  (println (solve prog false)))
+  (println (part1 prog))
+  (println (part2 prog)))
