@@ -14,7 +14,7 @@ USER_AGENT = "Custom script by https://github.com/helehto"
 
 
 def main() -> None:
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now(datetime.UTC)
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-y", "--year", type=int, required=False, default=now.year)
