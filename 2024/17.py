@@ -28,35 +28,22 @@ def run_program(reg, prog):
 
 
 def search(prog):
-    def search1(upper_bound):
-        s = z3.Solver()
-        a = [z3.BitVec(f"a{i}", 64) for i in range(len(prog) + 1)]
-        for i, _ in enumerate(prog):
-            t = (a[i] & 7) ^ 5
-            s.add(((t ^ (a[i] >> t)) & 7) == prog[i] ^ 6)
-            s.add(a[i + 1] == a[i] >> 3)
+    s = z3.Optimize()
+    a_init = z3.BitVec("a", 64)
 
-        s.add(a[0] <= upper_bound)
-        s.add(a[-1] == 0)
+    a = a_init
+    for val in prog:
+        b = a & 7
+        b ^= 5
+        c = a >> b
+        b ^= c
+        b ^= 6
+        s.add(b & 7 == val)
+        a >>= 3
 
-        s.check()
-        try:
-            a = s.model()[a[0]].as_long()
-            return a
-        except z3.z3types.Z3Exception:
-            return None
-
-    lo = 0
-    hi = 2**63 - 1
-    while lo + 1 < hi:
-        mid = (hi + lo) // 2
-        if (m := search1(mid)) is not None:
-            result = m
-            hi = mid
-        else:
-            lo = mid
-
-    return result
+    s.minimize(a_init)
+    s.check()
+    return s.model()[a_init].as_long()
 
 
 def main():
