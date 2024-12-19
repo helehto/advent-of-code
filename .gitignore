@@ -1,5 +1,8 @@
 build
 inputs/*.txt
+*.dot
+*.png
+__pycache__
 *.txt
 .session
 tags
