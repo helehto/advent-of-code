@@ -82,18 +82,6 @@
         "\x1b[1;30;43m {:>4d} \x1b[m " DV_FORMAT(var __VA_OPT__(, ) __VA_ARGS__) "\n",   \
         __LINE__, var __VA_OPT__(, ) __VA_ARGS__)
 
-constexpr uint64_t hash_mix(uint64_t x)
-{
-    // const auto m = UINT64_C((uint64_t(0xe9846af) << 32) + 0x9b1a615d;
-    const uint64_t m = UINT64_C(0xe9846af9b1a615d);
-    x ^= x >> 32;
-    x *= m;
-    x ^= x >> 32;
-    x *= m;
-    x ^= x >> 28;
-    return x;
-}
-
 template <typename T, typename... Rest>
 constexpr void hash_combine(std::size_t &h, const T &v, const Rest &...rest)
 {
