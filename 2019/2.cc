@@ -22,7 +22,7 @@ void run_program(std::vector<int> &prog)
 
 void run(FILE *f)
 {
-    auto [buf, _] = slurp_lines(f);
+    auto buf = slurp(f);
     auto orig_prog = find_numbers<int>(buf);
     std::vector<int> prog;
 

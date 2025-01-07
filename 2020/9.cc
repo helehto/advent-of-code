@@ -6,7 +6,7 @@ namespace aoc_2020_9 {
 void run(FILE *f)
 {
     constexpr size_t window_length = 25;
-    const auto [buf, _] = slurp_lines(f);
+    const auto buf = slurp(f);
     std::vector<uint64_t> nums;
     find_numbers(buf, nums);
 

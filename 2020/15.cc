@@ -10,7 +10,7 @@ static int32_t step(int32_t turn, int32_t last, std::vector<int32_t> &seen)
 
 void run(FILE *f)
 {
-    auto [buf, _] = slurp_lines(f);
+    auto buf = slurp(f);
     auto init = find_numbers<int32_t>(buf);
 
     std::vector<int32_t> seen(30'000'000, -1);

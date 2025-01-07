@@ -453,6 +453,28 @@ inline bool getline(FILE *f, std::string &s)
     }
 }
 
+inline std::string slurp(FILE *f)
+{
+    const int fd = fileno(f);
+    const off_t size = lseek(fd, 0, SEEK_END);
+    ASSERT(size > 0);
+
+    std::string contents;
+
+    // Work around any small string optimization. In the case of slurp_lines(),
+    // it is actively harmful; we will split the file contents into lines, and
+    // if the file is small enough, the resulting std::string_view instances
+    // would point inside the string's in-place buffer. Doing anything that
+    // changes the identity of the std::string afterwards, such as returning it
+    // without (N)RVO, would leave the string_views dangling.
+    contents.reserve(std::max<size_t>(size, sizeof(std::string)));
+
+    contents.resize(size);
+    ASSERT(pread(fd, contents.data(), size, 0) == size);
+
+    return contents;
+}
+
 struct SlurpResult {
     std::string contents;
     std::vector<std::string_view> lines;
@@ -463,24 +485,8 @@ split(std::string_view s, std::vector<std::string_view> &out, char c);
 
 inline SlurpResult slurp_lines(FILE *f)
 {
-    SlurpResult result;
-    int fd = fileno(f);
-
-    off_t size = lseek(fd, 0, SEEK_END);
-    ASSERT(size > 0);
-
-    // Work around any small string optimization. In this case, it is actively
-    // harmful; we will split the file contents into lines, and if the file is
-    // small enough, the resulting std::string_view instances would point
-    // inside the string's in-place buffer. Doing anything that changes the
-    // identity of the std::string afterwards, such as returning it without
-    // (N)RVO, would leave the string_views dangling.
-    result.contents.reserve(std::max<size_t>(size, sizeof(std::string)));
-
-    result.contents.resize(size);
-    ASSERT(pread(fd, result.contents.data(), size, 0) == size);
+    SlurpResult result = {.contents = slurp(f)};
     split(result.contents, result.lines, '\n');
-
     return result;
 }
 

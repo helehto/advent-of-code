@@ -4,7 +4,7 @@ namespace aoc_2019_1 {
 
 void run(FILE *f)
 {
-    auto [buf, _] = slurp_lines(f);
+    auto buf = slurp(f);
     auto nums = find_numbers<int>(buf);
 
     int sum = 0;

@@ -46,7 +46,7 @@ static int cmp(const char *a, const char *b)
 
 void run(FILE *f)
 {
-    auto [buf, _] = slurp_lines(f);
+    auto buf = slurp(f);
     std::vector<int> bounds;
     find_numbers(buf, bounds);
 

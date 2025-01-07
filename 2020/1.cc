@@ -7,7 +7,7 @@ namespace aoc_2020_1 {
 
 void run(FILE *f)
 {
-    auto [buf, _] = slurp_lines(f);
+    auto buf = slurp(f);
     std::vector<int> nums = find_numbers<int>(buf);
 
     dense_set<int> seen;
