@@ -54,7 +54,7 @@
     } while (0)
 
 #ifdef DEBUG
-#define D(x, ...) fmt::print("[DEBUG] " x "\n" __VA_OPT__(,)__VA_ARGS__)
+#define D(x, ...) fmt::print("[DEBUG] " x "\n" __VA_OPT__(, ) __VA_ARGS__)
 #else
 #define D(...)
 #endif
@@ -124,12 +124,14 @@ struct Point {
     constexpr bool operator!=(const Point &other) const = default;
 
     template <typename U>
-    constexpr Point<T> translate(U dx, U dy) const {
+    constexpr Point<T> translate(U dx, U dy) const
+    {
         return {static_cast<T>(x + dx), static_cast<T>(y + dy)};
     }
 
     template <typename U>
-    constexpr Point<U> cast() const {
+    constexpr Point<U> cast() const
+    {
         ASSERT(static_cast<T>(x) == x);
         ASSERT(static_cast<T>(y) == y);
         return Point<U>{
@@ -138,6 +140,12 @@ struct Point {
         };
     }
 };
+
+template <typename T>
+T manhattan(const Point<T> &a)
+{
+    return std::abs(a.x) + std::abs(a.y);
+}
 
 template <typename T>
 T manhattan(const Point<T> &a, const Point<T> &b)
@@ -517,7 +525,8 @@ split(std::string_view s, std::vector<std::string_view> &out, char c)
 
     for (; i + 31 < s.size(); i += 32) {
         __m256i m = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(s.data() + i));
-        unsigned int mask = _mm256_movemask_epi8(_mm256_cmpeq_epi8(m, _mm256_set1_epi8(c)));
+        unsigned int mask =
+            _mm256_movemask_epi8(_mm256_cmpeq_epi8(m, _mm256_set1_epi8(c)));
 
         for (; mask != 0; mask &= mask - 1) {
             int offset = std::countr_zero(mask);
@@ -640,20 +649,37 @@ struct StridedIterator {
     pointer operator->() const { return p; }
     reference operator[](difference_type n) const { return p[stride * n]; }
     StridedIterator &operator++() { return p += stride, *this; }
-    StridedIterator operator++(int) { StridedIterator copy(*this); p += stride; return copy; }
+    StridedIterator operator++(int)
+    {
+        StridedIterator copy(*this);
+        p += stride;
+        return copy;
+    }
     StridedIterator &operator--() { return p -= stride, *this; }
-    StridedIterator operator--(int) {  StridedIterator copy(*this); p -= stride; return copy; }
+    StridedIterator operator--(int)
+    {
+        StridedIterator copy(*this);
+        p -= stride;
+        return copy;
+    }
     StridedIterator &operator+=(difference_type n) { return p += stride * n, *this; }
-    StridedIterator operator+(difference_type n) const { return StridedIterator(*this) += n; }
+    StridedIterator operator+(difference_type n) const
+    {
+        return StridedIterator(*this) += n;
+    }
     StridedIterator &operator-=(difference_type n) { return p -= stride * n, *this; }
-    StridedIterator operator-(difference_type n) const { return StridedIterator(*this) -= n; }
+    StridedIterator operator-(difference_type n) const
+    {
+        return StridedIterator(*this) -= n;
+    }
 
     difference_type operator-(const StridedIterator &o) const
     {
         return (p - o.p) / static_cast<ssize_t>(stride);
     }
 
-    friend StridedIterator operator+(difference_type n, const StridedIterator &it) {
+    friend StridedIterator operator+(difference_type n, const StridedIterator &it)
+    {
         return it + n;
     }
 };
@@ -743,12 +769,24 @@ struct Matrix {
     constexpr size_t size() const { return rows * cols; }
 
     constexpr std::span<T> all() { return {data.get(), data.get() + rows * cols}; }
-    constexpr std::span<const T> all() const { return {data.get(), data.get() + rows * cols}; }
+    constexpr std::span<const T> all() const
+    {
+        return {data.get(), data.get() + rows * cols};
+    }
 
     constexpr StridedRange<T> col(size_t i) { return {{}, data.get() + i, rows, cols}; }
-    constexpr StridedRange<const T> col(size_t i) const { return {{}, data.get() + i, rows, cols}; }
-    constexpr StridedRange<T> row(size_t i) { return {{}, data.get() + i * cols, cols, 1}; }
-    constexpr StridedRange<const T> row(size_t i) const { return {{}, data.get() + i * cols, cols, 1}; }
+    constexpr StridedRange<const T> col(size_t i) const
+    {
+        return {{}, data.get() + i, rows, cols};
+    }
+    constexpr StridedRange<T> row(size_t i)
+    {
+        return {{}, data.get() + i * cols, cols, 1};
+    }
+    constexpr StridedRange<const T> row(size_t i) const
+    {
+        return {{}, data.get() + i * cols, cols, 1};
+    }
 
     template <typename U = size_t>
     Ndindex2DRange<U> ndindex() const
@@ -757,7 +795,8 @@ struct Matrix {
     }
 
     template <typename U>
-    bool in_bounds(Point<U> p) const {
+    bool in_bounds(Point<U> p) const
+    {
         using Unsigned = std::make_unsigned_t<U>;
         return static_cast<Unsigned>(p.x) < cols && static_cast<Unsigned>(p.y) < rows;
     }
@@ -804,8 +843,8 @@ constexpr static std::array<Point<T>, 4> neighbors4(Point<T> p)
 }
 
 template <typename T, typename U>
-static boost::container::static_vector<Point<U>, 4>
-neighbors4(const Matrix<T> &chart, Point<U> p)
+static boost::container::static_vector<Point<U>, 4> neighbors4(const Matrix<T> &chart,
+                                                               Point<U> p)
 {
     boost::container::static_vector<Point<U>, 4> result;
     for (auto n : neighbors4(p))
