@@ -1,88 +1,11 @@
 #include "common.h"
+#include "intcode.h"
 
 namespace aoc_2019_7 {
 
-enum {
-    OP_ADD = 1,
-    OP_MUL = 2,
-    OP_IN = 3,
-    OP_OUT = 4,
-    OP_JT = 5,
-    OP_JF = 6,
-    OP_LT = 7,
-    OP_EQ = 8,
-    OP_HALT = 99,
-};
+using VM = IntcodeVM<FlatMemory<int>>;
 
-enum class HaltReason { op99, need_input };
-
-struct IntcodeVM {
-    std::vector<int> prog;
-    std::vector<int> input;
-    std::vector<int> output;
-    size_t pc = 0;
-
-    void reset(std::span<const int> prog)
-    {
-        this->prog.clear();
-        this->prog.insert(end(this->prog), begin(prog), end(prog));
-        input.clear();
-        output.clear();
-        pc = 0;
-    }
-
-    HaltReason run(std::initializer_list<int> extra_input = {});
-};
-
-inline HaltReason IntcodeVM::run(std::initializer_list<int> extra_input)
-{
-    input.insert(end(input), begin(extra_input), end(extra_input));
-
-    auto operand = [&](int div, int offset) {
-        const auto val = prog[pc + offset];
-        return (prog[pc] / div) % 10 ? val : prog[val];
-    };
-    auto op1 = [&] { return operand(100, 1); };
-    auto op2 = [&] { return operand(1000, 2); };
-
-    while (true) {
-        ASSERT(pc < prog.size());
-        const int opcode = prog[pc] % 100;
-
-        if (opcode == OP_HALT) {
-            return HaltReason::op99;
-        } else if (opcode == OP_ADD) {
-            prog[prog[pc + 3]] = op1() + op2();
-            pc += 4;
-        } else if (opcode == OP_MUL) {
-            prog[prog[pc + 3]] = op1() * op2();
-            pc += 4;
-        } else if (opcode == OP_IN) {
-            if (input.empty())
-                return HaltReason::need_input;
-            prog[prog[pc + 1]] = input.front();
-            input.erase(input.begin());
-            pc += 2;
-        } else if (opcode == OP_OUT) {
-            output.push_back(op1());
-            pc += 2;
-        } else if (opcode == OP_JT) {
-            pc = op1() ? op2() : pc + 3;
-        } else if (opcode == OP_JF) {
-            pc = !op1() ? op2() : pc + 3;
-        } else if (opcode == OP_LT) {
-            prog[prog[pc + 3]] = (op1() < op2());
-            pc += 4;
-        } else if (opcode == OP_EQ) {
-            prog[prog[pc + 3]] = (op1() == op2());
-            pc += 4;
-        } else {
-            ASSERT_MSG(false, "Unknown opcode {}", opcode);
-        }
-    }
-}
-
-static int part1(std::array<IntcodeVM, 5> &amplifiers, std::span<const int> prog)
+static int part1(std::array<VM, 5> &amplifiers, std::span<const VM::value_type> prog)
 {
     std::array<int8_t, 5> perm;
     for (size_t i = 0; i < perm.size(); ++i)
@@ -102,7 +25,7 @@ static int part1(std::array<IntcodeVM, 5> &amplifiers, std::span<const int> prog
     return max_thruster_value;
 }
 
-static int part2(std::array<IntcodeVM, 5> &amplifiers, std::span<const int> prog)
+static int part2(std::array<VM, 5> &amplifiers, std::span<const VM::value_type> prog)
 {
     std::array<int8_t, 5> perm;
     for (size_t i = 0; i < perm.size(); ++i)
@@ -136,8 +59,8 @@ static int part2(std::array<IntcodeVM, 5> &amplifiers, std::span<const int> prog
 void run(FILE *f)
 {
     auto buf = slurp(f);
-    const auto prog = find_numbers<int>(buf);
-    std::array<IntcodeVM, 5> amplifiers;
+    const auto prog = find_numbers<VM::value_type>(buf);
+    std::array<VM, 5> amplifiers;
     fmt::print("{}\n", part1(amplifiers, prog));
     fmt::print("{}\n", part2(amplifiers, prog));
 }
