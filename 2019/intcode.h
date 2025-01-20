@@ -41,10 +41,11 @@ struct FlatMemory {
 
     std::vector<value_type> mem;
 
-    void reset(size_t size)
+    void reset(std::span<const value_type> init)
     {
-        mem.clear();
-        mem.resize(size, 0);
+        mem.resize(init.size());
+        if (!init.empty())
+            memcpy(mem.data(), init.data(), init.size() * sizeof(value_type));
     }
 
     /// Read a value from memory at the address `addr`.
@@ -76,10 +77,13 @@ struct SplitMemory {
     std::vector<value_type> low;
     dense_map<address_type, value_type> high;
 
-    void reset(size_t)
+    void reset(std::span<const value_type> init)
     {
+        ASSERT(init.size() < highmem_start_addr);
         low.clear();
         low.resize(highmem_start_addr, 0);
+        if (!init.empty())
+            memcpy(low.data(), init.data(), init.size() * sizeof(value_type));
         high.clear();
     }
 
@@ -150,14 +154,11 @@ struct IntcodeVM {
 
     void reset(std::span<const value_type> prog = {})
     {
-        mem.reset(prog.size());
+        mem.reset(prog);
         input.clear();
         output.clear();
         pc = 0;
         relative_base = 0;
-
-        for (size_t i = 0; i < prog.size(); ++i)
-            mem.wr(i, prog[i]);
     }
 
     /// Read the value of the operand at offset `operand_index` from pc, given
