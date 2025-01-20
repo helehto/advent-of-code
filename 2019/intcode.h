@@ -141,6 +141,11 @@ struct IntcodeVM {
 
     enum class Mode { position, immediate, relative };
 
+    struct DecodedInstruction {
+        int opcode;
+        Mode operand_modes[3];
+    };
+
     IntcodeVM() { reset(); }
 
     void reset(std::span<const value_type> prog = {})
@@ -155,30 +160,12 @@ struct IntcodeVM {
             mem.wr(i, prog[i]);
     }
 
-    /// Determine the operand mode of the operand at offset `operand_index`
-    /// from pc, given the instruction `instr`.
-    Mode operand_mode(const int instr, const int operand_index)
-    {
-        ASSERT(operand_index >= 1 && operand_index <= 3);
-
-        int mode;
-        if (operand_index == 3)
-            mode = (instr / 10000) % 10;
-        else if (operand_index == 2)
-            mode = (instr / 1000) % 10;
-        else
-            mode = (instr / 100) % 10;
-
-        ASSERT_MSG(mode >= 0 && mode < 3, "Instruction {} has invalid mode!", mode);
-        return static_cast<Mode>(mode);
-    }
-
     /// Read the value of the operand at offset `operand_index` from pc, given
     /// the operand modes defined in the instruction `instr`.
-    value_type read_op(const int instr, const int operand_index)
+    value_type read_op(const DecodedInstruction &instr, const int operand_index)
     {
         const auto operand = mem.rd(pc + operand_index);
-        switch (operand_mode(instr, operand_index)) {
+        switch (instr.operand_modes[operand_index - 1]) {
         case Mode::position:
             return mem.rd(operand);
         case Mode::immediate:
@@ -192,10 +179,11 @@ struct IntcodeVM {
     /// Write `val` to the address given by the value of the operand at offset
     /// `operand_index` from pc, given the operand modes in the instruction
     /// `instr`.
-    void write_op(const int instr, const int operand_index, value_type val)
+    void
+    write_op(const DecodedInstruction &instr, const int operand_index, value_type val)
     {
         const auto operand = mem.rd(pc + operand_index);
-        switch (operand_mode(instr, operand_index)) {
+        switch (instr.operand_modes[operand_index - 1]) {
         case Mode::position:
             mem.wr(operand, val);
             break;
@@ -207,6 +195,33 @@ struct IntcodeVM {
         }
     }
 
+    template <int Multiplier>
+    static Mode decode_operand_mode(value_type *instr)
+    {
+        if (*instr < Multiplier)
+            return Mode::position;
+        if (*instr < 2 * Multiplier) {
+            *instr -= 1 * Multiplier;
+            return Mode::immediate;
+        }
+        if (*instr < 3 * Multiplier) {
+            *instr -= 2 * Multiplier;
+            return Mode::relative;
+        }
+        [[unlikely]] ASSERT(false);
+    }
+
+    static DecodedInstruction decode(value_type instr)
+    {
+        ASSERT(instr >= 0);
+        DecodedInstruction result;
+        result.operand_modes[2] = decode_operand_mode<10000>(&instr);
+        result.operand_modes[1] = decode_operand_mode<1000>(&instr);
+        result.operand_modes[0] = decode_operand_mode<100>(&instr);
+        result.opcode = instr;
+        return result;
+    }
+
     /// Run the program until it is halted for any reason, which is described
     /// by the return value. Any values passed in `extra_input` are appeneded
     /// to the input vector before executing the program.
@@ -215,19 +230,18 @@ struct IntcodeVM {
         input.insert(end(input), begin(extra_input), end(extra_input));
 
         while (true) {
-            const auto instr = mem.rd(pc);
-            const auto opcode = instr % 100;
+            const DecodedInstruction instr = decode(mem.rd(pc));
             value_type op1;
             value_type op2;
 
-            switch (opcode) {
+            switch (instr.opcode) {
             case OP_ADD:
             case OP_MUL: {
                 op1 = read_op(instr, 1);
                 op2 = read_op(instr, 2);
                 const value_type sum = op1 + op2;
                 const value_type product = op1 * op2;
-                write_op(instr, 3, (opcode & 1) ? sum : product);
+                write_op(instr, 3, (instr.opcode & 1) ? sum : product);
                 pc += 4;
             } break;
 
@@ -249,7 +263,7 @@ struct IntcodeVM {
             case OP_JT:
             case OP_JF:
                 op1 = read_op(instr, 1);
-                pc = (!!op1) == (opcode & 1) ? read_op(instr, 2) : pc + 3;
+                pc = (!!op1) == (instr.opcode & 1) ? read_op(instr, 2) : pc + 3;
                 break;
 
             case OP_LT:
@@ -258,7 +272,7 @@ struct IntcodeVM {
                 op2 = read_op(instr, 2);
                 const int lt = (op1 < op2);
                 const int eq = (op1 == op2);
-                write_op(instr, 3, (opcode & 1) ? lt : eq);
+                write_op(instr, 3, (instr.opcode & 1) ? lt : eq);
                 pc += 4;
             } break;
 
@@ -272,10 +286,10 @@ struct IntcodeVM {
                 // Check for uncommon opcodes here rather than folding into
                 // them into a case statement above, so that __builtin_expect()
                 // can be used.
-                if (__builtin_expect(opcode == OP_HALT, 0)) {
+                if (__builtin_expect(instr.opcode == OP_HALT, 0)) {
                     return HaltReason::op99;
                 } else {
-                    ASSERT_MSG(false, "Unknown opcode {}", opcode);
+                    ASSERT_MSG(false, "Unknown opcode {}", instr.opcode);
                 }
             }
         }
