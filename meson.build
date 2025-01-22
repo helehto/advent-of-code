@@ -6,7 +6,11 @@ if get_option('buildtype') == 'debug'
   # AVX-512 breaks Valgrind.
   add_project_arguments('-mno-avx512f', language: 'cpp')
   add_project_arguments('-D_GLIBCXX_DEBUG', language: 'cpp')
+else
+  add_project_arguments('-U_GLIBCXX_ASSERTIONS', language: 'cpp')
+  add_project_arguments('-DNDEBUG', language: 'cpp')
 endif
+
 
 add_project_arguments('-fno-omit-frame-pointer', language: 'cpp')
 add_project_arguments('-fno-exceptions', language: 'cpp')
