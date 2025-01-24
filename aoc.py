@@ -39,7 +39,9 @@ class AocBinary:
 @contextmanager
 def git_worktree(commit: str, patch: T.Optional[bytes], path: Path) -> T.Iterator[Path]:
     try:
-        sp.run(("git", "worktree", "add", "--force", "--quiet", path, commit), check=True)
+        sp.run(
+            ("git", "worktree", "add", "--force", "--quiet", path, commit), check=True
+        )
 
         if patch is not None:
             sp.run(("git", "apply", "--allow-empty"), cwd=path, input=patch, check=True)
@@ -50,7 +52,9 @@ def git_worktree(commit: str, patch: T.Optional[bytes], path: Path) -> T.Iterato
 
 
 @contextmanager
-def binary_for_commit(commit: str, patch: T.Optional[bytes] = None) -> T.Iterator[AocBinary]:
+def binary_for_commit(
+    commit: str, patch: T.Optional[bytes] = None
+) -> T.Iterator[AocBinary]:
     # Note: we deliberately check out worktree in the same path for all
     # invocations of binary_for_commit() to maximize ccache compilation cache
     # hits.
@@ -60,7 +64,7 @@ def binary_for_commit(commit: str, patch: T.Optional[bytes] = None) -> T.Iterato
         exe = Path(d) / f"aoc-{commit}"
 
         with git_worktree(commit, patch, worktree):
-            meson_cmd = "meson setup --wipe . build -Dbuildtype=release -Dunity=on -Dunity_size=4".split()
+            meson_cmd = "meson setup --wipe . build -Dbuildtype=release -Dunity=on -Dunity_size=4 -Db_ndebug=true".split()
             sp.run(meson_cmd, cwd=worktree, stdout=sp.DEVNULL, check=True)
             sp.run("ninja", cwd=worktree / "build", check=True)
             exe.write_bytes((worktree / "build" / "aoc").read_bytes())
@@ -74,7 +78,7 @@ def wrap_ansi(s: str, code: str) -> str:
 
 
 def wrap_color_rgb(s: str, r: int, g: int, b: int) -> str:
-    return wrap_ansi(s, f'38;2;{r};{g};{b}')
+    return wrap_ansi(s, f"38;2;{r};{g};{b}")
 
 
 def colorize(value: T.Any, fmt: str, is_significant: T.Any = True) -> str:
@@ -285,13 +289,13 @@ def benchmark(
 def color_diff(diff: T.Sequence[str]) -> list[str]:
     def color_line(s: str) -> str:
         if s.startswith("---") or s.startswith("+++"):
-            return wrap_ansi(s, '1')
+            return wrap_ansi(s, "1")
         if s.startswith("@@"):
-            return wrap_ansi(s, '36')
+            return wrap_ansi(s, "36")
         if s.startswith("-"):
-            return wrap_ansi(s, '31')
+            return wrap_ansi(s, "31")
         if s.startswith("+"):
-            return wrap_ansi(s, '32')
+            return wrap_ansi(s, "32")
 
         return s
 
