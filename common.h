@@ -373,7 +373,7 @@ public:
     {
         ASSERT(!heap_.empty());
         swap_elements(0, heap_.size() - 1);
-        handle_to_heap_[heap_.back().second] = erased_handle_index;
+        // handle_to_heap_[heap_.back().second] = erased_handle_index;
         heap_.pop_back();
         heap_to_handle_.pop_back();
         sift_down(0);
