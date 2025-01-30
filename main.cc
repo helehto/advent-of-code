@@ -126,7 +126,7 @@ run_problem(const Problem &p, std::string input_path, const Options &opts)
         }
         input = slurp(f);
 
-        while (isspace(input.back()))
+        while (input.back() == '\n')
             input.pop_back();
 
         fclose(f);
