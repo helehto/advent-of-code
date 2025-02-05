@@ -71,7 +71,7 @@ struct SplitMemory {
     using address_type = uint32_t;
     using value_type = ValueT;
 
-    constexpr static address_type highmem_start_addr = 4096;
+    constexpr static address_type highmem_start_addr = 8192;
 
     // Backing containers for low memory and high memory, respectively.
     std::vector<value_type> low;
