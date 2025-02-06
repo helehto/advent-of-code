@@ -30,7 +30,7 @@ static bool try_move(const dense_set<Point<int>> &occupied,
     }
 
     for (auto &p : rock)
-        p = p.translate(dx,dy);
+        p = p.translate(dx, dy);
 
     return true;
 }

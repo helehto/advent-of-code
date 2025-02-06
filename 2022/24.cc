@@ -78,7 +78,6 @@ struct std::hash<aoc_2022_24::QueueEntry> {
     }
 };
 
-
 template <>
 struct std::hash<aoc_2022_24::GMapEntry> {
     constexpr size_t operator()(const aoc_2022_24::GMapEntry &q) const

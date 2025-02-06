@@ -134,8 +134,14 @@ private:
 
         iterator_base() = default;
 
-        bool operator==(const iterator_base &other) const { return index_ == other.index_; }
-        bool operator!=(const iterator_base &other) const { return index_ != other.index_; }
+        bool operator==(const iterator_base &other) const
+        {
+            return index_ == other.index_;
+        }
+        bool operator!=(const iterator_base &other) const
+        {
+            return index_ != other.index_;
+        }
         reference operator*() const { return set_->buckets_[index_].data(); }
         pointer operator->() const { return &set_->buckets_[index_].data(); }
         Derived &operator++()
@@ -180,10 +186,7 @@ private:
         states_[i] = static_cast<uint8_t>(state) | hash_bits;
     }
 
-    size_t find_occupied_(size_t i) const
-    {
-        return detail::find_occupied(states_,i);
-    }
+    size_t find_occupied_(size_t i) const { return detail::find_occupied(states_, i); }
 
     std::tuple<size_t, bool, size_t> find_bucket_(const Key &key) const
     {
@@ -252,7 +255,8 @@ private:
     {
         auto [i, found, hash] = find_bucket_(key);
         if (!found) {
-            if (max_load_.second * (size_with_tombs_ + 1) >= capacity_ * max_load_.first) {
+            if (max_load_.second * (size_with_tombs_ + 1) >=
+                capacity_ * max_load_.first) {
                 rehash(2 * capacity_);
                 i = std::get<0>(find_bucket_(key));
             }
@@ -297,7 +301,8 @@ private:
     {
         const std::pair<size_t, size_t> fields[] = {
             {sizeof(bucket) * capacity_, alignof(bucket)},
-            {sizeof(bucket_state) * (capacity_ + detail::max_simd_size), detail::simd_align},
+            {sizeof(bucket_state) * (capacity_ + detail::max_simd_size),
+             detail::simd_align},
         };
         storage_ = detail::compound_allocate(fields, &buckets_, &states_);
 
@@ -556,7 +561,7 @@ public:
     T &at(const key_type &key)
     {
         const auto [i, found, _] = find_bucket_(key);
-        if constexpr (fmt::is_formattable<key_type>::value){
+        if constexpr (fmt::is_formattable<key_type>::value) {
             ASSERT_MSG(found, "Key '{}' not found!", key);
         } else {
             ASSERT(found);
@@ -567,7 +572,7 @@ public:
     const T &at(const key_type &key) const
     {
         const auto [i, found, _] = find_bucket_(key);
-        if constexpr (fmt::is_formattable<key_type>::value){
+        if constexpr (fmt::is_formattable<key_type>::value) {
             ASSERT_MSG(found, "Key '{}' not found!", key);
         } else {
             ASSERT(found);

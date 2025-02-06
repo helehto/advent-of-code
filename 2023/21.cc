@@ -1,4 +1,4 @@
-//#define DEBUG
+// #define DEBUG
 
 #include "common.h"
 #include "dense_map.h"
@@ -46,15 +46,18 @@ void run(FILE *f)
 
     auto dist = walk(grid, start, N / 2 + 2 * N);
 
-    int64_t part1=0;
-    int64_t y0 = 0; int64_t s0 = N/2+0*N;
-    int64_t y1 = 0; int64_t s1 = N/2+1*N;
-    int64_t y2 = 0; int64_t s2 = N/2+2*N;
+    int64_t part1 = 0;
+    int64_t y0 = 0;
+    int64_t s0 = N / 2 + 0 * N;
+    int64_t y1 = 0;
+    int64_t s1 = N / 2 + 1 * N;
+    int64_t y2 = 0;
+    int64_t s2 = N / 2 + 2 * N;
     for (int d : std::ranges::views::values(dist)) {
         part1 += (d % 2 == 0 && d <= 64);
-        y0 += (d % 2 == (s0&1) && d <= s0);
-        y1 += (d % 2 == (s1&1) && d <= s1);
-        y2 += (d % 2 == (s2&1) && d <= s2);
+        y0 += (d % 2 == (s0 & 1) && d <= s0);
+        y1 += (d % 2 == (s1 & 1) && d <= s1);
+        y2 += (d % 2 == (s2 & 1) && d <= s2);
     }
 
     int64_t steps = 26501365;

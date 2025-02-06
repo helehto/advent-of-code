@@ -10,7 +10,7 @@ struct Outcome {
 
 void run(FILE *f)
 {
-    auto [buf,lines]=slurp_lines(f);
+    auto [buf, lines] = slurp_lines(f);
     std::vector<std::vector<Outcome>> games;
     std::vector<std::string_view> tmp;
     std::vector<std::string_view> tmp2;

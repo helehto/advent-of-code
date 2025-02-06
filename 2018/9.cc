@@ -60,7 +60,7 @@ void run(FILE *f)
     const int n_players = input[0];
     const int n_marbles = input[1];
 
-    auto marbles = std::make_unique_for_overwrite<Marble[]>(100*n_marbles+1);
+    auto marbles = std::make_unique_for_overwrite<Marble[]>(100 * n_marbles + 1);
     fmt::print("{}\n", play(marbles.get(), n_players, n_marbles));
     fmt::print("{}\n", play(marbles.get(), n_players, 100 * n_marbles));
 }

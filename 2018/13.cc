@@ -46,7 +46,7 @@ void run(FILE *f)
         std::ranges::sort(carts, {}, [](auto &c) { return std::pair(c.p.y, c.p.x); });
 
         size_t i = 0;
-restart:
+    restart:
         while (i < carts.size()) {
             auto &c = carts[i];
 

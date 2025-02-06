@@ -1,15 +1,15 @@
 #include "common.h"
-#include <unordered_map>
-#include <unordered_set>
 #include <climits>
 #include <numeric>
+#include <unordered_map>
+#include <unordered_set>
 
 template <>
 struct std::hash<std::array<int, 3>> {
     constexpr size_t operator()(const std::array<int, 3> a) const
     {
         size_t h = 0;
-        hash_combine(h,a[0],a[1],a[2]);
+        hash_combine(h, a[0], a[1], a[2]);
         return h;
     }
 };

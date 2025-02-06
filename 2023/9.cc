@@ -40,7 +40,7 @@ void run(FILE *f)
 
     int64_t part1 = 0;
     int64_t part2 = 0;
-    for (size_t i=0;;) {
+    for (size_t i = 0;;) {
         part1 += std::inner_product(nums.begin(), nums.end(), basis1.begin(), 0.0);
         part2 += std::inner_product(nums.begin(), nums.end(), basis2.begin(), 0.0);
         i++;

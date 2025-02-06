@@ -45,8 +45,14 @@ public:
 
         const_iterator() = default;
 
-        bool operator==(const const_iterator &other) const { return iter_ == other.iter_; }
-        bool operator!=(const const_iterator &other) const { return iter_ != other.iter_; }
+        bool operator==(const const_iterator &other) const
+        {
+            return iter_ == other.iter_;
+        }
+        bool operator!=(const const_iterator &other) const
+        {
+            return iter_ != other.iter_;
+        }
         reference operator*() const { return iter_->first; }
         pointer operator->() const { return &iter_->first; }
         const_iterator &operator++() { return void(++iter_), *this; }
@@ -95,7 +101,8 @@ public:
               size_type bucket_count = 0,
               const Hash &hash = Hash(),
               const KeyEqual &equal = KeyEqual())
-        : dense_set(list.begin(), list.end(), std::max(bucket_count, list.size()), hash, equal)
+        : dense_set(
+              list.begin(), list.end(), std::max(bucket_count, list.size()), hash, equal)
     {
     }
 
@@ -130,7 +137,8 @@ public:
     }
     std::pair<iterator, bool> insert(value_type &&value)
     {
-        auto [u, inserted] = map_.insert(std::make_pair(std::move(value), dense_set_key{}));
+        auto [u, inserted] =
+            map_.insert(std::make_pair(std::move(value), dense_set_key{}));
         return {iterator{u}, inserted};
     }
 

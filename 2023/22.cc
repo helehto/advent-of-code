@@ -28,7 +28,7 @@ void run(FILE *f)
     uint16_t max_z = 0;
     for (std::string_view line : lines) {
         find_numbers(line, n);
-        auto &b=bricks.emplace_back(n[0], n[1], n[2], n[3], n[4], n[5]);
+        auto &b = bricks.emplace_back(n[0], n[1], n[2], n[3], n[4], n[5]);
         max_z = std::max<uint16_t>(max_z, b.z1);
     }
     std::ranges::sort(bricks, {}, [](auto &b) { return b.z0; });
@@ -68,7 +68,7 @@ void run(FILE *f)
 
     dense_set<uint16_t> unsafe_bricks;
     for (size_t i = 0; i < bricks.size(); ++i) {
-        auto &b=bricks[i];
+        auto &b = bricks[i];
         for (auto *s : b.supporting) {
             if (s->resting_on.size() == 1)
                 unsafe_bricks.insert(i);

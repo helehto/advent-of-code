@@ -7,7 +7,7 @@ void run(FILE *f)
     std::vector<std::pair<int, int>> pairs;
     auto [buf, lines] = slurp_lines(f);
     std::vector<int> v;
-    size_t i=0;
+    size_t i = 0;
     for (; !lines[i].empty(); i++) {
         find_numbers(lines[i], v);
         pairs.emplace_back(v[0], v[1]);

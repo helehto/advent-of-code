@@ -47,7 +47,7 @@ void run(FILE *f)
         }
 
         if (!overlap) {
-            fmt::print("{}\n", i+1);
+            fmt::print("{}\n", i + 1);
             return;
         }
     }

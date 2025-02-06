@@ -25,7 +25,7 @@ static void sort_unique(std::vector<uint16_t> &v)
 }
 
 template <typename... Spans>
-inline void merge_n(std::vector<uint16_t> &output, Spans&... spans)
+inline void merge_n(std::vector<uint16_t> &output, Spans &...spans)
 {
     while ((!spans.empty() && ...)) {
         uint16_t elem = std::min({spans.front()...});

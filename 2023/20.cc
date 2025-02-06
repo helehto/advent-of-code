@@ -1,10 +1,10 @@
 #include "common.h"
 #include "dense_map.h"
 #include <algorithm>
-#include <queue>
 #include <cstdio>
 #include <functional>
 #include <numeric>
+#include <queue>
 #include <ranges>
 
 namespace aoc_2023_20 {
@@ -69,16 +69,17 @@ static Circuit parse_input(std::span<const std::string_view> lines)
 
         ASSERT(type != -1);
         components_by_name.emplace(name, Component{
-                                     .type = type,
-                                     .outputs = std::move(outputs),
-                                 });
+                                             .type = type,
+                                             .outputs = std::move(outputs),
+                                         });
     }
     ASSERT(!rx_input_name.empty());
     ASSERT(components_by_name.count(rx_input_name));
 
     for (auto &[name, comp] : components_by_name) {
         for (auto &sink_name : comp.outputs) {
-            if (auto it = components_by_name.find(sink_name); it != components_by_name.end())
+            if (auto it = components_by_name.find(sink_name);
+                it != components_by_name.end())
                 it->second.inputs[name] = 0;
         }
     }
