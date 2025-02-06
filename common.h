@@ -130,13 +130,13 @@ struct Point {
 };
 
 template <typename T>
-T manhattan(const Point<T> &a)
+constexpr T manhattan(const Point<T> &a)
 {
     return std::abs(a.x) + std::abs(a.y);
 }
 
 template <typename T>
-T manhattan(const Point<T> &a, const Point<T> &b)
+constexpr T manhattan(const Point<T> &a, const Point<T> &b)
 {
     return std::abs(a.x - b.x) + std::abs(a.y - b.y);
 }
@@ -479,7 +479,7 @@ inline SlurpResult slurp_lines(FILE *f)
 }
 
 template <typename T>
-static void find_numbers(std::string_view s, std::vector<T> &result)
+constexpr void find_numbers(std::string_view s, std::vector<T> &result)
 {
     result.clear();
 
@@ -502,7 +502,7 @@ static void find_numbers(std::string_view s, std::vector<T> &result)
 }
 
 template <typename T>
-static std::vector<T> find_numbers(std::string_view s)
+constexpr std::vector<T> find_numbers(std::string_view s)
 {
     std::vector<T> result;
     find_numbers(s, result);
@@ -554,7 +554,7 @@ split(std::string_view s, std::vector<std::string_view> &out, char c)
 }
 
 template <typename Predicate>
-static inline std::vector<std::string_view> &
+constexpr std::vector<std::string_view> &
 split(std::string_view s, std::vector<std::string_view> &out, Predicate &&predicate)
 {
     out.clear();
@@ -575,20 +575,20 @@ split(std::string_view s, std::vector<std::string_view> &out, Predicate &&predic
     return out;
 }
 
-static inline std::vector<std::string_view> &split(std::string_view s,
-                                                   std::vector<std::string_view> &out)
+constexpr std::vector<std::string_view> &split(std::string_view s,
+                                               std::vector<std::string_view> &out)
 {
     return split(s, out, [](char c) { return isspace(c); });
 }
 
-static inline std::vector<std::string_view> split(std::string_view s)
+constexpr std::vector<std::string_view> split(std::string_view s)
 {
     std::vector<std::string_view> out;
     split(s, out);
     return out;
 }
 
-static inline std::string_view strip(std::string_view s)
+constexpr std::string_view strip(std::string_view s)
 {
     while (!s.empty() && s.front() == ' ')
         s.remove_prefix(1);
@@ -606,13 +606,13 @@ struct Ndindex2DRange {
 
     struct sentinel {};
 
-    Ndindex2DRange begin() { return *this; }
-    sentinel end() { return {}; }
+    constexpr Ndindex2DRange begin() { return *this; }
+    constexpr sentinel end() { return {}; }
 
-    Point<T> operator*() const { return {j, i}; }
-    bool operator==(sentinel) const { return static_cast<size_t>(i) >= rows; }
+    constexpr Point<T> operator*() const { return {j, i}; }
+    constexpr bool operator==(sentinel) const { return static_cast<size_t>(i) >= rows; }
 
-    Ndindex2DRange &operator++()
+    constexpr Ndindex2DRange &operator++()
     {
         if (static_cast<size_t>(j) < cols - 1) {
             j++;
@@ -624,7 +624,7 @@ struct Ndindex2DRange {
         return *this;
     }
 
-    Ndindex2DRange operator++(int) { return ++*this; }
+    constexpr Ndindex2DRange operator++(int) { return ++*this; }
 };
 
 template <typename T>
@@ -638,41 +638,49 @@ struct StridedIterator {
     T *p;
     size_t stride;
 
-    std::strong_ordering operator<=>(const StridedIterator &other) const = default;
-    reference operator*() const { return *p; }
-    pointer operator->() const { return p; }
-    reference operator[](difference_type n) const { return p[stride * n]; }
-    StridedIterator &operator++() { return p += stride, *this; }
-    StridedIterator operator++(int)
+    constexpr std::strong_ordering
+    operator<=>(const StridedIterator &other) const = default;
+    constexpr reference operator*() const { return *p; }
+    constexpr pointer operator->() const { return p; }
+    constexpr reference operator[](difference_type n) const { return p[stride * n]; }
+    constexpr StridedIterator &operator++() { return p += stride, *this; }
+    constexpr StridedIterator operator++(int)
     {
         StridedIterator copy(*this);
         p += stride;
         return copy;
     }
-    StridedIterator &operator--() { return p -= stride, *this; }
-    StridedIterator operator--(int)
+    constexpr StridedIterator &operator--() { return p -= stride, *this; }
+    constexpr StridedIterator operator--(int)
     {
         StridedIterator copy(*this);
         p -= stride;
         return copy;
     }
-    StridedIterator &operator+=(difference_type n) { return p += stride * n, *this; }
-    StridedIterator operator+(difference_type n) const
+    constexpr StridedIterator &operator+=(difference_type n)
+    {
+        return p += stride * n, *this;
+    }
+    constexpr StridedIterator operator+(difference_type n) const
     {
         return StridedIterator(*this) += n;
     }
-    StridedIterator &operator-=(difference_type n) { return p -= stride * n, *this; }
-    StridedIterator operator-(difference_type n) const
+    constexpr StridedIterator &operator-=(difference_type n)
+    {
+        return p -= stride * n, *this;
+    }
+    constexpr StridedIterator operator-(difference_type n) const
     {
         return StridedIterator(*this) -= n;
     }
 
-    difference_type operator-(const StridedIterator &o) const
+    constexpr difference_type operator-(const StridedIterator &o) const
     {
         return (p - o.p) / static_cast<ssize_t>(stride);
     }
 
-    friend StridedIterator operator+(difference_type n, const StridedIterator &it)
+    constexpr friend StridedIterator operator+(difference_type n,
+                                               const StridedIterator &it)
     {
         return it + n;
     }
@@ -685,8 +693,8 @@ struct StridedRange : std::ranges::view_interface<StridedRange<T>> {
     size_t n;
     size_t stride;
 
-    StridedIterator<T> begin() { return {p, stride}; }
-    StridedIterator<T> end() { return {p + n * stride, stride}; }
+    constexpr StridedIterator<T> begin() { return {p, stride}; }
+    constexpr StridedIterator<T> end() { return {p + n * stride, stride}; }
 };
 static_assert(std::ranges::random_access_range<StridedRange<int>>);
 
@@ -700,7 +708,7 @@ struct Matrix {
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Walloc-size-larger-than="
-    Matrix(size_t rows_, size_t cols_, T value = T())
+    constexpr Matrix(size_t rows_, size_t cols_, T value = T())
         : data(new T[rows_ * cols_])
         , rows(rows_)
         , cols(cols_)
@@ -709,7 +717,7 @@ struct Matrix {
     }
 #pragma GCC diagnostic pop
 
-    Matrix(const Matrix &other)
+    constexpr Matrix(const Matrix &other)
         : data(new T[other.rows * other.cols])
         , rows(other.rows)
         , cols(other.cols)
@@ -717,15 +725,15 @@ struct Matrix {
         std::ranges::copy(other.all(), data.get());
     }
 
-    Matrix &operator=(const Matrix &other)
+    constexpr Matrix &operator=(const Matrix &other)
     {
         Matrix m(other);
         std::swap(m, *this);
         return *this;
     }
 
-    Matrix(Matrix &&) = default;
-    Matrix &operator=(Matrix &&) = default;
+    constexpr Matrix(Matrix &&) = default;
+    constexpr Matrix &operator=(Matrix &&) = default;
 
     template <typename Proj = std::identity>
     static Matrix from_lines(std::span<const std::string_view> lines, Proj proj = {})
@@ -739,11 +747,14 @@ struct Matrix {
         return m;
     }
 
-    bool operator==(const Matrix &other) const noexcept
+    constexpr bool operator==(const Matrix &other) const noexcept
     {
         return std::ranges::equal(all(), other.all());
     }
-    bool operator!=(const Matrix &other) const noexcept { return !(*this == other); }
+    constexpr bool operator!=(const Matrix &other) const noexcept
+    {
+        return !(*this == other);
+    }
 
     constexpr T &operator()(size_t i, size_t j) { return data[i * cols + j]; }
     constexpr const T &operator()(size_t i, size_t j) const { return data[i * cols + j]; }
@@ -783,13 +794,13 @@ struct Matrix {
     }
 
     template <typename U = size_t>
-    Ndindex2DRange<U> ndindex() const
+    constexpr Ndindex2DRange<U> ndindex() const
     {
         return {rows, cols};
     }
 
     template <typename U>
-    bool in_bounds(Point<U> p) const
+    constexpr bool in_bounds(Point<U> p) const
     {
         using Unsigned = std::make_unsigned_t<U>;
         return static_cast<Unsigned>(p.x) < cols && static_cast<Unsigned>(p.y) < rows;
