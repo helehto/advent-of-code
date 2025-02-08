@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <bit>
 #include <boost/container/static_vector.hpp>
 #include <cassert>
 #include <charconv>
@@ -171,6 +172,63 @@ constexpr int signum(int x)
         return 1;
     else
         return 0;
+}
+
+constexpr inline uint64_t pow10i[] = {
+    /* 10^0 */ UINT64_C(1),
+    /* 10^1 */ UINT64_C(10),
+    /* 10^2 */ UINT64_C(100),
+    /* 10^3 */ UINT64_C(1000),
+    /* 10^4 */ UINT64_C(10000),
+    /* 10^5 */ UINT64_C(100000),
+    /* 10^6 */ UINT64_C(1000000),
+    /* 10^7 */ UINT64_C(10000000),
+    /* 10^8 */ UINT64_C(100000000),
+    /* 10^9 */ UINT64_C(1000000000),
+    /* 10^10 */ UINT64_C(10000000000),
+    /* 10^11 */ UINT64_C(100000000000),
+    /* 10^12 */ UINT64_C(1000000000000),
+    /* 10^13 */ UINT64_C(10000000000000),
+    /* 10^14 */ UINT64_C(100000000000000),
+    /* 10^15 */ UINT64_C(1000000000000000),
+    /* 10^16 */ UINT64_C(10000000000000000),
+    /* 10^17 */ UINT64_C(100000000000000000),
+    /* 10^18 */ UINT64_C(1000000000000000000),
+    /* 10^19 */ UINT64_C(10000000000000000000),
+};
+
+// For integers with `i` leading zero bits where 0 ≤ i ≤ 64, index `i` in
+// this table gives floor(log10(2 ** i)).
+constexpr std::array<uint8_t, 65> floor_log10_2exp = {
+    19, 19, 19, 19, 18, 18, 18, 17, 17, 17, 16, 16, 16, 16, 15, 15, 15,
+    14, 14, 14, 13, 13, 13, 13, 12, 12, 12, 11, 11, 11, 10, 10, 10, 10,
+    9,  9,  9,  8,  8,  8,  7,  7,  7,  7,  6,  6,  6,  5,  5,  5,  4,
+    4,  4,  4,  3,  3,  3,  2,  2,  2,  1,  1,  1,  0,  0,
+};
+
+// For integers with `i` leading zero bits where 0 ≤ i ≤ 64, index `i` in this
+// table gives the next power of 10.
+constexpr auto next_power_of_10 = [] {
+    std::array<uint64_t, 65> tab;
+    for (size_t i = 0; i < tab.size(); i++)
+        tab[i] = pow10i[floor_log10_2exp[i]];
+    return tab;
+}();
+
+/// Computes the number of digits in `n` when written in base 10.
+constexpr int digit_count_base10(uint64_t n)
+{
+    const int lzcnt = std::countl_zero(n);
+
+    // For adjacent powers of two where there is a power of ten between them,
+    // e.g. 64 ≤ 100 ≤ 128, we need to consult next_power_of_10 to determine
+    // whether the number of digits must be adjusted by 1. For instance: the
+    // numbers 99 and 101 both have 57 leading zero bits when written as 64-bit
+    // integers in base 2, but 101 contains an extra digit when written in base
+    // 10.
+    const int extra = (n >= next_power_of_10[lzcnt]);
+
+    return floor_log10_2exp[lzcnt] + extra;
 }
 
 /// Implementation of a binary min-heap with a decrease-key operation as used

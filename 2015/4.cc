@@ -137,32 +137,6 @@ static constexpr uint64_t ctpow(uint64_t base, int exp)
 
 __attribute__((noinline)) static to_chars_result to_chars(char *p, int n)
 {
-    // For integers with `i` leading zero bits where 0 ≤ i < 64, index `i` in
-    // this table gives floor(log10(2 ** i)).
-    //
-    // This gives an initial value for the number of digits in base 10, to be
-    // adjusted with next_power_of_10 below.
-    static constexpr std::array<uint8_t, 64> num_digits10 = {
-        19, 19, 19, 19, 18, 18, 18, 17, 17, 17, 16, 16, 16, 16, 15, 15,
-        15, 14, 14, 14, 13, 13, 13, 13, 12, 12, 12, 11, 11, 11, 10, 10,
-        10, 10, 9,  9,  9,  8,  8,  8,  7,  7,  7,  7,  6,  6,  6,  5,
-        5,  5,  4,  4,  4,  4,  3,  3,  3,  2,  2,  2,  1,  1,  1,  0};
-
-    // For integers with `i` leading zero bits where 0 ≤ i < 64, index `i` in
-    // this table gives the next power of 10.
-    //
-    // For adjacent powers of two where there is a power of ten between them,
-    // e.g. 64 ≤ 100 ≤ 128, we need to consult this table to determine whether
-    // the number of digits must be adjusted by 1. For instance, 99 and 101
-    // both have 57 leading zero bits when written as 64-bit integers, but 101
-    // contains an extra digit in base 10.
-    static constexpr auto next_power_of_10 = [] {
-        std::array<uint64_t, num_digits10.size()> tab;
-        for (int i = 63; i >= 0; i--)
-            tab[i] = ctpow(10, num_digits10[i]);
-        return tab;
-    }();
-
     // 00-99 packed into a single string.
     static constexpr const char packed_digits2[] =
         "0001020304050607080910111213141516171819"
@@ -179,8 +153,7 @@ __attribute__((noinline)) static to_chars_result to_chars(char *p, int n)
     // Determine the number of base 10 digits to be written. This way, we can
     // write the digits into the right place immediately and not have to
     // reverse or move them afterwards.
-    const int lzcnt = __builtin_clzl(n);
-    const int ndigits = num_digits10[lzcnt] + ((uint64_t)n >= next_power_of_10[lzcnt]);
+    const int ndigits = digit_count_base10(n);
 
     char *q = p + ndigits;
 
