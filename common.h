@@ -447,6 +447,17 @@ public:
         return handle;
     }
 
+    template <typename... Args>
+    Handle emplace(Args &&...args)
+    {
+        Handle handle{static_cast<uint32_t>(handle_to_heap_.size())};
+        handle_to_heap_.push_back(heap_.size());
+        heap_to_handle_.push_back(handle.index);
+        heap_.emplace_back(std::forward<Args>(args)...);
+        sift_up(heap_.size() - 1);
+        return handle;
+    }
+
     T &get(Handle h) { return heap_[get_handle_index_(h)]; }
     void decrease_key(Handle h) { sift_up(get_handle_index_(h)); }
 };
