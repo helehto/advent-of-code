@@ -31,7 +31,7 @@
 
 #define ASSERT(x)                                                                        \
     do {                                                                                 \
-        if (!(x)) {                                                                      \
+        if (!(x)) [[unlikely]] {                                                         \
             fflush(stdout);                                                              \
             fprintf(stderr,                                                              \
                     "\x1b[1;31m" __FILE__                                                \
@@ -43,7 +43,7 @@
 
 #define ASSERT_MSG(x, format, ...)                                                       \
     do {                                                                                 \
-        if (!(x)) {                                                                      \
+        if (!(x)) [[unlikely]] {                                                         \
             fflush(stdout);                                                              \
             fprintf(stderr,                                                              \
                     "\x1b[1;31m" __FILE__                                                \
