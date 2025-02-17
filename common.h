@@ -954,3 +954,15 @@ static boost::container::static_vector<Point<U>, 8> neighbors8(const Matrix<T> &
 
     return result;
 }
+
+struct TuplelikeHasher {
+    template <typename... Ts>
+    size_t operator()(const std::tuple<Ts...> &tuple) const
+    {
+        size_t h = 0;
+        std::apply([&]<typename... Elems>(
+                       const auto &...elems) mutable { hash_combine(h, elems...); },
+                   tuple);
+        return h;
+    }
+};
