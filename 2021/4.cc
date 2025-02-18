@@ -52,9 +52,9 @@ static int unmarked_sum(const Board &b)
     return sum;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     std::vector<int> called;
     find_numbers(lines[0], called);
 

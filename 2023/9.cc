@@ -29,9 +29,9 @@ static std::vector<double> lagrange_basis(int64_t k, int64_t x)
     return result;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     auto nums = find_numbers<int>(lines[0]);
 
     // This assumes that all input lists are of the same length.

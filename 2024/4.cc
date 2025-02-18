@@ -55,9 +55,9 @@ constexpr int part2(const Matrix<char> &grid)
     return result;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [_, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
     fmt::print("{}\n", part1(grid));
     fmt::print("{}\n", part2(grid));

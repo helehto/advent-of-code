@@ -79,13 +79,12 @@ static int64_t part2(std::span<const Hailstone> hailstones)
     return round(x[0]) + round(x[1]) + round(x[2]);
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
     std::vector<Hailstone> hailstones;
 
     std::vector<int64_t> n;
-    for (auto &line : lines) {
+    for (auto &line : split_lines(buf)) {
         find_numbers(line, n);
         hailstones.emplace_back(
             Eigen::Vector3d{

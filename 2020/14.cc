@@ -50,9 +50,9 @@ static uint64_t memory_sum(const dense_map<uint64_t, uint64_t> &memory)
     return sum;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [_, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     dense_map<uint64_t, uint64_t> memory;
     memory.reserve(100'000);
     std::vector<int> nums;

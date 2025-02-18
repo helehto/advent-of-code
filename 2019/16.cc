@@ -42,11 +42,9 @@ static void prefix_sum_mod10(int16_t *a, size_t n)
     }
 }
 
-void run(FILE *f)
+void run(std::string_view input)
 {
-    auto buf = slurp(f);
-    while (!buf.empty() && isspace(buf.back()))
-        buf.pop_back();
+    std::string buf(input);
 
     std::vector<int16_t> v;
     v.reserve(buf.size());

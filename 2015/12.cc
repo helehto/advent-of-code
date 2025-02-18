@@ -96,17 +96,14 @@ Entity Parser::parse_entity()
     }
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    std::string document;
-    getline(f, document);
-
     int sum = 0;
-    for (int x : find_numbers<int>(document))
+    for (int x : find_numbers<int>(buf))
         sum += x;
 
     fmt::print("{}\n", sum);
-    fmt::print("{}\n", std::get<int64_t>(Parser{document}.parse_entity()));
+    fmt::print("{}\n", std::get<int64_t>(Parser{buf}.parse_entity()));
 }
 
 }

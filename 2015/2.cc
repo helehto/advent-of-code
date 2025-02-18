@@ -2,13 +2,15 @@
 
 namespace aoc_2015_2 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
     std::vector<std::tuple<int, int, int>> input;
+    std::vector<int> nums;
 
-    int l, w, h;
-    while (fscanf(f, "%dx%dx%d\n", &l, &w, &h) == 3)
-        input.emplace_back(l, w, h);
+    for (std::string_view line : split_lines(buf)) {
+        find_numbers(line, nums);
+        input.emplace_back(nums[0], nums[1], nums[2]);
+    }
 
     int part1 = 0;
     int part2 = 0;

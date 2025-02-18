@@ -52,13 +52,12 @@ static bool part2(std::string_view s)
     return has_repeated && has_pair;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
     int count1 = 0;
     int count2 = 0;
 
-    auto [buf, lines] = slurp_lines(f);
-    for (std::string_view s : lines) {
+    for (std::string_view s : split_lines(buf)) {
         count1 += part1(s);
         count2 += part2(s);
     }

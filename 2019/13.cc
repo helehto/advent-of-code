@@ -6,9 +6,8 @@ namespace aoc_2019_13 {
 
 using VM = IntcodeVM<SplitMemory<int64_t>>;
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto buf = slurp(f);
     auto prog = find_numbers<VM::value_type>(buf);
 
     VM vm;

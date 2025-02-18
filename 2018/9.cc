@@ -53,10 +53,9 @@ static int64_t play(Marble *buffer, int n_players, int n_marbles)
     return std::ranges::max(scores);
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
-    auto input = find_numbers<int>(lines[0]);
+    auto input = find_numbers<int>(buf);
     const int n_players = input[0];
     const int n_marbles = input[1];
 

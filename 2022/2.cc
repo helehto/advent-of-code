@@ -2,15 +2,16 @@
 
 namespace aoc_2022_2 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
     static constexpr int loses_to[] = {1, 2, 0};
     static constexpr int wins_against[] = {2, 0, 1};
-    char ca, cb;
     int score1 = 0;
     int score2 = 0;
 
-    while (fscanf(f, "%c %c\n", &ca, &cb) == 2) {
+    for (std::string_view line : split_lines(buf)) {
+        char ca = line[0];
+        char cb = line[2];
         const int a = ca >= 'X' ? ca - 'X' : ca - 'A';
         const int b = cb >= 'X' ? cb - 'X' : cb - 'A';
 

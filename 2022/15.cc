@@ -74,11 +74,10 @@ static Point<int> intersect(std::vector<Point<int>> &a, std::vector<Point<int>> 
     return a[ai];
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
     std::vector<Sensor> sensors;
-    auto [buf, lines] = slurp_lines(f);
-    for (std::string_view s : lines) {
+    for (std::string_view s : split_lines(buf)) {
         auto v = find_numbers<int>(s);
         sensors.push_back(Sensor{
             .p = {v[0], v[1]},

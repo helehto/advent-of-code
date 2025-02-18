@@ -21,9 +21,8 @@ static void step(dense_map<int64_t, int64_t> &counter,
     }
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto buf = slurp(f);
     std::vector<int64_t> nums;
     find_numbers(buf, nums);
 

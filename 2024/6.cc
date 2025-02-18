@@ -85,9 +85,9 @@ static bool walk2(const Matrix<char> &grid,
     return true;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [_, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
 
     Point<uint16_t> start{};

@@ -82,9 +82,9 @@ static void execute(std::vector<int> &regs, std::span<const int> instr)
     }
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
 
     std::vector<int> input_regs;
     std::vector<int> expected_regs;

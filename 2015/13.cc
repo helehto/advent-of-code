@@ -3,9 +3,9 @@
 
 namespace aoc_2015_13 {
 
-static Matrix<int> get_happiness_matrix(FILE *f)
+static Matrix<int> get_happiness_matrix(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     int n = 0;
 
     dense_map<std::string_view, int> name_map;
@@ -66,9 +66,9 @@ static int max_happiness(const Matrix<int> &matrix)
     return max_happiness;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto matrix = get_happiness_matrix(f);
+    auto matrix = get_happiness_matrix(buf);
     fmt::print("{}\n", max_happiness(matrix));
 
     Matrix<int> augmented(matrix.rows + 1, matrix.cols + 1);

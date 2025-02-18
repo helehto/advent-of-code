@@ -57,21 +57,21 @@ static int64_t run(std::vector<Monkey> monkeys)
     return monkeys[0].inspections * monkeys[1].inspections;
 }
 
-static std::vector<Monkey> parse_monkeys(FILE *f)
+static std::vector<Monkey> parse_monkeys(std::string_view buf)
 {
     std::vector<Monkey> monkeys;
+    auto lines = split_lines(buf);
 
-    std::string s;
-    while (getline(f, s)) {
+    for (size_t i = 0; i < lines.size();) {
         Monkey &m = monkeys.emplace_back();
 
         // Starting items
-        getline(f, s);
+        std::string_view s = lines[++i];
         m.items = find_numbers<int64_t>(s);
 
         // Operation
         {
-            getline(f, s);
+            s = lines[++i];
 
             auto op_str = s.substr(s.find(" = ") + 3);
             if (op_str == "old * old") {
@@ -88,25 +88,25 @@ static std::vector<Monkey> parse_monkeys(FILE *f)
         }
 
         // Test
-        getline(f, s);
+        s = lines[++i];
         m.divisor = find_numbers<int>(s)[0];
 
         // If true, if false:
-        getline(f, s);
+        s = lines[++i];
         m.targets[1] = find_numbers<int>(s)[0];
-        getline(f, s);
+        s = lines[++i];
         m.targets[0] = find_numbers<int>(s)[0];
 
         // Blank line
-        getline(f, s);
+        i += 2;
     }
 
     return monkeys;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto monkeys = parse_monkeys(f);
+    auto monkeys = parse_monkeys(buf);
     fmt::print("{}\n", run<20, 3>(monkeys));
     fmt::print("{}\n", run<10000, 1>(std::move(monkeys)));
 }

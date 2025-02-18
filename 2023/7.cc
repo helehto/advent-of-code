@@ -92,9 +92,9 @@ constexpr std::array<uint8_t, 256> ascii_card_value_table = [] {
     return v;
 }();
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     std::vector<std::string_view> sv;
     std::vector<Hand> hands;
     hands.reserve(lines.size());

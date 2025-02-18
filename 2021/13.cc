@@ -2,10 +2,10 @@
 
 namespace aoc_2021_13 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
     std::vector<std::pair<int, int>> pairs;
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     std::vector<int> v;
     size_t i = 0;
     for (; !lines[i].empty(); i++) {

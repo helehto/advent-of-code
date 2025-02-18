@@ -8,9 +8,8 @@ static int32_t step(int32_t turn, int32_t last, std::vector<int32_t> &seen)
     return t >= 0 ? turn - t - 1 : 0;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto buf = slurp(f);
     auto init = find_numbers<int32_t>(buf);
 
     std::vector<int32_t> seen(30'000'000, -1);

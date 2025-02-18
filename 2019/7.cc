@@ -56,9 +56,8 @@ static int part2(std::array<VM, 5> &amplifiers, std::span<const VM::value_type> 
     return max_thruster_value;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto buf = slurp(f);
     const auto prog = find_numbers<VM::value_type>(buf);
     std::array<VM, 5> amplifiers;
     fmt::print("{}\n", part1(amplifiers, prog));

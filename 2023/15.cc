@@ -60,11 +60,10 @@ static int part2(const std::vector<std::string_view> &fields)
     return sum;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
     std::vector<std::string_view> fields;
-    split(lines[0], fields, ',');
+    split(buf, fields, ',');
 
     fmt::print("{}\n", part1(fields));
     fmt::print("{}\n", part2(fields));

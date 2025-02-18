@@ -17,9 +17,9 @@ struct Brick {
     std::vector<Brick *> supporting;
 };
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
 
     std::vector<Brick> bricks;
     bricks.reserve(lines.size());

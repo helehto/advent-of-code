@@ -38,16 +38,16 @@ static int64_t solve(std::vector<std::array<int, 2>> galaxies, int factor)
     return sum;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
     std::vector<std::array<int, 2>> galaxies;
 
-    std::string s;
-    for (size_t i = 0; getline(f, s); i++) {
+    for (size_t i = 0; std::string_view s : split_lines(buf)) {
         for (size_t j = 0; j < s.size(); j++) {
             if (s[j] == '#')
                 galaxies.push_back({static_cast<int>(j), static_cast<int>(i)});
         }
+        i++;
     }
 
     fmt::print("{}\n", solve(galaxies, 2));

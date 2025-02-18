@@ -3,9 +3,9 @@
 
 namespace aoc_2015_9 {
 
-static Matrix<int> get_distance_matrix(FILE *f)
+static Matrix<int> get_distance_matrix(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     int n = 0;
 
     dense_map<std::string_view, int> name_map;
@@ -58,9 +58,9 @@ static int solve(const Matrix<int> &dist, Compare comp)
     return cost;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    const auto dist = get_distance_matrix(f);
+    const auto dist = get_distance_matrix(buf);
     fmt::print("{}\n", solve(dist, std::less<>()));
     fmt::print("{}\n", solve(dist, std::greater<>()));
 }

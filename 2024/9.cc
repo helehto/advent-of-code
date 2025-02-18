@@ -91,9 +91,8 @@ static int64_t part2(std::string_view line)
     return checksum(disk);
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto buf = slurp(f);
     fmt::print("{}\n", part1(buf));
     fmt::print("{}\n", part2(buf));
 }

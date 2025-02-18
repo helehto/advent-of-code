@@ -94,9 +94,9 @@ static int64_t part2(std::vector<int16_t> &nums,
     return result;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
 
     std::vector<std::string_view> field_names;
     std::vector<std::pair<int16_t, int16_t>> intervals;

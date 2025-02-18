@@ -8,14 +8,13 @@ struct Outcome {
     int b;
 };
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
     std::vector<std::vector<Outcome>> games;
     std::vector<std::string_view> tmp;
     std::vector<std::string_view> tmp2;
 
-    for (std::string_view sv : lines) {
+    for (std::string_view sv : split_lines(buf)) {
         sv.remove_prefix(sv.find(": ") + 2);
 
         std::vector<Outcome> outcomes;

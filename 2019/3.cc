@@ -3,9 +3,9 @@
 
 namespace aoc_2019_3 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     dense_map<Point<int16_t>, int8_t> visited;
     dense_map<Point<int16_t>, int> steps_maps[2];
 

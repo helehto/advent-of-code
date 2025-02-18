@@ -5,12 +5,11 @@ namespace aoc_2022_1 {
 
 using namespace std;
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
     std::vector<int> calories{0};
 
-    for (std::string_view s : lines) {
+    for (std::string_view s : split_lines(buf)) {
         if (s.empty()) {
             calories.push_back(0);
         } else {

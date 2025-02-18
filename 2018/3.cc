@@ -3,9 +3,9 @@
 
 namespace aoc_2018_3 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
 
     std::vector<std::tuple<int, int, int, int>> claims;
     size_t max_x = 0;

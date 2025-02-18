@@ -10,14 +10,12 @@ constexpr static auto char2bit = [] {
     return bit;
 }();
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
-
     uint64_t id_sum = 0;
     int min_id = INT_MAX;
     int max_id = 0;
-    for (std::string_view line : lines) {
+    for (std::string_view line : split_lines(buf)) {
         int id = 0;
         for (const uint8_t c : line)
             id = (id << 1) | char2bit[c];

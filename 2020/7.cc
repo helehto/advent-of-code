@@ -4,15 +4,13 @@
 
 namespace aoc_2020_7 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
-
     std::vector<std::string_view> bags;
     using Edge = std::pair<std::string_view, int>;
     dense_map<std::string_view, std::vector<Edge>> predecessors;
     dense_map<std::string_view, std::vector<Edge>> successors;
-    for (std::string_view line : lines) {
+    for (std::string_view line : split_lines(buf)) {
         const size_t i = line.find(" bags contain ");
         ASSERT(i != std::string_view::npos);
         split(line.substr(i + 14), bags, ',');

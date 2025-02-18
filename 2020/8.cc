@@ -32,9 +32,9 @@ std::pair<int, bool> run(const std::vector<Instruction> &prog)
     return {acc, pc >= prog.size()};
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
 
     std::vector<Instruction> prog;
     std::vector<int> nums;

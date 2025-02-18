@@ -2,15 +2,14 @@
 
 namespace aoc_2021_2 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
     int x1 = 0;
     int y1 = 0;
     int x2 = 0;
     int y2 = 0;
 
-    auto [buf, lines] = slurp_lines(f);
-    for (std::string_view s : lines) {
+    for (std::string_view s : split_lines(buf)) {
         int v = 0;
 
         if (s.starts_with("up")) {

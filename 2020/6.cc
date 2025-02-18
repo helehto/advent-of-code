@@ -3,9 +3,9 @@
 
 namespace aoc_2020_6 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
 
     size_t i = 0;
     int any_count = 0;

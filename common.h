@@ -471,81 +471,8 @@ constexpr T modulo(T x, T mod)
     return r;
 }
 
-inline bool getline(FILE *f, std::string &s)
-{
-    constexpr size_t chunk_size = 256;
-
-    s.clear();
-    size_t offset = 0;
-
-    __m256i vzero = _mm256_setzero_si256();
-    __m256i vnl = _mm256_set1_epi8('\n');
-
-    while (true) {
-        s.resize(s.size() + chunk_size);
-
-    read_more:
-        if (fgets(s.data() + offset, chunk_size, f) == nullptr) {
-            s.resize(offset);
-            return !s.empty();
-        }
-
-        // No break condition, the null byte added by fgets() will break the
-        // loop if we reach the end of the chunk.
-        for (size_t j = offset;; j += 32) {
-            auto bytes = _mm256_loadu_si256(reinterpret_cast<__m256i *>(s.data() + j));
-
-            if (int mask = _mm256_movemask_epi8(_mm256_cmpeq_epi8(bytes, vnl))) {
-                offset = j + __builtin_ctz(mask);
-                s.resize(offset);
-                return true;
-            }
-
-            if (int mask = _mm256_movemask_epi8(_mm256_cmpeq_epi8(bytes, vzero))) {
-                offset = j + __builtin_ctz(mask);
-                s.resize(offset + chunk_size);
-                goto read_more;
-            }
-        }
-    }
-}
-
-inline std::string slurp(FILE *f)
-{
-    const int fd = fileno(f);
-    const off_t size = lseek(fd, 0, SEEK_END);
-    ASSERT(size > 0);
-
-    std::string contents;
-
-    // Work around any small string optimization. In the case of slurp_lines(),
-    // it is actively harmful; we will split the file contents into lines, and
-    // if the file is small enough, the resulting std::string_view instances
-    // would point inside the string's in-place buffer. Doing anything that
-    // changes the identity of the std::string afterwards, such as returning it
-    // without (N)RVO, would leave the string_views dangling.
-    contents.reserve(std::max<size_t>(size, sizeof(std::string)));
-
-    contents.resize(size);
-    ASSERT(pread(fd, contents.data(), size, 0) == size);
-
-    return contents;
-}
-
-struct SlurpResult {
-    std::string contents;
-    std::vector<std::string_view> lines;
-};
-
 static inline std::vector<std::string_view> &
 split(std::string_view s, std::vector<std::string_view> &out, char c);
-
-inline SlurpResult slurp_lines(FILE *f)
-{
-    SlurpResult result = {.contents = slurp(f)};
-    split(result.contents, result.lines, '\n');
-    return result;
-}
 
 template <typename T>
 constexpr void find_numbers(std::string_view s, std::vector<T> &result)
@@ -620,6 +547,13 @@ split(std::string_view s, std::vector<std::string_view> &out, char c)
         out.emplace_back(s.begin() + curr_field_start, s.end());
 
     return out;
+}
+
+static inline std::vector<std::string_view> split_lines(std::string_view s)
+{
+    std::vector<std::string_view> lines;
+    split(s, lines, '\n');
+    return lines;
 }
 
 template <typename Predicate>

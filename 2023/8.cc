@@ -8,9 +8,9 @@ constexpr uint16_t encode_name(std::string_view sv)
     return (sv[0] - 'A') << 10 | (sv[1] - 'A') << 5 | (sv[2] - 'A');
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     std::string_view directions = lines[0];
 
     std::vector<std::array<uint16_t, 2>> next(1 << 15);

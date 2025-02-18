@@ -4,9 +4,9 @@
 
 namespace aoc_2019_6 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
 
     dense_map<std::string_view, int16_t> name_to_id;
     std::vector<std::vector<int16_t>> directed_edges(lines.size() + 1);

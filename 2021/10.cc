@@ -2,14 +2,13 @@
 
 namespace aoc_2021_10 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
     int score1 = 0;
     std::vector<char> stack;
     std::vector<uint64_t> scores2;
 
-    for (std::string_view s : lines) {
+    for (std::string_view s : split_lines(buf)) {
         stack.clear();
         bool incorrect = false;
 

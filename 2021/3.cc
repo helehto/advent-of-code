@@ -11,13 +11,12 @@ static int most_common_bit(std::span<uint16_t> xs, size_t bit)
     return 2 * sum >= xs.size();
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
     std::vector<uint16_t> xs;
     size_t bit_length = 0;
 
-    auto [buf, lines] = slurp_lines(f);
-    for (std::string_view s : lines) {
+    for (std::string_view s : split_lines(buf)) {
         uint32_t x = 0;
         for (char c : s)
             x = x << 1 | (c - '0');

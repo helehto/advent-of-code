@@ -3,13 +3,15 @@
 
 namespace aoc_2021_8 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
     std::string s;
     int part1 = 0;
     int part2 = 0;
 
-    while (getline(f, s)) {
+    for (std::string_view line : split_lines(buf)) {
+        s = line;
+
         const char *token;
         std::array<uint32_t, 14> masks = {{}};
 

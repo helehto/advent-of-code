@@ -13,9 +13,9 @@ static int64_t signed_area(std::span<const Point<int64_t>> points)
     return result;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     int n = 0;
 
     std::vector<Point<int64_t>> polygon;

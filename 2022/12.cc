@@ -44,9 +44,9 @@ static int dijkstra(const Matrix<char> &m, size_t target, std::vector<int> &dist
     return dist[target];
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     auto m = Matrix<char>::from_lines(lines);
 
     // Find the start and end point (at least for my input, the start point

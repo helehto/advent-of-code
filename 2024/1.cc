@@ -25,9 +25,9 @@ static int part2(std::span<const int> l, std::span<const int> r)
     return result;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
 
     std::vector<int> nums;
     std::vector<int> l, r;

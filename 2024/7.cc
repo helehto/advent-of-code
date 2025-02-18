@@ -22,14 +22,13 @@ constexpr bool solve(int64_t goal, const int64_t *operands, size_t n, int64_t ac
            (Part == 2 && solve<Part>(goal, operands + 1, n - 1, concatenate(accum, a)));
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [_, lines] = slurp_lines(f);
     std::vector<int64_t> nums;
 
     int64_t s1 = 0;
     int64_t s2 = 0;
-    for (std::string_view line : lines) {
+    for (std::string_view line : split_lines(buf)) {
         find_numbers(line, nums);
         s1 += solve<1>(nums[0], &nums[1], nums.size() - 1) ? nums[0] : 0;
         s2 += solve<2>(nums[0], &nums[1], nums.size() - 1) ? nums[0] : 0;

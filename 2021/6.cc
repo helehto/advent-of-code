@@ -3,12 +3,10 @@
 
 namespace aoc_2021_6 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
     std::array<uint64_t, 9> a = {{}};
-    std::string s;
-    getline(f, s);
-    for (auto i : find_numbers<uint8_t>(s))
+    for (auto i : find_numbers<uint8_t>(buf))
         a[i - 1]++;
 
     int i = 0;

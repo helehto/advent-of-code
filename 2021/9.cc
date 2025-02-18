@@ -5,9 +5,9 @@
 
 namespace aoc_2021_9 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     auto chart = Matrix<char>::from_lines(lines);
 
     int risk_sum = 0;

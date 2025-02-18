@@ -135,9 +135,9 @@ static int64_t part2(std::span<const Workflow> workflows, int start_workflow)
     return volume;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     dense_map<std::string_view, int> workflow_index;
 
     size_t i = 0;

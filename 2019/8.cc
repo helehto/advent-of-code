@@ -99,9 +99,8 @@ static char *part2(char *out, const char *input, size_t num_layers)
     return out;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto buf = slurp(f);
     size_t num_layers = buf.size() / layer_size;
 
     char output_buffer[4096];

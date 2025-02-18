@@ -39,9 +39,9 @@ static dense_map<int, Schedule> parse_schedules(std::span<std::string_view> line
     return schedules;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     std::ranges::sort(lines);
     auto schedules = parse_schedules(lines);
 

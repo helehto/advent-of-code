@@ -28,12 +28,12 @@ struct Circuit {
     std::string_view rx_input_name;
 };
 
-static Circuit parse_input(std::span<const std::string_view> lines)
+static Circuit parse_input(std::string_view buf)
 {
     dense_map<std::string_view, Component> components_by_name;
     std::string_view rx_input_name;
 
-    for (std::string_view line : lines) {
+    for (std::string_view line : split_lines(buf)) {
         auto arrow = line.find("->");
         ASSERT(arrow != std::string_view::npos);
 
@@ -167,10 +167,9 @@ static void press_button(State &state, Circuit &circuit)
     }
 };
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
-    auto circuit = parse_input(lines);
+    auto circuit = parse_input(buf);
 
     {
         State state;

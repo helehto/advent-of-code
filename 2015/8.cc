@@ -67,9 +67,9 @@ static int part2(std::span<const std::string_view> lines)
     return count;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     auto [total_code, total_mem] = part1(lines);
     fmt::print("{}\n", total_code - total_mem);
     fmt::print("{}\n", part2(lines) - total_code);

@@ -142,12 +142,11 @@ static int search(SearchParameters &p, const SearchState &state = {})
     return score;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
     std::vector<Blueprint> blueprints;
 
-    auto [buf, lines] = slurp_lines(f);
-    for (std::string_view s : lines) {
+    for (std::string_view s : split_lines(buf)) {
         auto v = find_numbers<int>(s);
         Blueprint &b = blueprints.emplace_back();
         b.costs[ORE][ORE] = v[1];

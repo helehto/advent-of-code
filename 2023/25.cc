@@ -66,7 +66,7 @@ struct Graph {
     }
 };
 
-static Graph parse_input(std::span<const std::string_view> lines)
+static Graph parse_input(std::string_view buf)
 {
     Graph g;
     auto get_node = [&](std::string_view s) -> uint16_t {
@@ -79,7 +79,7 @@ static Graph parse_input(std::span<const std::string_view> lines)
     };
 
     std::vector<std::string_view> fields;
-    for (auto &line : lines) {
+    for (auto &line : split_lines(buf)) {
         split(line, fields);
         auto source = line.substr(0, line.find(':'));
         for (size_t i = 1; i < fields.size(); ++i)
@@ -139,10 +139,9 @@ static int min_cut(Graph g)
     return cut_size;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
-    auto g = parse_input(lines);
+    auto g = parse_input(buf);
     int min_cut_size = min_cut(g);
     fmt::print("{}\n", min_cut_size * (g.nodes.size() - min_cut_size));
 }

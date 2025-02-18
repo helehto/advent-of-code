@@ -61,9 +61,9 @@ static ScanResult scanv(const Matrix<uint8_t> &m, size_t i, size_t j)
     return {0, 0, 0, 0};
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     int part1 = 0;
     int part2 = 0;
 

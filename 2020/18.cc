@@ -80,14 +80,12 @@ static int64_t evaluate(std::span<const Token> tokens, int add_precedence)
     return e.expr(-1);
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
-
     int64_t sum1 = 0;
     int64_t sum2 = 0;
     std::vector<Token> tokens;
-    for (std::string_view line : lines) {
+    for (std::string_view line : split_lines(buf)) {
         tokenize(line, tokens);
         sum1 += evaluate(tokens, 0);
         sum2 += evaluate(tokens, 1);

@@ -2,9 +2,8 @@
 
 namespace aoc_2019_1 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto buf = slurp(f);
     auto nums = find_numbers<int>(buf);
 
     int sum = 0;

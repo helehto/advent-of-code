@@ -47,9 +47,8 @@ static int part2(std::string_view s)
     return result;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto buf = slurp(f);
     fmt::print("{}\n", part1(buf));
     fmt::print("{}\n", part2(buf));
 }

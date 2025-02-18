@@ -46,13 +46,12 @@ static uint64_t search(const SearchParameters &sp, size_t si, size_t bi)
     return solutions;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
     uint64_t sum1 = 0;
     uint64_t sum2 = 0;
 
-    for (std::string_view sv : lines) {
+    for (std::string_view sv : split_lines(buf)) {
         auto n = find_numbers<uint32_t>(sv);
         std::string q(sv.substr(0, sv.find(' ')));
         cache.clear();

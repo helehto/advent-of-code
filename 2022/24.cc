@@ -90,9 +90,9 @@ struct std::hash<aoc_2022_24::GMapEntry> {
 
 namespace aoc_2022_24 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     const size_t n = lines.size();
     const size_t m = lines[0].size();
 

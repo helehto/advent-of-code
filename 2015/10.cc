@@ -265,14 +265,11 @@ static size_t length_of(std::span<int> counts)
     return length;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    std::string s;
-    getline(f, s);
-
     std::vector<int> counts(NUM_ATOMS), new_counts(NUM_ATOMS);
     for (size_t i = 1; i < std::size(atomic_sequences); i++) {
-        if (s == atomic_sequences[i]) {
+        if (buf == atomic_sequences[i]) {
             counts[i]++;
             break;
         }

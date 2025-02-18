@@ -209,9 +209,8 @@ static Matrix<char> construct_grid(VM &vm, std::span<const int64_t> prog)
     return g;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto buf = slurp(f);
     auto prog = find_numbers<VM::value_type>(buf);
     VM vm;
     Matrix<char> g = construct_grid(vm, prog);

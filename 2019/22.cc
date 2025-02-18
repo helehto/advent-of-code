@@ -69,9 +69,9 @@ static std::pair<int64_t, int64_t> get_coefficients(std::span<std::string_view> 
     return {a, b};
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
 
     // Part 1: After computing `a` and `b` in f(x) = (ax + b) mod m, we are
     // looking for `x` such that (ax + b) mod m = 2019. Rearranging, we get

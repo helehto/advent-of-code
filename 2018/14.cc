@@ -2,9 +2,9 @@
 
 namespace aoc_2018_14 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     auto n = find_numbers<size_t>(lines[0])[0];
 
     std::vector<uint8_t> scores;

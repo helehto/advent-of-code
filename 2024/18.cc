@@ -2,9 +2,8 @@
 
 namespace aoc_2024_18 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto buf = slurp(f);
     std::vector<int> nums;
     find_numbers(buf, nums);
 

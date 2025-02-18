@@ -3,16 +3,14 @@
 
 namespace aoc_2015_3 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
-
     {
         dense_set<Point<int>> points;
         points.insert({0, 0});
 
         Point<int> p = {0, 0};
-        for (auto c : lines[0]) {
+        for (auto c : buf) {
             switch (c) {
             case '>':
                 p.x++;
@@ -39,7 +37,7 @@ void run(FILE *f)
 
         Point<int> ps[2] = {};
         size_t i = 0;
-        for (auto c : lines[0]) {
+        for (auto c : buf) {
             switch (c) {
             case '>':
                 ps[i & 1].x++;

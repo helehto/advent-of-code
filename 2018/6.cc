@@ -3,9 +3,9 @@
 
 namespace aoc_2018_6 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     std::vector<int> nums;
     std::vector<int> xs;
     std::vector<int> ys;

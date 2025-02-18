@@ -55,19 +55,16 @@ static void search(std::span<const std::vector<Range>> tables,
     }
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    std::string s;
-    getline(f, s);
-
-    auto seeds = find_numbers<uint64_t>(s);
+    auto lines = split_lines(buf);
+    auto seeds = find_numbers<uint64_t>(lines.front());
 
     std::vector<uint64_t> nums;
     std::vector<Range> tables[7];
-    getline(f, s);
-    for (size_t i = 0; getline(f, s); i++) {
-        while (getline(f, s) && !s.empty()) {
-            find_numbers(s, nums);
+    for (size_t i = 0, j = 2; j < lines.size(); ++i, j += 2) {
+        for (++j; j < lines.size() && !lines[j].empty(); ++j) {
+            find_numbers(lines[j], nums);
             tables[i].emplace_back(nums[0], nums[1], nums[2]);
         }
     }

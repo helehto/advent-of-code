@@ -60,13 +60,12 @@ static int solve(std::vector<std::string> grid, int iterations, bool stuck)
     return count_on(grid);
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
     std::vector<std::string> grid;
-    std::string s;
 
-    while (getline(f, s))
-        grid.push_back(std::move(s));
+    for (std::string_view line : split_lines(buf))
+        grid.emplace_back(line);
 
     constexpr int iterations = 100;
     fmt::print("{}\n", solve(grid, iterations, false));

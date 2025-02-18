@@ -25,9 +25,9 @@ static void prefix_sum(Range &&r, Out out)
         *out++ = sum += x;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     const int serial_number = find_numbers<int>(lines[0])[0];
     const auto grid = generate_grid(serial_number, 300);
 

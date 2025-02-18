@@ -2,9 +2,9 @@
 
 namespace aoc_2018_12 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
 
     std::vector<uint8_t> state;
     for (char c : lines[0].substr(lines[0].find(':') + 2))

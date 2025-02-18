@@ -16,12 +16,12 @@ static uint64_t make_mask(std::string_view s)
     return mask;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, strings] = slurp_lines(f);
+    auto lines = split_lines(buf);
 
     int part1 = 0;
-    for (const auto &s : strings) {
+    for (const auto &s : lines) {
         auto mid = s.begin() + s.size() / 2;
         const auto mask1 = make_mask({s.begin(), mid});
         const auto mask2 = make_mask({mid, s.end()});
@@ -29,10 +29,10 @@ void run(FILE *f)
     }
 
     int part2 = 0;
-    for (size_t i = 0; i < strings.size(); i += 3) {
-        const auto mask1 = make_mask(strings[i]);
-        const auto mask2 = make_mask(strings[i + 1]);
-        const auto mask3 = make_mask(strings[i + 2]);
+    for (size_t i = 0; i < lines.size(); i += 3) {
+        const auto mask1 = make_mask(lines[i]);
+        const auto mask2 = make_mask(lines[i + 1]);
+        const auto mask3 = make_mask(lines[i + 2]);
         part2 += __builtin_ctzll(mask1 & mask2 & mask3) + 1;
     }
 

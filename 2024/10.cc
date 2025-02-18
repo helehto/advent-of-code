@@ -34,9 +34,9 @@ static int64_t trailhead_score(const Matrix<char> &grid,
     return score;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [_, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
 
     std::vector<Point<int>> queue;

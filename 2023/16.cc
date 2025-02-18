@@ -185,9 +185,9 @@ apply_final_continuation:
     return visited->size();
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
     dense_map<uint16_t, std::vector<uint16_t>> cache(grid.size());
 

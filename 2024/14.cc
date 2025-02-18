@@ -92,9 +92,8 @@ static bool has_tree(const Robots &r)
     return false;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto buf = slurp(f);
     std::vector<int> nums;
     find_numbers(buf, nums);
 

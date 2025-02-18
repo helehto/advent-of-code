@@ -72,10 +72,9 @@ int part2(std::span<int> crabs)
     return std::min(cost2(crabs, ceilf(goal)), cost2(crabs, floorf(goal)));
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
-    auto crabs = find_numbers<int>(lines[0]);
+    auto crabs = find_numbers<int>(buf);
     std::sort(begin(crabs), end(crabs));
 
     printf("%d\n", part1(crabs));

@@ -77,13 +77,12 @@ static void part2(std::array<std::vector<int>, 26> dependencies, int max_task)
     fmt::print("{}\n", t);
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
     std::vector<std::string_view> cs;
     std::array<std::vector<int>, 26> dependencies;
     int max_task = 0;
-    for (auto line : lines) {
+    for (auto line : split_lines(buf)) {
         split(line, cs, [](char c) { return (uint8_t)(c - 'A') >= 26; });
         int c1 = cs[1][0] - 'A';
         int c2 = cs[2][0] - 'A';

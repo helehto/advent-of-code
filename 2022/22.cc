@@ -186,12 +186,16 @@ static std::vector<Move> parse_moves(const std::string_view &s)
     return moves;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
+    auto lines = split_lines(buf);
+
     std::vector<std::string> map;
-    std::string s;
-    while (getline(f, s) && !s.empty())
-        map.push_back(s);
+    for (std::string_view line : lines) {
+        if (line.empty())
+            break;
+        map.emplace_back(line);
+    }
 
     size_t m = 0;
     for (auto &line : map)
@@ -201,8 +205,7 @@ void run(FILE *f)
             line.resize(m, ' ');
     }
 
-    getline(f, s);
-    auto moves = parse_moves(s);
+    auto moves = parse_moves(lines.back());
 
     fmt::print("{}\n", part1(map, moves));
     fmt::print("{}\n", part2(map, moves));

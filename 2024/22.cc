@@ -4,13 +4,12 @@
 
 namespace aoc_2024_22 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
     std::vector<int> nums;
 
     std::vector<std::vector<int>> secrets;
-    for (std::string_view line : lines) {
+    for (std::string_view line : split_lines(buf)) {
         find_numbers(line, nums);
 
         std::vector<int> s;

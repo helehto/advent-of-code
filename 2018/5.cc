@@ -16,10 +16,9 @@ static size_t react(std::string &polymer, std::string_view input)
     return polymer.size();
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [_, lines] = slurp_lines(f);
-    auto s = lines[0];
+    auto s = split_lines(buf)[0];
 
     std::string result;
     fmt::print("{}\n", react(result, {s}));
@@ -29,7 +28,7 @@ void run(FILE *f)
     spliced.reserve(s.size());
     for (char c = 'a'; c <= 'z'; c++) {
         spliced.clear();
-        for (char k : lines[0])
+        for (char k : s)
             if ((k | 0x20) != c)
                 spliced.push_back(k);
         min = std::min(min, react(result, spliced));

@@ -159,10 +159,8 @@ static int part2(uint32_t grid)
     return num_bugs;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto buf = slurp(f);
-
     uint32_t grid = 0;
     for (size_t j = 0; char c : buf) {
         if (c == '#') {

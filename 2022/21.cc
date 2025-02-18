@@ -30,7 +30,7 @@ struct Input {
     size_t root_index;
 };
 
-static Input parse_monkeys(FILE *f)
+static Input parse_monkeys(std::string_view buf)
 {
     struct ParsedMonkey {
         char name[5];
@@ -43,7 +43,8 @@ static Input parse_monkeys(FILE *f)
 
     std::vector<ParsedMonkey> parsed_monkeys;
     std::string s;
-    for (int i = 0; getline(f, s); i++) {
+    for (std::string_view line : split_lines(buf)) {
+        s = line;
         auto &m = parsed_monkeys.emplace_back();
         char type;
         if (sscanf(s.c_str(), "%4s: %d", m.name, &m.constant) == 2) {
@@ -168,9 +169,9 @@ static int64_t part2(const Input &input)
     return k;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    Input input = parse_monkeys(f);
+    Input input = parse_monkeys(buf);
     fmt::print("{}\n", part1(input));
     input.monkeys[input.humn_index].type = OP_VARIABLE;
     fmt::print("{}\n", part2(input));

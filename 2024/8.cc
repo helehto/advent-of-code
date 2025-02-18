@@ -3,9 +3,9 @@
 
 namespace aoc_2024_8 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [_, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
 
     dense_map<char, std::vector<Point<uint16_t>>> antennas;

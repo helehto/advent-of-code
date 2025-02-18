@@ -49,9 +49,8 @@ static bool search(std::span<const int> prog, const ssize_t i, const int64_t a =
     return false;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto buf = slurp(f);
     std::vector<int> nums;
     find_numbers(buf, nums);
     std::span<const int> prog(nums.begin() + 3, nums.end());

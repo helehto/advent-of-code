@@ -54,13 +54,9 @@ static int part2(const std::vector<int> &containers, int target)
     return -1;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    std::vector<int> containers;
-
-    int n;
-    while (fscanf(f, "%d", &n) == 1)
-        containers.push_back(n);
+    auto containers = find_numbers<int>(buf);
     ASSERT(containers.size() < 64);
 
     fmt::print("{}\n", part1(containers, 0, 150, 0));

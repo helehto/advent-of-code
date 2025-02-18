@@ -62,12 +62,11 @@ constexpr uint64_t gen_mask(int x1, int x2, int x3)
            UINT64_C(0xff) << (8 * x3);
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
     std::vector<Point<int>> elves;
     int i = 0;
-    for (std::string_view s : lines) {
+    for (std::string_view s : split_lines(buf)) {
         for (size_t j = 0; j < s.size(); j++) {
             if (s[j] == '#')
                 elves.push_back(Point{static_cast<int>(j), i});

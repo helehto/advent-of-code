@@ -2,12 +2,11 @@
 
 namespace aoc_2022_8 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
     std::vector<std::string_view> trees;
-    auto [buf, lines] = slurp_lines(f);
 
-    for (std::string_view s : lines) {
+    for (std::string_view s : split_lines(buf)) {
         if (!s.empty())
             trees.push_back(std::move(s));
     }

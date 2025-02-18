@@ -3,9 +3,9 @@
 
 namespace aoc_2020_10 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    const auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     std::vector<int> joltages;
     joltages.reserve(lines.size());
     find_numbers(buf, joltages);

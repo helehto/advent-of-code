@@ -3,12 +3,11 @@
 
 namespace aoc_2023_4 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
     std::vector<int> matches;
-    auto [buf, lines] = slurp_lines(f);
     std::vector<int> v;
-    for (std::string_view s : lines) {
+    for (std::string_view s : split_lines(buf)) {
         find_numbers(s, v);
 
         uint64_t winning[2] = {0};

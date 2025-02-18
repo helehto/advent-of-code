@@ -3,10 +3,9 @@
 
 namespace aoc_2020_9 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
     constexpr size_t window_length = 25;
-    const auto buf = slurp(f);
     std::vector<uint64_t> nums;
     find_numbers(buf, nums);
 

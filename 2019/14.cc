@@ -19,9 +19,9 @@ static auto parse_quantity_and_name(std::string_view s)
     return std::pair(n, name);
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     std::vector<std::string_view> tmp;
 
     std::vector<Recipe> recipes;

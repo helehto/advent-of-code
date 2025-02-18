@@ -93,11 +93,8 @@ static std::optional<Cycle> detect_cycle(const std::vector<State> &state_vec)
     };
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    std::string jets;
-    getline(f, jets);
-
     dense_map<CacheKey, std::vector<State>> past_states;
     dense_set<Point<int>> occupied;
     std::vector<int> heights;
@@ -127,8 +124,8 @@ void run(FILE *f)
         // Drop the rock.
         while (true) {
             // It gets pushed by the jet of gas, if possible:
-            const auto jet = jets[jet_idx];
-            jet_idx = (jet_idx + 1) % jets.size();
+            const auto jet = buf[jet_idx];
+            jet_idx = (jet_idx + 1) % buf.size();
             try_move(occupied, rock, (jet == '<' ? -1 : 1), 0);
 
             // It falls, if possible:

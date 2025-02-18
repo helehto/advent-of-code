@@ -77,12 +77,11 @@ static Packet parse_line(std::string_view s)
     return *p;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
     std::vector<Packet> packets;
 
-    auto [buf, lines] = slurp_lines(f);
-    for (std::string_view s : lines) {
+    for (std::string_view s : split_lines(buf)) {
         if (!s.empty())
             packets.push_back(parse_line(s));
     }

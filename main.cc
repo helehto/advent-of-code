@@ -24,7 +24,7 @@ using namespace std::literals;
 
 #define X_DECLARE_RUN_FUNCS(year, day)                                                   \
     namespace GLUE(aoc_, GLUE3(year, _, day)) {                                          \
-    extern void run(FILE *);                                                             \
+    extern void run(std::string_view);                                                   \
     }
 #define X_PROBLEM_TABLE_INITIALIZERS(year, day)                                          \
     {year, day, PROBLEM_NAMESPACE(year, day)::run},
@@ -34,7 +34,7 @@ using namespace std::literals;
 struct Problem {
     int year;
     int day;
-    void (*func)(FILE *);
+    void (*func)(std::string_view);
 };
 
 struct Options {
@@ -98,12 +98,38 @@ static std::string restore_stdout(int memfd, int original_stdout)
     return std::string(buf, buf + bytes_read);
 }
 
+static std::string slurp(FILE *f)
+{
+    const int fd = fileno(f);
+    const off_t size = lseek(fd, 0, SEEK_END);
+    ASSERT(size > 0);
+
+    std::string contents;
+    contents.resize(size);
+    ASSERT(pread(fd, contents.data(), size, 0) == size);
+
+    return contents;
+}
+
 static std::pair<std::vector<uint64_t>, std::string>
 run_problem(const Problem &p, std::string input_path, const Options &opts)
 {
     using namespace std::chrono;
 
-    FILE *f = fopen(input_path.c_str(), "r");
+    std::string input;
+    {
+        FILE *f = fopen(input_path.c_str(), "r");
+        if (!f) {
+            fprintf(stderr, "%s: %s", input_path.c_str(), strerror(errno));
+            exit(1);
+        }
+        input = slurp(f);
+
+        while (isspace(input.back()))
+            input.pop_back();
+
+        fclose(f);
+    }
 
     std::vector<uint64_t> durations;
     durations.reserve(opts.iterations);
@@ -111,7 +137,7 @@ run_problem(const Problem &p, std::string input_path, const Options &opts)
 
     auto run = [&] {
         const auto start = high_resolution_clock::now();
-        p.func(f);
+        p.func(input);
         const auto end = high_resolution_clock::now();
         uint64_t duration = duration_cast<nanoseconds>(end - start).count();
         durations.push_back(duration);
@@ -131,11 +157,8 @@ run_problem(const Problem &p, std::string input_path, const Options &opts)
     }
 
     for (int i = 1; i < opts.iterations || total_duration < opts.target_time * 1e9; i++) {
-        rewind(f);
         run();
     }
-
-    fclose(f);
 
     return {durations, output};
 }

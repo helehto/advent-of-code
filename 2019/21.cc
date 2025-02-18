@@ -5,9 +5,8 @@ namespace aoc_2019_21 {
 
 using VM = IntcodeVM<SplitMemory<int64_t>>;
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto buf = slurp(f);
     auto prog = find_numbers<VM::value_type>(buf);
 
     static constexpr char part1[] = "NOT A T\n"

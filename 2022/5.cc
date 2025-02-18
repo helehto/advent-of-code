@@ -22,9 +22,9 @@ static void print_crates(std::span<std::string> crates)
     putc('\n', stdout);
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     size_t i = 0;
 
     std::array<std::string, 30> crates1;

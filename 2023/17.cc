@@ -107,9 +107,9 @@ static int dijkstra(const Matrix<uint8_t> &grid,
     ASSERT_MSG(false, "Path to {} not found!", goal);
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     auto grid = Matrix<uint8_t>::from_lines(lines, [&](auto c) { return c - '0'; });
     const Point<uint8_t> goal{
         static_cast<uint8_t>(grid.cols - 1),

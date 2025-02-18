@@ -20,7 +20,7 @@ constexpr static uint64_t bit(long n)
 }
 
 // TODO: Clean up this absolute disaster of a function
-static Valves parse_valves(FILE *f)
+static Valves parse_valves(std::string_view buf)
 {
     struct ParsedValve {
         std::string name;
@@ -34,7 +34,8 @@ static Valves parse_valves(FILE *f)
     std::string s;
     size_t i = 0;
     std::vector<ParsedValve> parsed_valves;
-    while (getline(f, s)) {
+    for (std::string_view line : split_lines(buf)) {
+        s = line;
         auto &valve = parsed_valves.emplace_back();
 
         char name[16];
@@ -158,9 +159,9 @@ static void search(const SearchParameters &p, State s)
     }
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    const auto input = parse_valves(f);
+    const auto input = parse_valves(buf);
     const auto costs = floyd_warshall(input.valves);
 
     // Build a bitmask of nodes with non-zero flow. This allows search() to

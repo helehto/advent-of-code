@@ -95,19 +95,19 @@ static int64_t solve(std::vector<int64_t> nums, int key, int rounds, int64_t zer
            (nums[(zero_index + 3000) % nums.size()] >> index_shift);
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    std::vector<int64_t> nums;
+    std::vector<int64_t> nums = find_numbers<int64_t>(buf);
 
     int64_t zero = 0;
-    int64_t n;
-    for (int i = 0; fscanf(f, "%" PRId64 "\n", &n) == 1; i++) {
+    for (int i = 0; int64_t &n : nums) {
         // To disambiguate duplicates, pack the index into the lower 16 bits
         // and the original number into the high 48 bits. This way we don't
         // need to keep track of a separate index array.
         if (n == 0)
             zero = i;
-        nums.push_back(n << index_shift | i);
+        n = n << index_shift | i;
+        i++;
     }
 
     fmt::print("{}\n", solve(nums, 1, 1, zero));

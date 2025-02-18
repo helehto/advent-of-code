@@ -5,9 +5,8 @@
 
 namespace aoc_2020_1 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto buf = slurp(f);
     std::vector<int> nums = find_numbers<int>(buf);
 
     dense_set<int> seen;

@@ -4,14 +4,13 @@
 
 namespace aoc_2022_7 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
     std::unordered_map<std::string, int> sizes;
     std::vector<std::string_view> cwd;
     std::string path;
 
-    for (std::string_view s : lines) {
+    for (std::string_view s : split_lines(buf)) {
         if (s == "$ cd /") {
             cwd = {""};
         } else if (s == "$ cd ..") {

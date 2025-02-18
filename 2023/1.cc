@@ -10,14 +10,13 @@ constexpr uint64_t pack(std::string_view p)
     return r;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
     int part1 = 0;
     int part2 = 0;
 
     std::vector<int> v;
-    auto [buf, lines] = slurp_lines(f);
-    for (std::string_view s : lines) {
+    for (std::string_view s : split_lines(buf)) {
         v.clear();
         for (size_t i = 0; i < s.size(); i++) {
             if (s[i] >= '0' && s[i] <= '9')

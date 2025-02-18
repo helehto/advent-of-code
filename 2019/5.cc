@@ -5,9 +5,8 @@ namespace aoc_2019_5 {
 
 using VM = IntcodeVM<FlatMemory<int>>;
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto buf = slurp(f);
     auto prog = find_numbers<VM::value_type>(buf);
 
     VM vm;

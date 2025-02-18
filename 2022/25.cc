@@ -5,11 +5,10 @@ namespace aoc_2022_25 {
 
 using namespace std::literals;
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
     int64_t n = 0;
-    for (std::string_view s : lines) {
+    for (std::string_view s : split_lines(buf)) {
         int64_t exp = 1;
         for (size_t i = s.size(); i--; exp *= 5)
             n += ("=-012"sv.find(s[i]) - 2) * exp;

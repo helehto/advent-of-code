@@ -7,7 +7,7 @@ struct Instruction {
     int addend;
 };
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
     int X = 1;
     int cycle = 1;
@@ -15,7 +15,7 @@ void run(FILE *f)
     std::string crt;
     Instruction pending{-1, 0};
 
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     for (size_t i = 0; i < lines.size();) {
         // Start of the cycle. If nothing is executing, fetch an instruction.
         if (pending.due < 0) {

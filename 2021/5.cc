@@ -2,7 +2,7 @@
 
 namespace aoc_2021_5 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
     struct Pair {
         Point<int> a;
@@ -12,12 +12,13 @@ void run(FILE *f)
     int w = 0;
     int h = 0;
 
+    std::vector<int> nums;
     std::vector<Pair> input;
-    int x1, y1, x2, y2;
-    while (fscanf(f, "%d,%d -> %d,%d", &x1, &y1, &x2, &y2) == 4) {
-        input.push_back({{x1, y1}, {x2, y2}});
-        w = std::max(w, x2);
-        h = std::max(h, y2);
+    for (auto line : split_lines(buf)) {
+        find_numbers(line, nums);
+        input.push_back({{nums[0], nums[1]}, {nums[2], nums[3]}});
+        w = std::max(w, nums[2]);
+        h = std::max(h, nums[3]);
     }
 
     Matrix<uint16_t> count1(w + 2, h + 2);

@@ -26,14 +26,12 @@ constexpr bool is_safe2(std::span<const int> nums)
     return false;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
-
     int s1 = 0;
     int s2 = 0;
     std::vector<int> nums;
-    for (std::string_view line : lines) {
+    for (std::string_view line : split_lines(buf)) {
         find_numbers(line, nums);
         s1 += is_safe1(nums);
         s2 += is_safe2(nums);

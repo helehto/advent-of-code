@@ -68,9 +68,9 @@ static int region_sides(const Matrix<char> &g, const std::vector<Point<int>> &po
     return result;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [_, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     auto g = Matrix<char>::from_lines(lines);
 
     std::vector<Point<int>> points;

@@ -3,14 +3,13 @@
 
 namespace aoc_2015_6 {
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
     std::vector<int8_t> lights(1'000'000);
     std::vector<int16_t> brightness(1'000'000);
 
-    auto [buf, lines] = slurp_lines(f);
     std::vector<int> words;
-    for (std::string_view s : lines) {
+    for (std::string_view s : split_lines(buf)) {
         find_numbers(s, words);
 
         const int x0 = words[0];

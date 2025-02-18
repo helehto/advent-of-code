@@ -17,9 +17,9 @@ int64_t modinv(int64_t a, int64_t m)
     return x1 < 0 ? x1 + m0 : x1;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    const auto [_, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
 
     int depart_after = 0;
     std::from_chars(lines[0].data(), lines[0].data() + lines[0].size(), depart_after);

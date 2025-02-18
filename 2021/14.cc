@@ -9,19 +9,17 @@ auto increment_count(dense_map<std::string, int> &map, const std::string &key)
         it->second++;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    std::string tpl;
-    std::string s;
-    getline(f, tpl);
-    getline(f, s);
+    auto lines = split_lines(buf);
+    std::string_view tpl = lines[0];
 
     dense_map<std::string, std::string> rules;
-
-    char a[16], b[16];
-    while (getline(f, s)) {
-        sscanf(s.c_str(), "%[^ ] -> %s\n", a, b);
-        rules.emplace(a, b);
+    for (size_t i = 2; i < lines.size(); ++i) {
+        auto arrow = lines[i].find(" -> ");
+        ASSERT(arrow != std::string_view::npos);
+        rules.emplace(std::string(lines[i].substr(0, arrow)),
+                      std::string(lines[i].substr(arrow + 4)));
     }
 
     dense_map<std::string, uint64_t> elements;

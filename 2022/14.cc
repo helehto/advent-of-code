@@ -12,13 +12,12 @@ struct Cave {
     int max_y;
 };
 
-static Cave make_cave(FILE *f)
+static Cave make_cave(std::string_view buf)
 {
     Cave cave;
     std::vector<int> nums;
 
-    auto [buf, lines] = slurp_lines(f);
-    for (std::string_view s : lines) {
+    for (std::string_view s : split_lines(buf)) {
         find_numbers(s, nums);
 
         for (size_t i = 0; i + 3 < nums.size(); i += 2) {
@@ -108,9 +107,9 @@ static int solve(Cave cave, bool abyss)
     return cave.occupied.size() - num_walls;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    Cave cave = make_cave(f);
+    Cave cave = make_cave(buf);
     fmt::print("{}\n", solve(cave, true));
     fmt::print("{}\n", solve(cave, false));
 }

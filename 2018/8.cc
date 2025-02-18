@@ -30,10 +30,9 @@ static std::pair<std::span<const uint8_t>, int> solve(std::span<const uint8_t> t
     return {tree.subspan(n_metadata), value};
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
-    auto tree = find_numbers<uint8_t>(lines[0]);
+    auto tree = find_numbers<uint8_t>(buf);
     fmt::print("{}\n", solve<1>(tree).second);
     fmt::print("{}\n", solve<2>(tree).second);
 }

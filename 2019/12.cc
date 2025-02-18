@@ -51,9 +51,9 @@ uint64_t cycle_length_1d(const System initial_state, size_t dim)
     return i;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     std::vector<int> nums;
 
     System initial_state{};

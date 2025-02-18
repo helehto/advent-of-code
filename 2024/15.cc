@@ -151,9 +151,9 @@ static int part2(const Matrix<char> &grid, std::string_view moves)
     return result;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     auto nl = std::ranges::find(lines, "") - lines.begin();
     auto grid = Matrix<char>::from_lines(std::span(lines.begin(), nl));
 

@@ -31,9 +31,9 @@ walk(const Matrix<char> &grid, Point<int> start, int max_steps)
     return dist;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
 
     Point<int> start;

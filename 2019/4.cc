@@ -44,9 +44,8 @@ static int cmp(const char *a, const char *b)
     return 0;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto buf = slurp(f);
     std::vector<int> bounds;
     find_numbers(buf, bounds);
 

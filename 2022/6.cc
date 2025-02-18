@@ -18,12 +18,10 @@ static size_t solve(std::string_view s, size_t n)
     return i;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    std::string s;
-    getline(f, s);
-    fmt::print("{}\n", solve(s, 4));
-    fmt::print("{}\n", solve(s, 14));
+    fmt::print("{}\n", solve(buf, 4));
+    fmt::print("{}\n", solve(buf, 14));
 }
 
 }

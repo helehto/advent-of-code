@@ -4,10 +4,10 @@
 
 namespace aoc_2021_12 {
 
-static bool is_big(const char *p)
+static bool is_big(std::string_view s)
 {
-    for (; *p; p++)
-        if (!isupper(*p))
+    for (char c : s)
+        if (!(c >= 'A' && c <= 'Z'))
             return false;
 
     return true;
@@ -46,11 +46,8 @@ static void search(SearchParameters &sp,
     }
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    std::string s;
-    char a[16], b[16];
-
     dense_map<std::string, uint8_t> name_to_index;
     int current_index = 0;
 
@@ -58,7 +55,13 @@ void run(FILE *f)
     std::vector<std::vector<uint8_t>> neighbors;
     uint64_t big_mask = 0;
 
-    while (fscanf(f, "%[^-]-%s\n", a, b) == 2) {
+    for (std::string_view line : split_lines(buf)) {
+        auto dash = line.find('-');
+        ASSERT(dash != std::string_view::npos);
+
+        std::string a(line.substr(0, dash));
+        std::string b(line.substr(dash + 1));
+
         int aindex = current_index;
         if (auto [it, inserted] = name_to_index.emplace(a, current_index); inserted)
             current_index++;

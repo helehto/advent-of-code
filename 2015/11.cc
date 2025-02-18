@@ -43,10 +43,9 @@ static bool is_valid(std::string_view s)
     return has_increasing_triple(s) && has_nonoverlapping_pairs(s);
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    std::string s;
-    getline(f, s);
+    std::string s(buf);
 
     for (int i = 0; i < 2; i++) {
         do {

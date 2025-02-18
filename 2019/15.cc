@@ -15,9 +15,8 @@ static int turn(int dir, bool left)
     return tab[dir] ^ left;
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto buf = slurp(f);
     auto prog = find_numbers<VM::value_type>(buf);
 
     Matrix<char> m(100, 100);

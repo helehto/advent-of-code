@@ -13,9 +13,9 @@ static double to_angle(Point<int16_t> a)
     return std::fabs(angle);
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
+    auto lines = split_lines(buf);
 
     std::vector<Point<int16_t>> asteroids;
     for (size_t y = 0; y < lines.size(); y++) {

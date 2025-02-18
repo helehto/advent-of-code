@@ -33,10 +33,8 @@ namespace aoc_2024_25 {
 constexpr uint32_t carry_bit_mask = 0x88888;
 constexpr uint32_t counter_bias = 0x22222;
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    auto buf = slurp(f);
-
     std::vector<uint32_t> locks;
     std::vector<uint32_t> keys;
     locks.reserve(buf.size() / (6 * 7));
@@ -44,7 +42,8 @@ void run(FILE *f)
 
     size_t i = 0;
     for (; i + 3 < buf.size(); i += 6 * 7 + 1) {
-        __m256i vchars = _mm256_loadu_si256(reinterpret_cast<__m256i *>(&buf[i + 6]));
+        __m256i vchars =
+            _mm256_loadu_si256(reinterpret_cast<const __m256i *>(&buf[i + 6]));
         __m256i vfilled = _mm256_cmpeq_epi8(vchars, _mm256_set1_epi8('#'));
         unsigned int filled = _mm256_movemask_epi8(vfilled);
 

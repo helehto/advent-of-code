@@ -9,13 +9,12 @@ struct Reindeer {
     int rest_time;
 };
 
-static std::vector<Reindeer> parse_input(FILE *f)
+static std::vector<Reindeer> parse_input(std::string_view buf)
 {
-    auto [buf, lines] = slurp_lines(f);
     std::vector<int> nums;
     std::vector<Reindeer> reindeer;
 
-    for (std::string_view s : lines) {
+    for (std::string_view s : split_lines(buf)) {
         find_numbers(s, nums);
         reindeer.push_back({
             .velocity = nums[0],
@@ -57,9 +56,9 @@ static int part2(const std::vector<Reindeer> &reindeer, int time)
     return *std::max_element(begin(scores), end(scores));
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    const auto reindeer = parse_input(f);
+    const auto reindeer = parse_input(buf);
 
     int distance = 0;
     for (auto &r : reindeer)

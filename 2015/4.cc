@@ -230,17 +230,14 @@ hash_search(std::string_view s, int n, int stride, std::atomic_int &limit)
     return {part1, part2};
 }
 
-void run(FILE *f)
+void run(std::string_view buf)
 {
-    std::string s;
-    getline(f, s);
-
     const auto num_threads = std::thread::hardware_concurrency();
     std::vector<std::future<std::pair<int, int>>> futures;
 
     std::atomic_int limit = INT_MAX;
     for (size_t i = 0; i < num_threads; i++)
-        futures.push_back(std::async(std::launch::async, hash_search, s, i, num_threads,
+        futures.push_back(std::async(std::launch::async, hash_search, buf, i, num_threads,
                                      std::ref(limit)));
 
     std::vector<std::pair<int, int>> results;
