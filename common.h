@@ -598,19 +598,6 @@ split(std::string_view s, std::vector<std::string_view> &out, Predicate &&predic
     return out;
 }
 
-constexpr std::vector<std::string_view> &split(std::string_view s,
-                                               std::vector<std::string_view> &out)
-{
-    return split(s, out, [](char c) { return isspace(c); });
-}
-
-constexpr std::vector<std::string_view> split(std::string_view s)
-{
-    std::vector<std::string_view> out;
-    split(s, out);
-    return out;
-}
-
 constexpr std::string_view strip(std::string_view s)
 {
     while (!s.empty() && (s.front() == ' ' || s.front() == '\n'))

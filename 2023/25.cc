@@ -80,7 +80,7 @@ static Graph parse_input(std::string_view buf)
 
     std::vector<std::string_view> fields;
     for (auto &line : split_lines(buf)) {
-        split(line, fields);
+        split(line, fields, ' ');
         auto source = line.substr(0, line.find(':'));
         for (size_t i = 1; i < fields.size(); ++i)
             g.add_edge(get_node(source), get_node(fields[i]), 1);
