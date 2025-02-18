@@ -659,9 +659,9 @@ constexpr std::vector<std::string_view> split(std::string_view s)
 
 constexpr std::string_view strip(std::string_view s)
 {
-    while (!s.empty() && s.front() == ' ')
+    while (!s.empty() && (s.front() == ' ' || s.front() == '\n'))
         s.remove_prefix(1);
-    while (!s.empty() && s.back() == ' ')
+    while (!s.empty() && (s.back() == ' ' || s.back() == '\n'))
         s.remove_suffix(1);
     return s;
 }
