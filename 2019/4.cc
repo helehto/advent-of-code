@@ -46,9 +46,6 @@ static int cmp(const char *a, const char *b)
 
 void run(std::string_view buf)
 {
-    std::vector<int> bounds;
-    find_numbers(buf, bounds);
-
     alignas(8) std::array<char, 8> pass{};
     memcpy(pass.data(), buf.data(), 6);
 

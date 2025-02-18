@@ -83,19 +83,18 @@ void run(std::string_view buf)
 {
     std::vector<Hailstone> hailstones;
 
-    std::vector<int64_t> n;
     for (auto &line : split_lines(buf)) {
-        find_numbers(line, n);
+        auto [x, y, z, vx, vy, vz] = find_numbers_n<int64_t, 6>(line);
         hailstones.emplace_back(
             Eigen::Vector3d{
-                static_cast<double>(n[0]),
-                static_cast<double>(n[1]),
-                static_cast<double>(n[2]),
+                static_cast<double>(x),
+                static_cast<double>(y),
+                static_cast<double>(z),
             },
             Eigen::Vector3d{
-                static_cast<double>(n[3]),
-                static_cast<double>(n[4]),
-                static_cast<double>(n[5]),
+                static_cast<double>(vx),
+                static_cast<double>(vy),
+                static_cast<double>(vz),
             });
     }
 

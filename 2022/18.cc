@@ -97,11 +97,8 @@ static std::unordered_set<Cube> flood(std::unordered_set<Cube> occupied)
 void run(std::string_view buf)
 {
     std::unordered_set<Cube> cubes;
-    std::vector<int> tmp;
-    for (std::string_view line : split_lines(buf)) {
-        find_numbers(line, tmp);
-        cubes.insert({tmp[0], tmp[1], tmp[2]});
-    }
+    for (std::string_view line : split_lines(buf))
+        cubes.insert(find_numbers_n<int, 3>(line));
 
     const auto area = sum_surface_area(cubes);
     fmt::print("{}\n", area);

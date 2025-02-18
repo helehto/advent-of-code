@@ -37,7 +37,6 @@ void run(std::string_view buf)
     auto lines = split_lines(buf);
 
     std::vector<Instruction> prog;
-    std::vector<int> nums;
     prog.reserve(size(lines));
     for (std::string_view line : lines) {
         Instruction &instr = prog.emplace_back();
@@ -51,9 +50,7 @@ void run(std::string_view buf)
         else
             ASSERT(false);
 
-        find_numbers(line, nums);
-        ASSERT(nums.size() == 1);
-        instr.val = nums[0];
+        instr.val = find_numbers_n<int, 1>(line)[0];
     }
 
     // Part 1:

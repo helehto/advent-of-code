@@ -60,12 +60,11 @@ void run(std::string_view buf)
     auto lines = split_lines(buf);
     auto seeds = find_numbers<uint64_t>(lines.front());
 
-    std::vector<uint64_t> nums;
     std::vector<Range> tables[7];
     for (size_t i = 0, j = 2; j < lines.size(); ++i, j += 2) {
         for (++j; j < lines.size() && !lines[j].empty(); ++j) {
-            find_numbers(lines[j], nums);
-            tables[i].emplace_back(nums[0], nums[1], nums[2]);
+            auto [a, b, c] = find_numbers_n<uint64_t, 3>(lines[j]);
+            tables[i].emplace_back(a, b, c);
         }
     }
 

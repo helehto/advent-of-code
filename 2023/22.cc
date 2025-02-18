@@ -24,12 +24,11 @@ void run(std::string_view buf)
     std::vector<Brick> bricks;
     bricks.reserve(lines.size());
 
-    std::vector<int> n;
     uint16_t max_z = 0;
     for (std::string_view line : lines) {
-        find_numbers(line, n);
-        auto &b = bricks.emplace_back(n[0], n[1], n[2], n[3], n[4], n[5]);
-        max_z = std::max<uint16_t>(max_z, b.z1);
+        auto [x0, y0, z0, x1, y1, z1] = find_numbers_n<int, 6>(line);
+        bricks.emplace_back(x0, y0, z0, x1, y1, z1);
+        max_z = std::max<uint16_t>(max_z, z1);
     }
     std::ranges::sort(bricks, {}, [](auto &b) { return b.z0; });
 

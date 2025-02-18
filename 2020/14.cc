@@ -55,7 +55,6 @@ void run(std::string_view buf)
     auto lines = split_lines(buf);
     dense_map<uint64_t, uint64_t> memory;
     memory.reserve(100'000);
-    std::vector<int> nums;
 
     // Part 1:
     {
@@ -65,8 +64,8 @@ void run(std::string_view buf)
             if (line.starts_with("mask")) {
                 std::tie(mask1, maskx) = parse_mask_line(line);
             } else {
-                find_numbers(line, nums);
-                memory[nums[0]] = (maskx & nums[1]) | mask1;
+                auto [addr, value] = find_numbers_n<int, 2>(line);
+                memory[addr] = (maskx & value) | mask1;
             }
         }
         fmt::print("{}\n", memory_sum(memory));
@@ -81,11 +80,11 @@ void run(std::string_view buf)
             if (line.starts_with("mask")) {
                 std::tie(mask1, maskx) = parse_mask_line(line);
             } else {
-                find_numbers(line, nums);
-                uint64_t addr = nums[0] | mask1;
+                auto [raw_addr, value] = find_numbers_n<int, 2>(line);
+                uint64_t addr = raw_addr | mask1;
                 const uint64_t max_addr = uint64_t(1) << std::popcount(maskx);
                 for (uint64_t a = 0; a < max_addr; a++)
-                    memory[(addr & ~maskx) | pdep(a, maskx)] = nums[1];
+                    memory[(addr & ~maskx) | pdep(a, maskx)] = value;
             }
         }
         fmt::print("{}\n", memory_sum(memory));

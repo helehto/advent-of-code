@@ -89,13 +89,13 @@ static std::vector<Monkey> parse_monkeys(std::string_view buf)
 
         // Test
         s = lines[++i];
-        m.divisor = find_numbers<int>(s)[0];
+        m.divisor = find_numbers_n<int, 1>(s)[0];
 
         // If true, if false:
         s = lines[++i];
-        m.targets[1] = find_numbers<int>(s)[0];
+        m.targets[1] = find_numbers_n<int, 1>(s)[0];
         s = lines[++i];
-        m.targets[0] = find_numbers<int>(s)[0];
+        m.targets[0] = find_numbers_n<int, 1>(s)[0];
 
         // Blank line
         i += 2;

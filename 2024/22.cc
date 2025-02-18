@@ -10,11 +10,10 @@ void run(std::string_view buf)
 
     std::vector<std::vector<int>> secrets;
     for (std::string_view line : split_lines(buf)) {
-        find_numbers(line, nums);
-
+        auto [n] = find_numbers_n<int, 1>(line);
         std::vector<int> s;
         s.reserve(2002);
-        s.push_back(nums[0]);
+        s.push_back(n);
 
         while (s.size() <= 2001) {
             auto n = s.back();

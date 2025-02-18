@@ -147,14 +147,14 @@ void run(std::string_view buf)
     std::vector<Blueprint> blueprints;
 
     for (std::string_view s : split_lines(buf)) {
-        auto v = find_numbers<int>(s);
+        auto [_, oror, clor, obor, obcl, geor, geob] = find_numbers_n<int, 7>(s);
         Blueprint &b = blueprints.emplace_back();
-        b.costs[ORE][ORE] = v[1];
-        b.costs[CLAY][ORE] = v[2];
-        b.costs[OBSIDIAN][ORE] = v[3];
-        b.costs[OBSIDIAN][CLAY] = v[4];
-        b.costs[GEODE][ORE] = v[5];
-        b.costs[GEODE][OBSIDIAN] = v[6];
+        b.costs[ORE][ORE] = oror;
+        b.costs[CLAY][ORE] = clor;
+        b.costs[OBSIDIAN][ORE] = obor;
+        b.costs[OBSIDIAN][CLAY] = obcl;
+        b.costs[GEODE][ORE] = geor;
+        b.costs[GEODE][OBSIDIAN] = geob;
     }
 
     int part1 = 0;

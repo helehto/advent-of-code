@@ -78,10 +78,10 @@ void run(std::string_view buf)
 {
     std::vector<Sensor> sensors;
     for (std::string_view s : split_lines(buf)) {
-        auto v = find_numbers<int>(s);
+        auto [x1, y1, x2, y2] = find_numbers_n<int, 4>(s);
         sensors.push_back(Sensor{
-            .p = {v[0], v[1]},
-            .d = abs(v[0] - v[2]) + abs(v[1] - v[3]),
+            .p = {x1, y1},
+            .d = abs(x1 - x2) + abs(y1 - y2),
         });
     }
 

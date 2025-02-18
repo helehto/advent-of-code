@@ -12,12 +12,11 @@ void run(std::string_view buf)
     size_t max_y = 0;
     {
         claims.reserve(lines.size());
-        std::vector<int> nums;
         for (auto line : lines) {
-            find_numbers(line, nums);
-            claims.emplace_back(nums[1], nums[2], nums[1] + nums[3], nums[2] + nums[4]);
-            max_x = std::max<size_t>(max_x, nums[1] + nums[3] + 1);
-            max_y = std::max<size_t>(max_y, nums[2] + nums[4] + 1);
+            auto [claim, x, y, w, h] = find_numbers_n<int, 5>(line);
+            claims.emplace_back(x, y, x + w, y + h);
+            max_x = std::max<size_t>(max_x, x + w + 1);
+            max_y = std::max<size_t>(max_y, y + h + +1);
         }
     }
 

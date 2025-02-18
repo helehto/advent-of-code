@@ -28,7 +28,7 @@ static void prefix_sum(Range &&r, Out out)
 void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
-    const int serial_number = find_numbers<int>(lines[0])[0];
+    const auto [serial_number] = find_numbers_n<int, 1>(lines[0]);
     const auto grid = generate_grid(serial_number, 300);
 
     Matrix<int> row_prefix_sum(grid.rows, grid.cols);

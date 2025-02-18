@@ -53,14 +53,10 @@ uint64_t cycle_length_1d(const System initial_state, size_t dim)
 
 void run(std::string_view buf)
 {
-    auto lines = split_lines(buf);
-    std::vector<int> nums;
-
     System initial_state{};
-    ASSERT(lines.size() == 4);
-    for (size_t i = 0; i < 4; ++i) {
-        find_numbers(lines[i], nums);
-        initial_state.p[i] = {nums[0], nums[1], nums[2]};
+    for (size_t i = 0; std::string_view line : split_lines(buf)) {
+        initial_state.p[i] = find_numbers_n<int, 3>(line);
+        i++;
     }
 
     System system = initial_state;

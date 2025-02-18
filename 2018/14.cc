@@ -5,7 +5,7 @@ namespace aoc_2018_14 {
 void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
-    auto n = find_numbers<size_t>(lines[0])[0];
+    auto [n] = find_numbers_n<size_t, 1>(lines[0]);
 
     std::vector<uint8_t> scores;
     scores.reserve(30'000'000);

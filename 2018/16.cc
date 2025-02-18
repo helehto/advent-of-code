@@ -24,7 +24,7 @@ enum Instruction {
     num_opcodes,
 };
 
-static void execute(std::vector<int> &regs, std::span<const int> instr)
+static void execute(std::array<int, 4> &regs, const std::array<int, 4> &instr)
 {
     auto rr = [&](auto &&f) { regs[instr[3]] = f(regs[instr[1]], regs[instr[2]]); };
     auto ri = [&](auto &&f) { regs[instr[3]] = f(regs[instr[1]], instr[2]); };
@@ -86,11 +86,11 @@ void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
 
-    std::vector<int> input_regs;
-    std::vector<int> expected_regs;
-    std::vector<int> instr;
-    std::vector<int> candidate;
-    std::vector<int> output_regs;
+    std::array<int, 4> input_regs;
+    std::array<int, 4> expected_regs;
+    std::array<int, 4> instr;
+    std::array<int, 4> candidate;
+    std::array<int, 4> output_regs;
 
     uint32_t masks[num_opcodes];
     std::ranges::fill(masks, (UINT32_C(1) << num_opcodes) - 1);
@@ -98,12 +98,9 @@ void run(std::string_view buf)
     int part1 = 0;
     size_t i = 0;
     for (; lines[i].starts_with("Before:"); i += 4) {
-        find_numbers(lines[i], input_regs);
-        ASSERT(input_regs.size() == 4);
-        find_numbers(lines[i + 1], instr);
-        ASSERT(instr.size() == 4);
-        find_numbers(lines[i + 2], expected_regs);
-        ASSERT(expected_regs.size() == 4);
+        input_regs = find_numbers_n<int, 4>(lines[i]);
+        instr = find_numbers_n<int, 4>(lines[i + 1]);
+        expected_regs = find_numbers_n<int, 4>(lines[i + 2]);
 
         int matches = 0;
         for (int op = 0; op < num_opcodes; op++) {
@@ -139,9 +136,9 @@ restart:
 
     while (lines[i].empty())
         i++;
-    std::vector<int> regs{0, 0, 0, 0};
+    std::array<int, 4> regs{0, 0, 0, 0};
     for (; i < lines.size(); i++) {
-        find_numbers(lines[i], instr);
+        instr = find_numbers_n<int, 4>(lines[i]);
         instr[0] = permutation[instr[0]];
         execute(regs, instr);
     }

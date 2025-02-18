@@ -8,14 +8,8 @@ void run(std::string_view buf)
     std::vector<int8_t> lights(1'000'000);
     std::vector<int16_t> brightness(1'000'000);
 
-    std::vector<int> words;
     for (std::string_view s : split_lines(buf)) {
-        find_numbers(s, words);
-
-        const int x0 = words[0];
-        const int y0 = words[1];
-        const int x1 = words[2];
-        const int y1 = words[3];
+        const auto [x0, y0, x1, y1] = find_numbers_n<int, 4>(s);
 
         if (s.starts_with("toggle")) {
             for (int y = y0; y <= y1; y++) {

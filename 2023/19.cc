@@ -74,9 +74,8 @@ static int part1(std::span<const Workflow> workflows,
                  int start_workflow)
 {
     int sum = 0;
-    std::vector<int> nums;
     for (auto part : parts) {
-        find_numbers(part, nums);
+        auto nums = find_numbers_n<int, 4>(part);
         for (int index = start_workflow; index >= 0;) {
             index = apply_workflow(workflows[index], nums);
             if (index == ACCEPTED)

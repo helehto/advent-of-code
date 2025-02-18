@@ -6,17 +6,17 @@ namespace aoc_2024_5 {
 void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
-    std::vector<int> nums;
 
     size_t i = 0;
     std::vector<uint8_t> ok(16384, false);
     for (; !lines[i].empty(); ++i) {
-        find_numbers(lines[i], nums);
-        ASSERT(nums[0] < 128);
-        ASSERT(nums[1] < 128);
-        ok[nums[0] << 7 | nums[1]] = true;
+        auto [a, b] = find_numbers_n<int, 2>(lines[i]);
+        ASSERT(a < 128);
+        ASSERT(b < 128);
+        ok[a << 7 | b] = true;
     }
 
+    std::vector<int> nums;
     int n[2]{};
     for (++i; i < lines.size(); ++i) {
         find_numbers(lines[i], nums);

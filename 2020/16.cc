@@ -104,10 +104,10 @@ void run(std::string_view buf)
 
     size_t i = 0;
     for (; !lines[i].empty(); ++i) {
-        find_numbers(lines[i], nums);
+        auto [a0, a1, b0, b1] = find_numbers_n<int, 4>(lines[i]);
         field_names.push_back(lines[i].substr(0, lines[i].find(':')));
-        intervals.emplace_back(nums[0], -nums[1]);
-        intervals.emplace_back(nums[2], -nums[3]);
+        intervals.emplace_back(a0, -a1);
+        intervals.emplace_back(b0, -b1);
     }
     i += 2; // skip blank line + 'your ticket:'
 

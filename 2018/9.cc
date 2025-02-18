@@ -55,10 +55,7 @@ static int64_t play(Marble *buffer, int n_players, int n_marbles)
 
 void run(std::string_view buf)
 {
-    auto input = find_numbers<int>(buf);
-    const int n_players = input[0];
-    const int n_marbles = input[1];
-
+    auto [n_players, n_marbles] = find_numbers_n<int, 2>(buf);
     auto marbles = std::make_unique_for_overwrite<Marble[]>(100 * n_marbles + 1);
     fmt::print("{}\n", play(marbles.get(), n_players, n_marbles));
     fmt::print("{}\n", play(marbles.get(), n_players, 100 * n_marbles));

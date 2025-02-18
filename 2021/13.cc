@@ -6,11 +6,10 @@ void run(std::string_view buf)
 {
     std::vector<std::pair<int, int>> pairs;
     auto lines = split_lines(buf);
-    std::vector<int> v;
     size_t i = 0;
     for (; !lines[i].empty(); i++) {
-        find_numbers(lines[i], v);
-        pairs.emplace_back(v[0], v[1]);
+        auto [x, y] = find_numbers_n<int, 2>(lines[i]);
+        pairs.emplace_back(x, y);
     }
     i++;
 
@@ -27,8 +26,7 @@ void run(std::string_view buf)
 
     for (; i < lines.size(); i++) {
         std::string_view s = lines[i];
-        find_numbers(s, v);
-        int w = v[0];
+        auto [w] = find_numbers_n<int, 1>(lines[i]);
 
         if (s[sizeof("fold along")] == 'x') {
             int n = std::min(w, cols - w);

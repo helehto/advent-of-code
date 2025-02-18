@@ -6,7 +6,6 @@ namespace aoc_2018_10 {
 void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
-    std::vector<int> nums;
     std::vector<int64_t> px;
     std::vector<int64_t> py;
     std::vector<int64_t> vx;
@@ -14,11 +13,11 @@ void run(std::string_view buf)
     const int n = lines.size();
 
     for (auto line : lines) {
-        find_numbers(line, nums);
-        px.push_back(nums[0]);
-        py.push_back(nums[1]);
-        vx.push_back(nums[2]);
-        vy.push_back(nums[3]);
+        auto [a, b, c, d] = find_numbers_n<int64_t, 4>(line);
+        px.push_back(a);
+        py.push_back(b);
+        vx.push_back(c);
+        vy.push_back(d);
     }
 
     auto dispersion_x = [&](int64_t t) -> double {

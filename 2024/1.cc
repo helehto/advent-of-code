@@ -29,14 +29,13 @@ void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
 
-    std::vector<int> nums;
     std::vector<int> l, r;
     l.reserve(lines.size());
     r.reserve(lines.size());
     for (std::string_view line : lines) {
-        find_numbers(line, nums);
-        l.push_back(nums[0]);
-        r.push_back(nums[1]);
+        auto [a, b] = find_numbers_n<int, 2>(line);
+        l.push_back(a);
+        r.push_back(b);
     }
 
     std::ranges::sort(l);

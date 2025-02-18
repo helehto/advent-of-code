@@ -11,16 +11,11 @@ struct Reindeer {
 
 static std::vector<Reindeer> parse_input(std::string_view buf)
 {
-    std::vector<int> nums;
     std::vector<Reindeer> reindeer;
 
     for (std::string_view s : split_lines(buf)) {
-        find_numbers(s, nums);
-        reindeer.push_back({
-            .velocity = nums[0],
-            .duration = nums[1],
-            .rest_time = nums[2],
-        });
+        auto [v, d, r] = find_numbers_n<int, 3>(s);
+        reindeer.push_back({.velocity = v, .duration = d, .rest_time = r});
     }
 
     return reindeer;

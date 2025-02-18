@@ -6,16 +6,15 @@ namespace aoc_2018_6 {
 void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
-    std::vector<int> nums;
     std::vector<int> xs;
     std::vector<int> ys;
     xs.reserve(lines.size());
     ys.reserve(lines.size());
 
     for (auto line : lines) {
-        find_numbers(line, nums);
-        xs.push_back(nums[0]);
-        ys.push_back(nums[1]);
+        auto [x, y] = find_numbers_n<int, 2>(line);
+        xs.push_back(x);
+        ys.push_back(y);
     }
 
     const auto max_x = std::ranges::max(xs);

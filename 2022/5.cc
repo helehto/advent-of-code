@@ -40,12 +40,10 @@ void run(std::string_view buf)
     i += 2;
 
     auto crates2 = crates1;
-    std::vector<int> nums;
-    nums.reserve(3);
     for (; i < lines.size(); i++) {
-        find_numbers(lines[i], nums);
-        move_crates(crates1[nums[1]], crates1[nums[2]], nums[0], true);
-        move_crates(crates2[nums[1]], crates2[nums[2]], nums[0], false);
+        auto [crate, from, to] = find_numbers_n<int, 3>(lines[i]);
+        move_crates(crates1[from], crates1[to], crate, true);
+        move_crates(crates2[from], crates2[to], crate, false);
     }
 
     print_crates(crates1);

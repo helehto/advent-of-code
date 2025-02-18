@@ -23,12 +23,9 @@ static void step(dense_map<int64_t, int64_t> &counter,
 
 void run(std::string_view buf)
 {
-    std::vector<int64_t> nums;
-    find_numbers(buf, nums);
-
     dense_map<int64_t, int64_t> counter;
     dense_map<int64_t, int64_t> tmp;
-    for (auto n : nums)
+    for (auto n : find_numbers<int64_t>(buf))
         counter[n]++;
 
     for (int steps : {25, 50}) {

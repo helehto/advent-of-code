@@ -474,11 +474,9 @@ constexpr T modulo(T x, T mod)
 static inline std::vector<std::string_view> &
 split(std::string_view s, std::vector<std::string_view> &out, char c);
 
-template <typename T>
-constexpr void find_numbers(std::string_view s, std::vector<T> &result)
+template <typename T, typename Fn>
+constexpr void find_numbers_impl(std::string_view s, Fn &&sink)
 {
-    result.clear();
-
     while (true) {
         while (!s.empty() && s.front() != '-' && !(s.front() >= '0' && s.front() <= '9'))
             s.remove_prefix(1);
@@ -489,12 +487,34 @@ constexpr void find_numbers(std::string_view s, std::vector<T> &result)
         auto r = std::from_chars(s.data(), s.data() + s.size(), value);
         assert(r.ec != std::errc::result_out_of_range);
         if (r.ec == std::errc()) {
-            result.push_back(value);
+            sink(static_cast<T &&>(value));
             s.remove_prefix(r.ptr - s.data());
         } else {
             s.remove_prefix(1);
         }
     }
+}
+
+template <typename T>
+constexpr void find_numbers(std::string_view s, std::vector<T> &result)
+{
+    result.clear();
+    find_numbers_impl<T>(s, [&](auto &&v) { result.push_back(static_cast<T &&>(v)); });
+}
+
+template <typename T, size_t N>
+constexpr std::array<T, N> find_numbers_n(std::string_view s)
+{
+    std::array<T, N> result;
+    size_t i = 0;
+
+    find_numbers_impl<T>(s, [&](auto &&v) {
+        ASSERT(i < result.size());
+        result[i++] = static_cast<T &&>(v);
+    });
+
+    ASSERT_MSG(i == N, "Expected {} numbers, but got only {}!", N, i);
+    return result;
 }
 
 template <typename T>
