@@ -10,12 +10,12 @@ static constexpr std::pair<int, int> face_orientations[6][4] = {
     {{2, D}, {3, R}, {5, R}, {1, R}}, {{3, D}, {0, U}, {1, U}, {4, D}},
 };
 
-static Point<int> turn_left(Point<int> d)
+static Vec2i turn_left(Vec2i d)
 {
     return {-d.y, d.x};
 }
 
-static Point<int> turn_right(Point<int> d)
+static Vec2i turn_right(Vec2i d)
 {
     return {d.y, -d.x};
 }
@@ -26,7 +26,7 @@ struct Move {
     uint16_t type : 2;
 };
 
-static Point<int> move1(const std::vector<std::string> &map, Point<int> p, Point<int> d)
+static Vec2i move1(const std::vector<std::string> &map, Vec2i p, Vec2i d)
 {
     for (;;) {
         p.x = (p.x + d.x) % (int)map.size();
@@ -40,7 +40,7 @@ static Point<int> move1(const std::vector<std::string> &map, Point<int> p, Point
     }
 }
 
-static int score(Point<int> p, Point<int> d)
+static int score(Vec2i p, Vec2i d)
 {
     const auto f = (d.x == 0 && d.y == 1)    ? 0
                    : (d.x == 1 && d.y == 0)  ? 1
@@ -51,7 +51,7 @@ static int score(Point<int> p, Point<int> d)
 
 static int part1(const std::vector<std::string> &map, const std::vector<Move> &moves)
 {
-    Point<int> d{0, 1};
+    Vec2i d{0, 1};
     auto p = move1(map, {0, -1}, d);
 
     for (const auto &move : moves) {
@@ -78,10 +78,9 @@ static int part1(const std::vector<std::string> &map, const std::vector<Move> &m
 static int part2(const std::vector<std::string> &map, const std::vector<Move> &moves)
 {
     constexpr int face_width = 50;
-    std::vector<Point<int>> face_to_global;
+    std::vector<Vec2i> face_to_global;
 
-    auto wrap = [&](Point<int> localp, int face,
-                    Point<int> d) -> std::tuple<Point<int>, int, Point<int>> {
+    auto wrap = [&](Vec2i localp, int face, Vec2i d) -> std::tuple<Vec2i, int, Vec2i> {
         auto [y, x] = localp;
         int exit_dir, k;
 
@@ -131,8 +130,8 @@ static int part2(const std::vector<std::string> &map, const std::vector<Move> &m
     }
 
     face = 0;
-    Point<int> local{0, 0};
-    Point<int> d{0, 1};
+    Vec2i local{0, 0};
+    Vec2i d{0, 1};
 
     for (const auto &move : moves) {
         switch (move.type) {

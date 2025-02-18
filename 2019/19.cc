@@ -10,14 +10,14 @@ void run(std::string_view buf)
     auto prog = find_numbers<VM::value_type>(buf);
     VM vm;
 
-    auto scan = [&](const Point<int> p) {
+    auto scan = [&](const Vec2i p) {
         vm.reset(prog);
         ASSERT(vm.run({p.x, p.y}) == HaltReason::op99);
         ASSERT(vm.output.size() == 1);
         return vm.output[0] != 0;
     };
 
-    auto fits = [&](Point<int> p) {
+    auto fits = [&](Vec2i p) {
         return scan(p.translate(0, 0)) && scan(p.translate(0, 99)) &&
                scan(p.translate(99, 0)) && scan(p.translate(99, 99));
     };
@@ -25,7 +25,7 @@ void run(std::string_view buf)
     Matrix<bool> g(50, 50);
     for (int x = 0; x < 50; ++x) {
         for (int y = 0; y < 50; ++y) {
-            Point<int> p{x, y};
+            Vec2i p{x, y};
             g(p) = scan(p);
         }
     }
@@ -35,7 +35,7 @@ void run(std::string_view buf)
         for (int y = 0; y < 50; ++y)
             n += g(x, y);
 
-    Point<int> p(25, 0);
+    Vec2i p(25, 0);
     for (; !g(p); p.y++)
         ;
 
@@ -48,9 +48,9 @@ void run(std::string_view buf)
 
     p = p.translate(-99, 0);
     while (true) {
-        if (Point<int> q = p.translate(-1, 0); fits(q))
+        if (Vec2i q = p.translate(-1, 0); fits(q))
             p = q;
-        else if (Point<int> q = p.translate(0, -1); fits(q))
+        else if (Vec2i q = p.translate(0, -1); fits(q))
             p = q;
         else
             break;

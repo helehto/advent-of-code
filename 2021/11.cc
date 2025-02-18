@@ -10,8 +10,8 @@ void run(std::string_view buf)
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines, [](char c) { return c - '0'; });
 
-    dense_set<Point<size_t>> flashed;
-    std::vector<Point<size_t>> queue;
+    dense_set<Vec2z> flashed;
+    std::vector<Vec2z> queue;
     int total_flashes = 0;
     for (int step = 1;; step++) {
         queue.clear();

@@ -24,12 +24,11 @@ struct State {
     };
 };
 
-static std::pair<std::vector<State>, size_t> walk1(const Matrix<char> &grid,
-                                                   Point<uint16_t> p)
+static std::pair<std::vector<State>, size_t> walk1(const Matrix<char> &grid, Vec2u16 p)
 {
     uint16_t dir = N;
     std::vector<State> visited{State{p.x, p.y, dir}};
-    dense_set<Point<uint16_t>> unique{p};
+    dense_set<Vec2u16> unique{p};
 
     while (true) {
         auto q = p.translate(dx[dir], dy[dir]);
@@ -50,9 +49,9 @@ static std::pair<std::vector<State>, size_t> walk1(const Matrix<char> &grid,
 }
 
 static bool walk2(const Matrix<char> &grid,
-                  Point<uint16_t> p,
+                  Vec2u16 p,
                   dense_set<State, State::Hasher> &visited,
-                  dense_set<Point<uint16_t>> *out = nullptr)
+                  dense_set<Vec2u16> *out = nullptr)
 {
     uint16_t dir = N;
     visited.clear();
@@ -90,7 +89,7 @@ void run(std::string_view buf)
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
 
-    Point<uint16_t> start{};
+    Vec2u16 start{};
     for (auto p : grid.ndindex<uint16_t>()) {
         if (grid(p) == '^') {
             start = p;
@@ -101,7 +100,7 @@ void run(std::string_view buf)
     auto [route, n_route_unique] = walk1(grid, start);
     fmt::print("{}\n", n_route_unique);
 
-    dense_set<Point<uint16_t>> visited_points;
+    dense_set<Vec2u16> visited_points;
     dense_set<State, State::Hasher> visited_states;
     walk2(grid, start, visited_states, &visited_points);
     fmt::print("{}\n", visited_points.size());

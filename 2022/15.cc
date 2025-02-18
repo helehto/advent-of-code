@@ -5,11 +5,11 @@
 namespace aoc_2022_15 {
 
 struct Sensor {
-    Point<int> p;
+    Vec2i p;
     int d;
 };
 
-static std::vector<Point<int>> boundary(Sensor a, Sensor b)
+static std::vector<Vec2i> boundary(Sensor a, Sensor b)
 {
     if (a.d >= b.d)
         std::swap(a, b);
@@ -24,7 +24,7 @@ static std::vector<Point<int>> boundary(Sensor a, Sensor b)
     // details of this corner case.
     ASSERT(dx != 0 && dy != 0);
 
-    Point<int> b0, b1;
+    Vec2i b0, b1;
 
     if (dx > 0) {
         b0.x = std::max(bx, ax - (a.d + 1));
@@ -45,15 +45,15 @@ static std::vector<Point<int>> boundary(Sensor a, Sensor b)
     const int sx = signum(dx);
     const int sy = signum(dy);
 
-    std::vector<Point<int>> points;
+    std::vector<Vec2i> points;
     points.reserve(abs(b0.x - b1.x + 1) + abs(b0.y - b1.y + 1));
     for (int x = b0.x, y = b0.y; x != b1.x + sx; x += sx, y -= sy)
-        points.push_back(Point{x, y});
+        points.push_back(Vec2{x, y});
 
     return points;
 }
 
-static Point<int> intersect(std::vector<Point<int>> &a, std::vector<Point<int>> &b)
+static Vec2i intersect(std::vector<Vec2i> &a, std::vector<Vec2i> &b)
 {
     size_t ai = a.size() / 2;
     size_t bi = b.size() / 2;
@@ -99,7 +99,7 @@ void run(std::string_view buf)
     }
     fmt::print("{}\n", xmax - xmin);
 
-    std::vector<std::vector<Point<int>>> bps;
+    std::vector<std::vector<Vec2i>> bps;
     for (size_t i = 0; i < sensors.size(); i++) {
         for (size_t j = i + 1; j < sensors.size(); j++) {
             const auto &a = sensors[i];

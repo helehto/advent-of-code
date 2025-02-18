@@ -5,7 +5,7 @@ namespace aoc_2023_17 {
 enum { N, E, S, W };
 
 struct alignas(4) Vertex {
-    Point<uint8_t> p;
+    Vec2u8 p;
     uint8_t direction;
     uint8_t padding;
 
@@ -14,7 +14,7 @@ struct alignas(4) Vertex {
 };
 static_assert(sizeof(Vertex) == 4);
 
-static Point<uint8_t> step(Point<uint8_t> p, uint8_t d)
+static Vec2u8 step(Vec2u8 p, uint8_t d)
 {
     int dx = d == W ? -1 : d == E ? 1 : 0;
     int dy = d == N ? -1 : d == S ? 1 : 0;
@@ -37,7 +37,7 @@ static std::span<Neighbor> get_neighbors(std::array<Neighbor, 16> &result,
 
     for (int turn = -1; turn <= 1; turn += 2) {
         uint8_t new_direction = (u.direction + turn) & 3;
-        Point<uint8_t> p = u.p;
+        Vec2u8 p = u.p;
         int cost = 0;
 
         int n = 1;
@@ -65,7 +65,7 @@ static int dijkstra(const Matrix<uint8_t> &grid,
                     std::vector<int> &dist,
                     const int min_straight,
                     const int max_straight,
-                    Point<uint8_t> goal)
+                    Vec2u8 goal)
 {
     using VertexPlusDist = std::pair<uint32_t, int>;
 
@@ -111,7 +111,7 @@ void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
     auto grid = Matrix<uint8_t>::from_lines(lines, [&](auto c) { return c - '0'; });
-    const Point<uint8_t> goal{
+    const Vec2u8 goal{
         static_cast<uint8_t>(grid.cols - 1),
         static_cast<uint8_t>(grid.rows - 1),
     };

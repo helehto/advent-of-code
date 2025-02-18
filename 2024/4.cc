@@ -3,7 +3,7 @@
 namespace aoc_2024_4 {
 
 constexpr bool
-scan(const Matrix<char> &grid, Point<int> start, int dx, int dy, int len, char *out)
+scan(const Matrix<char> &grid, Vec2i start, int dx, int dy, int len, char *out)
 {
     for (int n = 0; n < len; ++n) {
         auto p = start.translate(n * dx, n * dy);
@@ -42,7 +42,7 @@ constexpr int part2(const Matrix<char> &grid)
     int result = 0;
 
     for (auto p : grid.ndindex<int>()) {
-        auto check = [&](Point<int> start, int dx, int dy) {
+        auto check = [&](Vec2i start, int dx, int dy) {
             word.fill(0);
             return scan(grid, start, dx, dy, 3, word.data()) &&
                    (match_word(word, 'M', 'A', 'S', 0) ||

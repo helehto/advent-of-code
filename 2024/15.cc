@@ -11,7 +11,7 @@ constexpr auto move_to_dir = [] {
     return result;
 }();
 
-static Point<int> step1(Matrix<char> &grid, const Point<int> from, const char c)
+static Vec2i step1(Matrix<char> &grid, const Vec2i from, const char c)
 {
     auto [dx, dy] = move_to_dir[c];
     const auto p = from.translate(dx, dy);
@@ -45,7 +45,7 @@ static int part1(const Matrix<char> &original_grid, std::string_view moves)
 {
     auto grid = original_grid;
 
-    Point<int> robot{};
+    Vec2i robot{};
     for (auto p : grid.ndindex<int>()) {
         if (grid(p) == '@') {
             robot = p;
@@ -64,13 +64,13 @@ static int part1(const Matrix<char> &original_grid, std::string_view moves)
     return result;
 }
 
-static Point<int> step2(const Point<int> robot,
-                        Matrix<bool> &boxes,
-                        const Matrix<bool> &walls,
-                        const char c,
-                        std::vector<Point<int>> &to_move)
+static Vec2i step2(const Vec2i robot,
+                   Matrix<bool> &boxes,
+                   const Matrix<bool> &walls,
+                   const char c,
+                   std::vector<Vec2i> &to_move)
 {
-    auto box_at = [&](const Point<int> &p) -> std::optional<Point<int>> {
+    auto box_at = [&](const Vec2i &p) -> std::optional<Vec2i> {
         if (boxes(p))
             return p;
         if (auto q = p.translate(-1, 0); boxes(q))
@@ -123,12 +123,12 @@ static Point<int> step2(const Point<int> robot,
 
 static int part2(const Matrix<char> &grid, std::string_view moves)
 {
-    Point<int> robot{};
+    Vec2i robot{};
     Matrix<bool> boxes(grid.rows, 2 * grid.cols, false);
     Matrix<bool> walls(grid.rows, 2 * grid.cols, false);
 
     for (auto p : grid.ndindex<int>()) {
-        const Point<int> pp(2 * p.x, p.y);
+        const Vec2i pp(2 * p.x, p.y);
         if (grid(p) == '@') {
             robot = pp;
         } else if (grid(p) == 'O') {
@@ -139,7 +139,7 @@ static int part2(const Matrix<char> &grid, std::string_view moves)
         }
     }
 
-    std::vector<Point<int>> to_move;
+    std::vector<Vec2i> to_move;
     to_move.reserve(16);
     for (char c : moves)
         robot = step2(robot, boxes, walls, c, to_move);

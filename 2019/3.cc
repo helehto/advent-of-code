@@ -6,14 +6,14 @@ namespace aoc_2019_3 {
 void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
-    dense_map<Point<int16_t>, int8_t> visited;
-    dense_map<Point<int16_t>, int> steps_maps[2];
+    dense_map<Vec2i16, int8_t> visited;
+    dense_map<Vec2i16, int> steps_maps[2];
 
     std::vector<std::string_view> moves;
     for (size_t i = 0; i < 2; i++) {
         split(lines[i], moves, ',');
 
-        Point<int16_t> p{0, 0};
+        Vec2i16 p{0, 0};
         int steps = 0;
         for (std::string_view w : moves) {
             int n = 0, dx = 0, dy = 0;
@@ -35,21 +35,21 @@ void run(std::string_view buf)
         }
     };
 
-    std::vector<Point<int16_t>> crossings;
+    std::vector<Vec2i16> crossings;
     crossings.reserve(visited.size());
     for (auto &[p, count] : visited) {
         if (count == 3)
             crossings.push_back(p);
     }
 
-    Point<int16_t> minp = {1000, 1000};
-    for (Point<int16_t> &p : crossings) {
+    Vec2i16 minp = {1000, 1000};
+    for (Vec2i16 &p : crossings) {
         if (manhattan(p) < manhattan(minp))
             minp = p;
     }
 
     int minsteps = INT_MAX;
-    for (Point<int16_t> &p : crossings) {
+    for (Vec2i16 &p : crossings) {
         int steps = steps_maps[0][p] + steps_maps[1][p];
         if (steps < minsteps)
             minsteps = steps;

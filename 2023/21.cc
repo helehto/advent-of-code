@@ -8,18 +8,17 @@
 
 namespace aoc_2023_21 {
 
-static dense_map<Point<int>, int>
-walk(const Matrix<char> &grid, Point<int> start, int max_steps)
+static dense_map<Vec2i, int> walk(const Matrix<char> &grid, Vec2i start, int max_steps)
 {
-    dense_map<Point<int>, int> dist{{start, 0}};
-    std::queue<std::pair<Point<int>, int>> queue;
+    dense_map<Vec2i, int> dist{{start, 0}};
+    std::queue<std::pair<Vec2i, int>> queue;
     queue.emplace(start, 0);
     while (!queue.empty()) {
         auto [p, d] = queue.front();
         queue.pop();
 
         for (auto q : neighbors4<int>(p)) {
-            Point<int> qwrap = {
+            Vec2i qwrap = {
                 modulo<int>(q.x, grid.cols),
                 modulo<int>(q.y, grid.rows),
             };
@@ -36,8 +35,8 @@ void run(std::string_view buf)
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
 
-    Point<int> start;
-    for (Point<size_t> p : grid.ndindex())
+    Vec2i start;
+    for (Vec2z p : grid.ndindex())
         if (grid(p) == 'S')
             start = p.cast<int>();
 

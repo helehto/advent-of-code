@@ -13,16 +13,16 @@ struct Map {
     int ymax = 0;
     int k = 0;
 
-    uint8_t &at(Point<int> p) { return array[(xmax - xmin) * p.y + p.x - k]; }
+    uint8_t &at(Vec2i p) { return array[(xmax - xmin) * p.y + p.x - k]; }
 
-    void increment(Point<int> p)
+    void increment(Vec2i p)
     {
         if (p.x < xmin + 1 || p.x >= xmax - 1 || p.y < ymin + 1 || p.y >= ymax - 1)
             resize_to(p);
         at(p)++;
     }
 
-    __attribute__((cold)) void resize_to(Point<int> p)
+    __attribute__((cold)) void resize_to(Vec2i p)
     {
         Map new_map;
         new_map.xmin = std::min(p.x - 16, xmin - 16);
@@ -43,7 +43,7 @@ struct Map {
         *this = std::move(new_map);
     }
 
-    uint64_t neighborhood_mask(Point<int> p)
+    uint64_t neighborhood_mask(Vec2i p)
     {
         const uint8_t *r0 = &at(p.translate(-1, -1));
         const uint8_t *r1 = &at(p.translate(-1, 0));
@@ -64,12 +64,12 @@ constexpr uint64_t gen_mask(int x1, int x2, int x3)
 
 void run(std::string_view buf)
 {
-    std::vector<Point<int>> elves;
+    std::vector<Vec2i> elves;
     int i = 0;
     for (std::string_view s : split_lines(buf)) {
         for (size_t j = 0; j < s.size(); j++) {
             if (s[j] == '#')
-                elves.push_back(Point{static_cast<int>(j), i});
+                elves.push_back(Vec2{static_cast<int>(j), i});
         }
         i++;
     }
@@ -93,8 +93,8 @@ void run(std::string_view buf)
 
     Map new_map;
     Map proposal_map;
-    std::vector<Point<int>> new_elves;
-    std::vector<Point<int>> proposals(elves.size());
+    std::vector<Vec2i> new_elves;
+    std::vector<Vec2i> proposals(elves.size());
 
     for (int round = 1;; round++) {
         for (auto &p : new_elves) {
@@ -121,7 +121,7 @@ void run(std::string_view buf)
         }
 
         for (size_t i = 0; i < elves.size(); i++) {
-            Point<int> dest = proposal_map.at(proposals[i]) > 1 ? elves[i] : proposals[i];
+            Vec2i dest = proposal_map.at(proposals[i]) > 1 ? elves[i] : proposals[i];
             new_elves.push_back(dest);
             new_map.increment(dest);
         }

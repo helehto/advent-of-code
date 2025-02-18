@@ -105,46 +105,57 @@ constexpr void hash_combine(std::size_t &h, const T &v, const Rest &...rest)
 }
 
 template <typename T>
-struct Point {
+struct Vec2 {
     T x;
     T y;
 
-    constexpr bool operator==(const Point &other) const = default;
-    constexpr bool operator!=(const Point &other) const = default;
+    constexpr bool operator==(const Vec2 &other) const = default;
+    constexpr bool operator!=(const Vec2 &other) const = default;
 
     template <typename U>
-    constexpr Point<T> translate(U dx, U dy) const
+    constexpr Vec2<T> translate(U dx, U dy) const
     {
         return {static_cast<T>(x + dx), static_cast<T>(y + dy)};
     }
 
     template <typename U>
-    constexpr Point<U> cast() const
+    constexpr Vec2<U> cast() const
     {
         ASSERT(static_cast<T>(x) == x);
         ASSERT(static_cast<T>(y) == y);
-        return Point<U>{
+        return Vec2<U>{
             static_cast<U>(x),
             static_cast<U>(y),
         };
     }
 };
 
+using Vec2i8 = Vec2<int8_t>;
+using Vec2u8 = Vec2<uint8_t>;
+using Vec2i16 = Vec2<int16_t>;
+using Vec2u16 = Vec2<uint16_t>;
+using Vec2i32 = Vec2<int32_t>;
+using Vec2u32 = Vec2<uint32_t>;
+using Vec2i64 = Vec2<int64_t>;
+using Vec2u64 = Vec2<uint64_t>;
+using Vec2i = Vec2<int>;
+using Vec2z = Vec2<size_t>;
+
 template <typename T>
-constexpr T manhattan(const Point<T> &a)
+constexpr T manhattan(const Vec2<T> &a)
 {
     return std::abs(a.x) + std::abs(a.y);
 }
 
 template <typename T>
-constexpr T manhattan(const Point<T> &a, const Point<T> &b)
+constexpr T manhattan(const Vec2<T> &a, const Vec2<T> &b)
 {
     return std::abs(a.x - b.x) + std::abs(a.y - b.y);
 }
 
 template <typename T>
-struct std::hash<Point<T>> {
-    constexpr size_t operator()(const Point<T> &p) const
+struct std::hash<Vec2<T>> {
+    constexpr size_t operator()(const Vec2<T> &p) const
     {
         size_t h = 0;
         hash_combine(h, p.x, p.y);
@@ -153,11 +164,11 @@ struct std::hash<Point<T>> {
 };
 
 template <typename T>
-struct fmt::formatter<Point<T>> {
+struct fmt::formatter<Vec2<T>> {
     constexpr auto parse(format_parse_context &ctx) { return ctx.begin(); }
 
     template <typename FormatContext>
-    auto format(const Point<T> &p, FormatContext &ctx) const
+    auto format(const Vec2<T> &p, FormatContext &ctx) const
     {
         // ctx.out() is an output iterator to write to.
         return fmt::format_to(ctx.out(), "({}, {})", p.x, p.y);
@@ -619,7 +630,7 @@ struct Ndindex2DRange {
     constexpr Ndindex2DRange begin() { return *this; }
     constexpr sentinel end() { return {}; }
 
-    constexpr Point<T> operator*() const { return {j, i}; }
+    constexpr Vec2<T> operator*() const { return {j, i}; }
     constexpr bool operator==(sentinel) const { return static_cast<size_t>(i) >= rows; }
 
     constexpr Ndindex2DRange &operator++()
@@ -770,13 +781,13 @@ struct Matrix {
     constexpr const T &operator()(size_t i, size_t j) const { return data[i * cols + j]; }
 
     template <typename U>
-    constexpr T &operator()(Point<U> p)
+    constexpr T &operator()(Vec2<U> p)
     {
         return data[p.y * cols + p.x];
     }
 
     template <typename U>
-    constexpr const T &operator()(Point<U> p) const
+    constexpr const T &operator()(Vec2<U> p) const
     {
         return data[p.y * cols + p.x];
     }
@@ -810,7 +821,7 @@ struct Matrix {
     }
 
     template <typename U>
-    constexpr bool in_bounds(Point<U> p) const
+    constexpr bool in_bounds(Vec2<U> p) const
     {
         using Unsigned = std::make_unsigned_t<U>;
         return static_cast<Unsigned>(p.x) < cols && static_cast<Unsigned>(p.y) < rows;
@@ -847,7 +858,7 @@ void erase_swap(Container &c, size_t i)
 }
 
 template <typename T>
-constexpr static std::array<Point<T>, 4> neighbors4(Point<T> p)
+constexpr static std::array<Vec2<T>, 4> neighbors4(Vec2<T> p)
 {
     return {{
         p.translate(0, -1),
@@ -858,10 +869,10 @@ constexpr static std::array<Point<T>, 4> neighbors4(Point<T> p)
 }
 
 template <typename T, typename U>
-static boost::container::static_vector<Point<U>, 4> neighbors4(const Matrix<T> &chart,
-                                                               Point<U> p)
+static boost::container::static_vector<Vec2<U>, 4> neighbors4(const Matrix<T> &chart,
+                                                              Vec2<U> p)
 {
-    boost::container::static_vector<Point<U>, 4> result;
+    boost::container::static_vector<Vec2<U>, 4> result;
     for (auto n : neighbors4(p))
         if (chart.in_bounds(n))
             result.push_back(n);
@@ -870,7 +881,7 @@ static boost::container::static_vector<Point<U>, 4> neighbors4(const Matrix<T> &
 }
 
 template <typename T>
-constexpr static std::array<Point<T>, 8> neighbors8(Point<T> p)
+constexpr static std::array<Vec2<T>, 8> neighbors8(Vec2<T> p)
 {
     return {{
         p.translate(-1, -1),
@@ -885,10 +896,10 @@ constexpr static std::array<Point<T>, 8> neighbors8(Point<T> p)
 }
 
 template <typename T, typename U>
-static boost::container::static_vector<Point<U>, 8> neighbors8(const Matrix<T> &grid,
-                                                               Point<U> p)
+static boost::container::static_vector<Vec2<U>, 8> neighbors8(const Matrix<T> &grid,
+                                                              Vec2<U> p)
 {
-    boost::container::static_vector<Point<U>, 8> result;
+    boost::container::static_vector<Vec2<U>, 8> result;
     for (auto n : neighbors8(p))
         if (grid.in_bounds(n))
             result.push_back(n);

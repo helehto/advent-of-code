@@ -10,7 +10,7 @@ void run(std::string_view buf)
     int slope_trees[5]{};
     constexpr std::pair<int, int> walks[] = {{1, 1}, {3, 1}, {5, 1}, {7, 1}, {1, 2}};
     for (size_t i = 0; const auto &[dx, dy] : walks) {
-        Point<size_t> p(0, 0);
+        Vec2z p(0, 0);
         while (true) {
             p = p.translate(dx, dy);
             if (p.y >= grid.rows)

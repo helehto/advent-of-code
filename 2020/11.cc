@@ -24,7 +24,7 @@ static size_t part1(Matrix<char> grid)
     return std::ranges::count(grid.all(), '#');
 }
 
-static bool scan_occupied(const Matrix<char> &g, Point<size_t> p, int dx, int dy)
+static bool scan_occupied(const Matrix<char> &g, Vec2z p, int dx, int dy)
 {
     while (true) {
         p = p.translate(dx, dy);

@@ -8,7 +8,7 @@ void run(std::string_view buf)
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
 
-    dense_map<char, std::vector<Point<uint16_t>>> antennas;
+    dense_map<char, std::vector<Vec2u16>> antennas;
     for (auto p : grid.ndindex<uint16_t>())
         if (grid(p) != '.' && grid(p) != '#')
             antennas[grid(p)].push_back(p);
@@ -26,13 +26,13 @@ void run(std::string_view buf)
                     const int dx = p1.x - p0.x;
                     const int dy = p1.y - p0.y;
 
-                    if (Point p = p1.translate(-k * dx, -k * dy); grid.in_bounds(p)) {
+                    if (Vec2 p = p1.translate(-k * dx, -k * dy); grid.in_bounds(p)) {
                         if (k == 2)
                             antinodes1(p) = '#';
                         antinodes2(p) = '#';
                     }
 
-                    if (Point p = p0.translate(k * dx, k * dy); grid.in_bounds(p)) {
+                    if (Vec2 p = p0.translate(k * dx, k * dy); grid.in_bounds(p)) {
                         if (k == 2)
                             antinodes1(p) = '#';
                         antinodes2(p) = '#';

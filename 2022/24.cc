@@ -21,9 +21,9 @@ struct Grid {
             g.resize(n * m);
     }
 
-    constexpr bool at(int dir, Point<int> p) const { return grid[dir][p.y * m + p.x]; }
+    constexpr bool at(int dir, Vec2i p) const { return grid[dir][p.y * m + p.x]; }
 
-    constexpr bool is_unoccupied(Point<int> p, int t) const
+    constexpr bool is_unoccupied(Vec2i p, int t) const
     {
         return !at(U, {p.x, (p.y - 1 + t) % (n - 2) + 1}) &&
                !at(D, {p.x, modulo(p.y - 1 - t, n - 2) + 1}) &&
@@ -31,10 +31,10 @@ struct Grid {
                !at(R, {modulo(p.x - 1 - t, m - 2) + 1, p.y});
     }
 
-    auto get_moves(Point<int> v, Point<int> goal, int t) const
+    auto get_moves(Vec2i v, Vec2i goal, int t) const
     {
-        static constexpr Point<int> neighbors[4] = {{-1, 0}, {1, 0}, {0, 1}, {0, -1}};
-        static_vector<Point<int>, 6> result;
+        static constexpr Vec2i neighbors[4] = {{-1, 0}, {1, 0}, {0, 1}, {0, -1}};
+        static_vector<Vec2i, 6> result;
 
         if (is_unoccupied(v, t))
             result.push_back(v);
@@ -52,7 +52,7 @@ struct Grid {
 };
 
 struct QueueEntry {
-    Point<int> v;
+    Vec2i v;
     int heuristic;
     int time;
 
@@ -60,7 +60,7 @@ struct QueueEntry {
 };
 
 struct GMapEntry {
-    Point<int> start;
+    Vec2i start;
     int time;
 
     constexpr bool operator==(const GMapEntry &) const = default;
@@ -113,7 +113,7 @@ void run(std::string_view buf)
     }
 
     dense_map<GMapEntry, int> g;
-    auto search = [&](int t, Point<int> start, Point<int> goal) -> std::tuple<int, int> {
+    auto search = [&](int t, Vec2i start, Vec2i goal) -> std::tuple<int, int> {
         g.clear();
         g.insert({{start, t}, 0});
         std::vector<QueueEntry> q{{start, manhattan(start, goal), t}};
@@ -146,8 +146,8 @@ void run(std::string_view buf)
         __builtin_trap();
     };
 
-    Point<int> start_p(1, 0);
-    Point<int> goal_p(lines.back().find("."), n - 1);
+    Vec2i start_p(1, 0);
+    Vec2i goal_p(lines.back().find("."), n - 1);
     auto [cost1, t1] = search(0, start_p, goal_p);
     auto [cost2, t2] = search(t1, start_p, goal_p);
     auto [cost3, t3] = search(t2, start_p, goal_p);

@@ -7,7 +7,7 @@
 
 namespace aoc_2022_17 {
 
-static std::vector<Point<int>> rock_templates[] = {
+static std::vector<Vec2i> rock_templates[] = {
     // clang-format off
     {{0, 0}, {1, 0}, {2, 0}, {3, 0}},
     {{1, 0}, {0, 1}, {1, 1}, {2, 1}, {1, 2}},
@@ -17,10 +17,8 @@ static std::vector<Point<int>> rock_templates[] = {
     // clang-format on
 };
 
-static bool try_move(const dense_set<Point<int>> &occupied,
-                     std::vector<Point<int>> &rock,
-                     int dx,
-                     int dy)
+static bool
+try_move(const dense_set<Vec2i> &occupied, std::vector<Vec2i> &rock, int dx, int dy)
 {
     for (const auto &p : rock) {
         if (p.x + dx < 0 || p.x + dx >= 7 || p.y + dy < 0)
@@ -96,7 +94,7 @@ static std::optional<Cycle> detect_cycle(const std::vector<State> &state_vec)
 void run(std::string_view buf)
 {
     dense_map<CacheKey, std::vector<State>> past_states;
-    dense_set<Point<int>> occupied;
+    dense_set<Vec2i> occupied;
     std::vector<int> heights;
     size_t rock_idx = 0;
     size_t jet_idx = 0;
@@ -115,7 +113,7 @@ void run(std::string_view buf)
         }
 
         // Spawn the rock.
-        std::vector<Point<int>> rock;
+        std::vector<Vec2i> rock;
         auto &rock_template = rock_templates[rock_idx];
         rock_idx = (rock_idx + 1) % std::size(rock_templates);
         for (const auto &[x, y] : rock_template)

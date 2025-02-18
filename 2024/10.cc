@@ -4,8 +4,8 @@ namespace aoc_2024_10 {
 
 template <bool AllowRevisit>
 static int64_t trailhead_score(const Matrix<char> &grid,
-                               Point<int> p,
-                               std::vector<Point<int>> &queue,
+                               Vec2i p,
+                               std::vector<Vec2i> &queue,
                                Matrix<bool> &visited)
 {
     if constexpr (!AllowRevisit)
@@ -39,7 +39,7 @@ void run(std::string_view buf)
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
 
-    std::vector<Point<int>> queue;
+    std::vector<Vec2i> queue;
     Matrix<bool> visited(grid.rows, grid.cols);
 
     int64_t s1 = 0;

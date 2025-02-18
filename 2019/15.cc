@@ -22,16 +22,16 @@ void run(std::string_view buf)
     Matrix<char> m(100, 100);
     std::ranges::fill(m.all(), ' ');
 
-    const Point<uint8_t> start(m.rows / 2, m.cols / 2);
+    const Vec2u8 start(m.rows / 2, m.cols / 2);
 
     VM vm;
     vm.reset(prog);
 
-    Point<uint8_t> p = start;
+    Vec2u8 p = start;
     auto step = [&](int dir) -> int {
         static constexpr int8_t dx[] = {0, 0, -1, +1};
         static constexpr int8_t dy[] = {-1, +1, 0, 0};
-        const Point<uint8_t> q = p.translate(dx[dir], dy[dir]);
+        const Vec2u8 q = p.translate(dx[dir], dy[dir]);
 
         vm.run({static_cast<int16_t>(dir + 1)});
         const int ret = vm.output.front();
@@ -50,7 +50,7 @@ void run(std::string_view buf)
     // otherwise turn right if there was something in front of us. This assumes
     // that the corridors are only one tile wide.
     dir = turn(dir, false);
-    Point<uint8_t> goal;
+    Vec2u8 goal;
     do {
         if (int r = step(dir); r == GOAL)
             goal = p;
@@ -61,7 +61,7 @@ void run(std::string_view buf)
     } while (p != start);
 
     // BFS from the goal.
-    std::vector<std::pair<Point<uint8_t>, int>> queue;
+    std::vector<std::pair<Vec2u8, int>> queue;
     queue.reserve(m.rows * m.cols / 2);
     queue.emplace_back(goal, 0);
     Matrix<bool> visited(m.rows, m.cols, false);

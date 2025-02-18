@@ -14,7 +14,7 @@ void run(std::string_view buf)
     vm.reset(prog);
     vm.run();
 
-    dense_set<Point<int>> block_tiles;
+    dense_set<Vec2i> block_tiles;
     ASSERT(vm.output.size() % 3 == 0);
     for (size_t i = 0; i < vm.output.size(); i += 3) {
         const int x = vm.output[i];

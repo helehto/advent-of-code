@@ -4,7 +4,7 @@ namespace aoc_2018_13 {
 
 enum { N, E, S, W };
 
-static Point<uint8_t> step(Point<uint8_t> p, uint8_t d)
+static Vec2u8 step(Vec2u8 p, uint8_t d)
 {
     int dx = d == W ? -1 : d == E ? 1 : 0;
     int dy = d == N ? -1 : d == S ? 1 : 0;
@@ -12,7 +12,7 @@ static Point<uint8_t> step(Point<uint8_t> p, uint8_t d)
 }
 
 struct Cart {
-    Point<uint8_t> p;
+    Vec2u8 p;
     uint16_t direction : 2;
     uint16_t crossings : 14 = 0;
 };

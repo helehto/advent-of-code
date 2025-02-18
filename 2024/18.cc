@@ -8,14 +8,14 @@ void run(std::string_view buf)
     find_numbers(buf, nums);
 
     constexpr int N = 71;
-    constexpr Point<uint16_t> start{0, 0};
-    constexpr Point<uint16_t> end{N - 1, N - 1};
+    constexpr Vec2u16 start{0, 0};
+    constexpr Vec2u16 end{N - 1, N - 1};
 
     Matrix<char> grid(N, N, '.');
     for (size_t i = 0; i < 2 * 1024; i += 2)
         grid(nums[i + 1], nums[i + 0]) = '#';
 
-    std::array<std::vector<Point<uint16_t>>, 1024> queue;
+    std::array<std::vector<Vec2u16>, 1024> queue;
     Matrix<uint16_t> f_score(N, N);
     Matrix<uint16_t> g_score(N, N);
 
@@ -32,7 +32,7 @@ void run(std::string_view buf)
         f_score(start) = manhattan(start, end);
 
         while (true) {
-            std::vector<Point<uint16_t>> *bucket;
+            std::vector<Vec2u16> *bucket;
             size_t i = 0;
             for (; i < queue.size(); i++, d++)
                 if (bucket = &queue[d & (queue.size() - 1)], !bucket->empty())

@@ -5,7 +5,7 @@
 namespace aoc_2022_14 {
 
 struct Cave {
-    dense_set<Point<int>> occupied;
+    dense_set<Vec2i> occupied;
     int min_x;
     int min_y;
     int max_x;
@@ -28,10 +28,10 @@ static Cave make_cave(std::string_view buf)
 
             if (x0 == x1) {
                 for (int y = std::min(y0, y1); y <= std::max(y0, y1); y++)
-                    cave.occupied.insert(Point{x0, y});
+                    cave.occupied.insert(Vec2{x0, y});
             } else {
                 for (int x = std::min(x0, x1); x <= std::max(x0, x1); x++)
-                    cave.occupied.insert(Point{x, y0});
+                    cave.occupied.insert(Vec2{x, y0});
             }
         }
     }
@@ -50,11 +50,11 @@ static Cave make_cave(std::string_view buf)
     return cave;
 }
 
-static std::tuple<Point<int>, bool>
-drop_sand(Cave &cave, Point<int> pos, std::vector<Point<int>> &trajectory, int y_limit)
+static std::tuple<Vec2i, bool>
+drop_sand(Cave &cave, Vec2i pos, std::vector<Vec2i> &trajectory, int y_limit)
 {
     while (true) {
-        Point<int> candidate;
+        Vec2i candidate;
 
         if (pos.y + 1 == y_limit)
             return {pos, true};
@@ -88,9 +88,9 @@ static int solve(Cave cave, bool abyss)
 {
     const int y_limit = cave.max_y + 2;
     const size_t num_walls = cave.occupied.size();
-    constexpr Point spawn = {500, 0};
+    constexpr Vec2 spawn = {500, 0};
 
-    std::vector<Point<int>> trajectory;
+    std::vector<Vec2i> trajectory;
     trajectory.reserve(y_limit);
     trajectory.push_back(spawn);
 

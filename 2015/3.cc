@@ -6,10 +6,10 @@ namespace aoc_2015_3 {
 void run(std::string_view buf)
 {
     {
-        dense_set<Point<int>> points;
+        dense_set<Vec2i> points;
         points.insert({0, 0});
 
-        Point<int> p = {0, 0};
+        Vec2i p = {0, 0};
         for (auto c : buf) {
             switch (c) {
             case '>':
@@ -32,10 +32,10 @@ void run(std::string_view buf)
     }
 
     {
-        dense_set<Point<int>> points;
+        dense_set<Vec2i> points;
         points.insert({0, 0});
 
-        Point<int> ps[2] = {};
+        Vec2i ps[2] = {};
         size_t i = 0;
         for (auto c : buf) {
             switch (c) {

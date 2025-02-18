@@ -3,14 +3,14 @@
 
 namespace aoc_2024_12 {
 
-static std::vector<std::vector<Point<int>>> regions(const Matrix<char> &g,
-                                                    const std::vector<Point<int>> &seeds)
+static std::vector<std::vector<Vec2i>> regions(const Matrix<char> &g,
+                                               const std::vector<Vec2i> &seeds)
 {
     Matrix<bool> visited(g.rows, g.cols, false);
-    std::vector<Point<int>> stack;
+    std::vector<Vec2i> stack;
 
-    auto flood = [&](Point<int> start) {
-        std::vector<Point<int>> result;
+    auto flood = [&](Vec2i start) {
+        std::vector<Vec2i> result;
         stack = {start};
 
         while (!stack.empty()) {
@@ -27,14 +27,14 @@ static std::vector<std::vector<Point<int>>> regions(const Matrix<char> &g,
         return result;
     };
 
-    std::vector<std::vector<Point<int>>> result;
+    std::vector<std::vector<Vec2i>> result;
     for (auto p : seeds)
         if (!visited(p))
             result.push_back(flood(p));
     return result;
 }
 
-static int region_perimeter(const Matrix<char> &g, const std::vector<Point<int>> &points)
+static int region_perimeter(const Matrix<char> &g, const std::vector<Vec2i> &points)
 {
     int result = 0;
     for (auto u : points)
@@ -43,12 +43,12 @@ static int region_perimeter(const Matrix<char> &g, const std::vector<Point<int>>
     return result;
 }
 
-static int region_sides(const Matrix<char> &g, const std::vector<Point<int>> &points)
+static int region_sides(const Matrix<char> &g, const std::vector<Vec2i> &points)
 {
     constexpr std::pair<int, int> d[] = {{-1, 0}, {+1, 0}, {0, -1}, {0, +1}};
     Matrix<char> mask(g.rows, g.cols);
     int result = 0;
-    std::vector<Point<int>> q;
+    std::vector<Vec2i> q;
 
     for (size_t i = 0; i < 4; i++) {
         std::ranges::fill(mask.all(), false);
@@ -73,7 +73,7 @@ void run(std::string_view buf)
     auto lines = split_lines(buf);
     auto g = Matrix<char>::from_lines(lines);
 
-    std::vector<Point<int>> points;
+    std::vector<Vec2i> points;
     points.reserve(g.rows * g.cols);
     for (auto p : g.ndindex<int>())
         points.push_back(p);
@@ -82,7 +82,7 @@ void run(std::string_view buf)
 
     int s1 = 0;
     int s2 = 0;
-    for (const std::vector<Point<int>> &r : ccs) {
+    for (const std::vector<Vec2i> &r : ccs) {
         s1 += r.size() * region_perimeter(g, r);
         s2 += r.size() * region_sides(g, r);
     }

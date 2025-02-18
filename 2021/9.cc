@@ -21,7 +21,7 @@ void run(std::string_view buf)
     }
     fmt::print("{}\n", risk_sum);
 
-    std::unordered_set<Point<size_t>> unvisited;
+    std::unordered_set<Vec2z> unvisited;
     for (auto p : chart.ndindex()) {
         if (chart(p) != '9')
             unvisited.insert(p);
@@ -29,7 +29,7 @@ void run(std::string_view buf)
 
     Matrix<int> basins(chart.rows, chart.cols, -1);
     int next_basin = 0;
-    std::vector<Point<size_t>> visited;
+    std::vector<Vec2z> visited;
 
     while (!unvisited.empty()) {
         auto p = *unvisited.begin();

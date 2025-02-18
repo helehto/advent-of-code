@@ -13,7 +13,7 @@ struct alignas(16) Node {
 
 struct Graph {
     std::vector<Node> nodes;
-    dense_map<Point<size_t>, size_t> node_map;
+    dense_map<Vec2z, size_t> node_map;
     uint8_t start_index;
     uint8_t goal_index;
 };
@@ -74,7 +74,7 @@ __attribute__((noinline)) static int64_t search(const Graph &graph)
     return max_length;
 }
 
-static size_t get_node(Graph &graph, Point<size_t> p)
+static size_t get_node(Graph &graph, Vec2z p)
 {
     if (auto it = graph.node_map.find(p); it != graph.node_map.end()) {
         return it->second;
@@ -85,7 +85,7 @@ static size_t get_node(Graph &graph, Point<size_t> p)
     }
 }
 
-static void add_edge(Graph &graph, Point<size_t> p, Point<size_t> q, int weight)
+static void add_edge(Graph &graph, Vec2z p, Vec2z q, int weight)
 {
     auto add_unique = [&](Node &node, uint8_t v) {
         for (size_t i = 0; i < node.n_edges; i++) {
@@ -103,13 +103,12 @@ static void add_edge(Graph &graph, Point<size_t> p, Point<size_t> q, int weight)
     add_unique(graph.nodes[qn], pn | 0x80);
 }
 
-static Graph
-build_graph(const Matrix<char> &grid, const Point<size_t> start, const Point<size_t> goal)
+static Graph build_graph(const Matrix<char> &grid, const Vec2z start, const Vec2z goal)
 {
     Graph graph;
 
-    std::vector<std::pair<Point<size_t>, Point<size_t>>> queue{{start, start}};
-    std::vector<Point<size_t>> neighbors;
+    std::vector<std::pair<Vec2z, Vec2z>> queue{{start, start}};
+    std::vector<Vec2z> neighbors;
 
     for (size_t i = 0; i < queue.size(); i++) {
         auto [origin, curr] = queue[i];
@@ -131,7 +130,7 @@ build_graph(const Matrix<char> &grid, const Point<size_t> start, const Point<siz
             if (neighbors.size() != 1) {
                 // It's a crossing; filter by icy slopes to get the next possible
                 // moves from here.
-                erase_if(neighbors, [&](const Point<size_t> &next) {
+                erase_if(neighbors, [&](const Vec2z &next) {
                     char c = grid(next);
                     int dx = next.x - curr.x;
                     int dy = next.y - curr.y;
@@ -161,14 +160,14 @@ void run(std::string_view buf)
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
 
-    Point<size_t> start;
+    Vec2z start;
     for (size_t j = 0; j < grid.cols; j++) {
         start = {j, 0};
         if (std::exchange(grid(start), '#') == '.')
             break;
     }
 
-    Point<size_t> goal;
+    Vec2z goal;
     for (size_t j = 0; j < grid.cols; j++) {
         goal = {j, grid.rows - 1};
         if (grid(goal) == '.')

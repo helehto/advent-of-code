@@ -5,7 +5,7 @@
 
 namespace aoc_2023_14 {
 
-static size_t scan_x(Matrix<char> &grid, Point<size_t> p, int dx)
+static size_t scan_x(Matrix<char> &grid, Vec2z p, int dx)
 {
     auto [i, j] = p;
     for (size_t k = j + dx;; k += dx) {
@@ -16,7 +16,7 @@ static size_t scan_x(Matrix<char> &grid, Point<size_t> p, int dx)
     }
 }
 
-static size_t scan_y(Matrix<char> &grid, Point<size_t> p, int dy)
+static size_t scan_y(Matrix<char> &grid, Vec2z p, int dy)
 {
     auto [i, j] = p;
     for (size_t k = i + dy;; k += dy) {

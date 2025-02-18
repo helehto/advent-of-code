@@ -7,13 +7,13 @@ namespace aoc_2023_16 {
 
 enum { N, E, S, W };
 
-static Point<uint8_t> step(Point<uint8_t> p, int d)
+static Vec2u8 step(Vec2u8 p, int d)
 {
     static int8_t table[] = {0, 1, 0, -1};
     return p.translate(table[d], table[(d - 1) & 3]);
 }
 
-static uint16_t encode_state(Point<uint8_t> p, int dir)
+static uint16_t encode_state(Vec2u8 p, int dir)
 {
     return p.x | static_cast<uint16_t>(p.y) << 7 | static_cast<uint16_t>(dir) << 14;
 }
@@ -76,7 +76,7 @@ static std::vector<uint16_t> merge3_unique(std::span<const uint16_t> a,
 // (recursive) version of this function.
 static size_t fire_laser(dense_map<uint16_t, std::vector<uint16_t>> &cache,
                          const Matrix<char> &grid,
-                         Point<uint8_t> p,
+                         Vec2u8 p,
                          uint8_t dir)
 {
     // Continuation for returning the final size of the visited set for `p`.
@@ -86,7 +86,7 @@ static size_t fire_laser(dense_map<uint16_t, std::vector<uint16_t>> &cache,
     struct Split1 {
         size_t original_continuation;
         std::vector<uint16_t> *result;
-        Point<uint8_t> p;
+        Vec2u8 p;
         uint8_t dir;
     };
 
@@ -193,7 +193,7 @@ void run(std::string_view buf)
 
     size_t part2 = 0;
     auto fire_from_edge = [&](uint8_t x, uint8_t y, int dir) {
-        Point<uint8_t> p = step({x, y}, (dir + 2) & 3);
+        Vec2u8 p = step({x, y}, (dir + 2) & 3);
         return fire_laser(cache, grid, p, dir);
     };
     fmt::print("{}\n", fire_from_edge(0, 0, E));

@@ -73,7 +73,7 @@ static bool search(std::span<const Move> curr,
 static std::vector<Move> walk_scaffold(const Matrix<char> &g)
 {
     // Find our starting location.
-    Point<int> p{};
+    Vec2i p{};
     for (auto q : g.ndindex<int>()) {
         if (g(q) == '^') {
             p = q;
@@ -84,7 +84,7 @@ static std::vector<Move> walk_scaffold(const Matrix<char> &g)
     std::vector<Move> result;
     result.push_back(Move{L});
 
-    Point<int> d = {-1, 0};
+    Vec2i d = {-1, 0};
     while (true) {
         int steps = 0;
         for (;; steps++) {
@@ -95,16 +95,16 @@ static std::vector<Move> walk_scaffold(const Matrix<char> &g)
         }
         result.emplace_back(steps);
 
-        const Point<int> dl = {d.y, -d.x};
-        const Point<int> pl = p.translate(dl.x, dl.y);
+        const Vec2i dl = {d.y, -d.x};
+        const Vec2i pl = p.translate(dl.x, dl.y);
         if (g.in_bounds(pl) && g(pl) == '#') {
             result.emplace_back(L);
             d = dl;
             continue;
         }
 
-        const Point<int> dr = {-d.y, d.x};
-        const Point<int> pr = p.translate(dr.x, dr.y);
+        const Vec2i dr = {-d.y, d.x};
+        const Vec2i pr = p.translate(dr.x, dr.y);
         if (g.in_bounds(pr) && g(pr) == '#') {
             result.emplace_back(R);
             d = dr;

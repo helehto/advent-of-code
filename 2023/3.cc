@@ -3,10 +3,10 @@
 
 namespace aoc_2023_3 {
 
-static boost::container::static_vector<Point<size_t>, 8>
-surrounding_part_numbers(const Matrix<char> &grid, Point<size_t> p)
+static boost::container::static_vector<Vec2z, 8>
+surrounding_part_numbers(const Matrix<char> &grid, Vec2z p)
 {
-    boost::container::static_vector<Point<size_t>, 8> result;
+    boost::container::static_vector<Vec2z, 8> result;
 
     for (auto n : neighbors8(grid, p)) {
         if (isdigit(grid(n))) {
@@ -21,7 +21,7 @@ surrounding_part_numbers(const Matrix<char> &grid, Point<size_t> p)
     return result;
 }
 
-static int read_number(const Matrix<char> &grid, Point<size_t> p)
+static int read_number(const Matrix<char> &grid, Vec2z p)
 {
     int n = 0;
     for (auto [x, y] = p; x < grid.cols && isdigit(grid(y, x)); x++)
@@ -34,7 +34,7 @@ void run(std::string_view buf)
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
 
-    dense_set<Point<size_t>> part_number_positions;
+    dense_set<Vec2z> part_number_positions;
     for (auto p : grid.ndindex()) {
         if (!isdigit(grid(p)) && grid(p) != '.') {
             for (auto n : surrounding_part_numbers(grid, p))

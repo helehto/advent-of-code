@@ -7,7 +7,7 @@ void run(std::string_view buf)
     auto lines = split_lines(buf);
 
     auto grid = Matrix<char>::from_lines(lines);
-    Point<int> start, end;
+    Vec2i start, end;
     for (auto p : grid.ndindex<int>()) {
         if (grid(p) == 'S')
             start = p;
@@ -16,7 +16,7 @@ void run(std::string_view buf)
     }
 
     Matrix<int> dist(grid.rows, grid.cols, -1);
-    std::vector<std::pair<int, Point<int>>> queue{{0, end}};
+    std::vector<std::pair<int, Vec2i>> queue{{0, end}};
     for (size_t i = 0; i < queue.size(); ++i) {
         auto [d, u] = queue[i];
 

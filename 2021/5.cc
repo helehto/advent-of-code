@@ -5,8 +5,8 @@ namespace aoc_2021_5 {
 void run(std::string_view buf)
 {
     struct Pair {
-        Point<int> a;
-        Point<int> b;
+        Vec2i a;
+        Vec2i b;
     };
 
     int w = 0;

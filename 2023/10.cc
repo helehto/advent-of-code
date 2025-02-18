@@ -4,7 +4,7 @@
 
 namespace aoc_2023_10 {
 
-static std::array<Point<size_t>, 2> get_pipe_neighbors(Point<size_t> p, char c)
+static std::array<Vec2z, 2> get_pipe_neighbors(Vec2z p, char c)
 {
     switch (c) {
     case '|':
@@ -23,15 +23,15 @@ static std::array<Point<size_t>, 2> get_pipe_neighbors(Point<size_t> p, char c)
     ASSERT(false);
 }
 
-static int64_t signed_area(std::span<const Point<size_t>> points)
+static int64_t signed_area(std::span<const Vec2z> points)
 {
     ASSERT(points.front() == points.back());
 
     int64_t result = 0;
     size_t i = 1;
     for (; i < points.size(); i++) {
-        Point<size_t> p0 = points[i - 1];
-        Point<size_t> p1 = points[i];
+        Vec2z p0 = points[i - 1];
+        Vec2z p1 = points[i];
         result += (int64_t)(p0.x * p1.y) - (int64_t)(p1.x * p0.y);
     }
 
@@ -43,13 +43,13 @@ void run(std::string_view buf)
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
 
-    Point<size_t> start{};
+    Vec2z start{};
     for (auto p : grid.ndindex())
         if (grid(p) == 'S')
             start = p;
 
     // Find the two pipes connected to the start point.
-    std::array<Point<size_t>, 2> start_neighbors;
+    std::array<Vec2z, 2> start_neighbors;
     {
         size_t i = 0;
         if (auto q = start.translate(0, -1); strchr("|F7", grid(q)))
@@ -66,12 +66,12 @@ void run(std::string_view buf)
     bool start_is_corner = (start_neighbors[0].x != start_neighbors[1].x &&
                             start_neighbors[0].y != start_neighbors[1].y);
 
-    std::vector<Point<size_t>> path{start};
-    std::vector<Point<size_t>> polygon;
+    std::vector<Vec2z> path{start};
+    std::vector<Vec2z> polygon;
     if (start_is_corner)
         polygon.push_back(start);
 
-    for (Point<size_t> prev = start, curr = start_neighbors[0]; curr != start;) {
+    for (Vec2z prev = start, curr = start_neighbors[0]; curr != start;) {
         auto n = get_pipe_neighbors(curr, grid(curr));
         path.push_back(curr);
         if (strchr("F7JL", grid(curr)))
@@ -83,7 +83,7 @@ void run(std::string_view buf)
     fmt::print("{}\n", path.size() / 2);
 
     // Remove any superfluous pipes from the grid.
-    dense_set<Point<size_t>> path_set(path.begin(), path.end());
+    dense_set<Vec2z> path_set(path.begin(), path.end());
     for (auto p : grid.ndindex()) {
         if (!path_set.count(p))
             grid(p) = '.';
@@ -95,9 +95,9 @@ void run(std::string_view buf)
         std::reverse(path.begin(), path.end());
     }
 
-    std::queue<Point<size_t>> queue;
+    std::queue<Vec2z> queue;
     int area = 0;
-    auto fill = [&](Point<size_t> q) {
+    auto fill = [&](Vec2z q) {
         if (grid.in_bounds(q) && grid(q) == '.') {
             grid(q) = 'X';
             queue.push(q);
@@ -107,8 +107,8 @@ void run(std::string_view buf)
 
     // Mark any points to the side of the polygon edges as filled.
     for (size_t i = 1; i < path.size(); i++) {
-        const Point<size_t> p0 = path[i - 1];
-        const Point<size_t> p1 = path[i];
+        const Vec2z p0 = path[i - 1];
+        const Vec2z p1 = path[i];
         const auto dx = int64_t(p1.x) - int64_t(p0.x);
         const auto dy = int64_t(p1.y) - int64_t(p0.y);
 
@@ -123,9 +123,9 @@ void run(std::string_view buf)
     // Flood fill from the initially marked points near the edges to count the
     // entire interior of the polygon.
     while (!queue.empty()) {
-        Point p = queue.front();
+        Vec2 p = queue.front();
         queue.pop();
-        for (Point q : neighbors4(grid, p))
+        for (Vec2 q : neighbors4(grid, p))
             fill(q);
     }
     fmt::print("{}\n", area);

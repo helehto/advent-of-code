@@ -10,7 +10,7 @@ void run(std::string_view buf)
     nums.reserve(lines.size());
     find_numbers(buf, nums);
 
-    Point<int> p(0, 0);
+    Vec2i p(0, 0);
     int dx = 1;
     int dy = 0;
     for (size_t i = 0; std::string_view line : lines) {
@@ -43,7 +43,7 @@ void run(std::string_view buf)
 
     std::tie(dx, dy) = std::pair(1, 0);
     p = {0, 0};
-    Point<int> waypoint{10, -1};
+    Vec2i waypoint{10, -1};
     for (size_t i = 0; std::string_view line : lines) {
         const char c = line.front();
         const int value = nums[i];
