@@ -16,19 +16,21 @@ void run(std::string_view buf)
         Vec2i16 p{0, 0};
         int steps = 0;
         for (std::string_view w : moves) {
-            int n = 0, dx = 0, dy = 0;
+            int n = 0;
             std::from_chars(w.data() + 1, w.data() + w.size(), n);
+
+            Vec2i16 d{};
             if (w[0] == 'U')
-                dy = 1;
+                d.y = 1;
             if (w[0] == 'D')
-                dy = -1;
+                d.y = -1;
             if (w[0] == 'L')
-                dx = -1;
+                d.x = -1;
             if (w[0] == 'R')
-                dx = 1;
+                d.x = 1;
 
             for (int j = 0; j < n; j++) {
-                p = p.translate(dx, dy);
+                p += d;
                 visited[p] |= 1 << i;
                 steps_maps[i].emplace(p, ++steps);
             }

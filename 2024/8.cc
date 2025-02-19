@@ -23,16 +23,13 @@ void run(std::string_view buf)
                 const auto p1 = points[j];
 
                 for (size_t k = 0; k < std::max(grid.rows, grid.cols); k++) {
-                    const int dx = p1.x - p0.x;
-                    const int dy = p1.y - p0.y;
-
-                    if (Vec2 p = p1.translate(-k * dx, -k * dy); grid.in_bounds(p)) {
+                    if (Vec2 p = p1 - k * (p1 - p0); grid.in_bounds(p)) {
                         if (k == 2)
                             antinodes1(p) = '#';
                         antinodes2(p) = '#';
                     }
 
-                    if (Vec2 p = p0.translate(k * dx, k * dy); grid.in_bounds(p)) {
+                    if (Vec2 p = p0 + k * (p1 - p0); grid.in_bounds(p)) {
                         if (k == 2)
                             antinodes1(p) = '#';
                         antinodes2(p) = '#';

@@ -5,23 +5,21 @@ namespace aoc_2022_9 {
 
 static Vec2i move_knot(const Vec2i &dst, Vec2i src)
 {
-    const int dx = dst.x - src.x;
-    const int dy = dst.y - src.y;
+    const Vec2i d = dst - src;
 
-    if (abs(dy) > 1 || abs(dx) > 1) {
-        src.x += signum(dx);
-        src.y += signum(dy);
+    if (abs(d.x) > 1 || abs(d.y) > 1) {
+        src.x += signum(d.x);
+        src.y += signum(d.y);
     }
 
     return src;
 }
 
-static void
-move(std::span<Vec2i> pos, dense_set<Vec2i> &tail_positions, int dx, int dy, int n)
+static void move(std::span<Vec2i> pos, dense_set<Vec2i> &tail_positions, Vec2i d, int n)
 {
     for (int i = 0; i < n; i++) {
         // Move the head.
-        pos[0] = pos[0].translate(dx, dy);
+        pos[0] += d;
 
         // Update the tail.
         for (size_t i = 1; i < pos.size(); i++)
@@ -42,20 +40,19 @@ void run(std::string_view buf)
         const char c = line[0];
         int n = 0;
         std::from_chars(line.begin() + 2, line.end(), n);
-        int dx = 0;
-        int dy = 0;
+        Vec2i d{};
 
         if (c == 'U')
-            dy = 1;
+            d.y = 1;
         else if (c == 'D')
-            dy = -1;
+            d.y = -1;
         else if (c == 'L')
-            dx = -1;
+            d.x = -1;
         else if (c == 'R')
-            dx = 1;
+            d.x = 1;
 
-        move(s1, p1, dx, dy, n);
-        move(s2, p2, dx, dy, n);
+        move(s1, p1, d, n);
+        move(s2, p2, d, n);
     }
 
     fmt::print("{}\n", p1.size());

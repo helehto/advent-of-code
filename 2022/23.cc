@@ -45,9 +45,9 @@ struct Map {
 
     uint64_t neighborhood_mask(Vec2i p)
     {
-        const uint8_t *r0 = &at(p.translate(-1, -1));
-        const uint8_t *r1 = &at(p.translate(-1, 0));
-        const uint8_t *r2 = &at(p.translate(-1, 1));
+        const uint8_t *r0 = &at(p + Vec2i(-1, -1));
+        const uint8_t *r1 = &at(p + Vec2i(-1, 0));
+        const uint8_t *r2 = &at(p + Vec2i(-1, 1));
         return (uint64_t)r0[0] << 0 | (uint64_t)r0[1] << 8 | (uint64_t)r0[2] << 16 |
                (uint64_t)r1[0] << 24 | (uint64_t)r1[2] << 32 | (uint64_t)r2[0] << 40 |
                (uint64_t)r2[1] << 48 | (uint64_t)r2[2] << 56;
@@ -76,8 +76,7 @@ void run(std::string_view buf)
 
     struct Dir {
         uint64_t mask;
-        int8_t dx;
-        int8_t dy;
+        Vec2i8 d;
     };
 
     std::array<Dir, 4> dirs = {{
@@ -112,7 +111,7 @@ void run(std::string_view buf)
 
             for (const auto &d : dirs) {
                 if ((mask & d.mask) == 0) {
-                    auto dest = p.translate(d.dx, d.dy);
+                    auto dest = p + d.d.cast<int>();
                     proposal_map.increment(dest);
                     proposals[i] = dest;
                     break;

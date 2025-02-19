@@ -11,8 +11,7 @@ void run(std::string_view buf)
     find_numbers(buf, nums);
 
     Vec2i p(0, 0);
-    int dx = 1;
-    int dy = 0;
+    Vec2i d(1, 0);
     for (size_t i = 0; std::string_view line : lines) {
         const char c = line.front();
         const int value = nums[i];
@@ -25,24 +24,20 @@ void run(std::string_view buf)
         } else if (c == 'W') {
             p.x -= value;
         } else if (c == 'R') {
-            int turns = value / 90;
-            for (int i = 0; i < turns; ++i) {
-                std::tie(dx, dy) = std::pair(-dy, dx);
-            }
+            for (int i = 0; i < value / 90; ++i)
+                d = d.cw();
         } else if (c == 'L') {
-            int turns = value / 90;
-            for (int i = 0; i < turns; ++i) {
-                std::tie(dx, dy) = std::pair(dy, -dx);
-            }
+            for (int i = 0; i < value / 90; ++i)
+                d = d.ccw();
         } else if (c == 'F') {
-            p = p.translate(value * dx, value * dy);
+            p += value * d;
         }
         i++;
     }
     fmt::print("{}\n", manhattan<int>(p, {0, 0}));
 
-    std::tie(dx, dy) = std::pair(1, 0);
     p = {0, 0};
+    d = {1, 0};
     Vec2i waypoint{10, -1};
     for (size_t i = 0; std::string_view line : lines) {
         const char c = line.front();
@@ -56,17 +51,13 @@ void run(std::string_view buf)
         } else if (c == 'W') {
             waypoint.x -= value;
         } else if (c == 'R') {
-            int turns = value / 90;
-            for (int i = 0; i < turns; ++i) {
-                std::tie(waypoint.x, waypoint.y) = std::pair(-waypoint.y, waypoint.x);
-            }
+            for (int i = 0; i < value / 90; ++i)
+                waypoint = waypoint.cw();
         } else if (c == 'L') {
-            int turns = value / 90;
-            for (int i = 0; i < turns; ++i) {
-                std::tie(waypoint.x, waypoint.y) = std::pair(waypoint.y, -waypoint.x);
-            }
+            for (int i = 0; i < value / 90; ++i)
+                waypoint = waypoint.ccw();
         } else if (c == 'F') {
-            p = p.translate(value * waypoint.x, value * waypoint.y);
+            p += value * waypoint;
         }
         i++;
     }

@@ -35,7 +35,7 @@ void run(std::string_view buf)
                 for (int dx = -n; dx <= n; ++dx) {
                     auto d = std::abs(dx) + std::abs(dy);
                     if (d <= n) {
-                        auto v = u.translate(dx, dy);
+                        auto v = u + Vec2i(dx, dy);
                         if (grid.in_bounds(v) && grid(v) != '#')
                             cheats += (dist(u) - dist(v) - d >= bound);
                     }

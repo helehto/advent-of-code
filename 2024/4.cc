@@ -2,11 +2,10 @@
 
 namespace aoc_2024_4 {
 
-constexpr bool
-scan(const Matrix<char> &grid, Vec2i start, int dx, int dy, int len, char *out)
+constexpr bool scan(const Matrix<char> &grid, Vec2i start, Vec2i d, int len, char *out)
 {
     for (int n = 0; n < len; ++n) {
-        auto p = start.translate(n * dx, n * dy);
+        auto p = start + n * d;
         if (!grid.in_bounds(p))
             return false;
         *out++ = grid(p);
@@ -30,7 +29,7 @@ constexpr int part1(const Matrix<char> &grid)
     for (auto p : grid.ndindex<int>())
         for (int dx : {-1, 0, 1})
             for (int dy : {-1, 0, 1})
-                result += scan(grid, p, dx, dy, 4, word.data()) &&
+                result += scan(grid, p, {dx, dy}, 4, word.data()) &&
                           match_word(word, 'X', 'M', 'A', 'S');
 
     return result;
@@ -44,12 +43,12 @@ constexpr int part2(const Matrix<char> &grid)
     for (auto p : grid.ndindex<int>()) {
         auto check = [&](Vec2i start, int dx, int dy) {
             word.fill(0);
-            return scan(grid, start, dx, dy, 3, word.data()) &&
+            return scan(grid, start, {dx, dy}, 3, word.data()) &&
                    (match_word(word, 'M', 'A', 'S', 0) ||
                     match_word(word, 'S', 'A', 'M', 0));
         };
 
-        result += check(p, 1, 1) && check(p.translate(2, 0), -1, 1);
+        result += check(p, 1, 1) && check(p + Vec2i(2, 0), -1, 1);
     }
 
     return result;

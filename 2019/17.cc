@@ -88,24 +88,22 @@ static std::vector<Move> walk_scaffold(const Matrix<char> &g)
     while (true) {
         int steps = 0;
         for (;; steps++) {
-            auto next = p.translate(d.x, d.y);
+            auto next = p + d;
             if (!g.in_bounds(next) || g(next) != '#')
                 break;
             p = next;
         }
         result.emplace_back(steps);
 
-        const Vec2i dl = {d.y, -d.x};
-        const Vec2i pl = p.translate(dl.x, dl.y);
-        if (g.in_bounds(pl) && g(pl) == '#') {
+        const Vec2i dl = d.ccw();
+        if (g.in_bounds(p + dl) && g(p + dl) == '#') {
             result.emplace_back(L);
             d = dl;
             continue;
         }
 
-        const Vec2i dr = {-d.y, d.x};
-        const Vec2i pr = p.translate(dr.x, dr.y);
-        if (g.in_bounds(pr) && g(pr) == '#') {
+        const Vec2i dr = d.cw();
+        if (g.in_bounds(p + dr) && g(p + dr) == '#') {
             result.emplace_back(R);
             d = dr;
             continue;

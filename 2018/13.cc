@@ -6,9 +6,9 @@ enum { N, E, S, W };
 
 static Vec2u8 step(Vec2u8 p, uint8_t d)
 {
-    int dx = d == W ? -1 : d == E ? 1 : 0;
-    int dy = d == N ? -1 : d == S ? 1 : 0;
-    return p.translate(dx, dy);
+    uint8_t dx = d == W ? -1 : d == E ? 1 : 0;
+    uint8_t dy = d == N ? -1 : d == S ? 1 : 0;
+    return p + Vec2u8(dx, dy);
 }
 
 struct Cart {

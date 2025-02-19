@@ -9,6 +9,8 @@ using VM = IntcodeVM<SplitMemory<int16_t>>;
 enum { N = 0, S = 1, W = 2, E = 3 };
 enum { BLOCKED = 0, MOVED = 1, GOAL = 2 };
 
+constexpr Vec2i8 dxdy[] = {Vec2i8(0, -1), Vec2i8(0, +1), Vec2i8(-1, 0), Vec2i8(+1, 0)};
+
 static int turn(int dir, bool left)
 {
     static constexpr uint8_t tab[] = {E, W, N, S};
@@ -29,9 +31,7 @@ void run(std::string_view buf)
 
     Vec2u8 p = start;
     auto step = [&](int dir) -> int {
-        static constexpr int8_t dx[] = {0, 0, -1, +1};
-        static constexpr int8_t dy[] = {-1, +1, 0, 0};
-        const Vec2u8 q = p.translate(dx[dir], dy[dir]);
+        const Vec2u8 q = p + dxdy[dir].cast<uint8_t>();
 
         vm.run({static_cast<int16_t>(dir + 1)});
         const int ret = vm.output.front();
@@ -67,16 +67,16 @@ void run(std::string_view buf)
     Matrix<bool> visited(m.rows, m.cols, false);
     int max_d = INT_MIN;
     for (size_t i = 0; i < queue.size(); i++) {
-        auto [u, d] = queue[i];
+        auto [u, dxdy] = queue[i];
         visited(u) = true;
-        max_d = std::max(max_d, d);
+        max_d = std::max(max_d, dxdy);
 
         if (u == start)
-            fmt::print("{}\n", d);
+            fmt::print("{}\n", dxdy);
 
         for (auto v : neighbors4(m, u))
             if ((m(v) != '#') && !visited(v))
-                queue.emplace_back(v, d + 1);
+                queue.emplace_back(v, dxdy + 1);
     }
     fmt::print("{}\n", max_d);
 }

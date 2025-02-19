@@ -22,28 +22,27 @@ void run(std::string_view buf)
             white_panels.erase(p);
     };
 
-    int dx = 0;
-    int dy = -1;
-    Vec2i16 p{0, 0};
+    Vec2i16 d(0, -1);
+    Vec2i16 p{};
     VM vm;
     vm.reset(prog);
     while (vm.run({static_cast<int>(white_panels.count(p))}) != HaltReason::op99) {
         paint(p, vm.output[0] != 0);
         visited.insert(p);
-        std::tie(dx, dy) = vm.output[1] ? std::pair(-dy, dx) : std::pair(dy, -dx);
-        p = p.translate(dx, dy);
+        d = vm.output[1] ? d.cw() : d.ccw();
+        p += d;
         vm.output.clear();
     }
     fmt::print("{}\n", visited.size());
 
     vm.reset(prog);
     white_panels.clear();
-    p = {0, 0};
+    p = {};
     white_panels.insert(p);
     while (vm.run({static_cast<int>(white_panels.count(p))}) != HaltReason::op99) {
         paint(p, vm.output[0] != 0);
-        std::tie(dx, dy) = vm.output[1] ? std::pair(-dy, dx) : std::pair(dy, -dx);
-        p = p.translate(dx, dy);
+        d = vm.output[1] ? d.cw() : d.ccw();
+        p += d;
         vm.output.clear();
     }
     fmt::print("{}\n", white_panels.size());

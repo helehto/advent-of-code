@@ -24,10 +24,10 @@ static size_t part1(Matrix<char> grid)
     return std::ranges::count(grid.all(), '#');
 }
 
-static bool scan_occupied(const Matrix<char> &g, Vec2z p, int dx, int dy)
+static bool scan_occupied(const Matrix<char> &g, Vec2z p, Vec2i d)
 {
     while (true) {
-        p = p.translate(dx, dy);
+        p += d.cast<size_t>();
         if (!g.in_bounds(p))
             return false;
         if (g(p) != '.')
@@ -44,14 +44,14 @@ static size_t part2(Matrix<char> grid)
         for (auto p : grid.ndindex()) {
             if (next(p) != '.') {
                 int occupied_neighbors = 0;
-                occupied_neighbors += scan_occupied(grid, p, -1, -1);
-                occupied_neighbors += scan_occupied(grid, p, -1, +0);
-                occupied_neighbors += scan_occupied(grid, p, -1, +1);
-                occupied_neighbors += scan_occupied(grid, p, +0, -1);
-                occupied_neighbors += scan_occupied(grid, p, +0, +1);
-                occupied_neighbors += scan_occupied(grid, p, +1, -1);
-                occupied_neighbors += scan_occupied(grid, p, +1, +0);
-                occupied_neighbors += scan_occupied(grid, p, +1, +1);
+                occupied_neighbors += scan_occupied(grid, p, {-1, -1});
+                occupied_neighbors += scan_occupied(grid, p, {-1, +0});
+                occupied_neighbors += scan_occupied(grid, p, {-1, +1});
+                occupied_neighbors += scan_occupied(grid, p, {+0, -1});
+                occupied_neighbors += scan_occupied(grid, p, {+0, +1});
+                occupied_neighbors += scan_occupied(grid, p, {+1, -1});
+                occupied_neighbors += scan_occupied(grid, p, {+1, +0});
+                occupied_neighbors += scan_occupied(grid, p, {+1, +1});
 
                 if (grid(p) == 'L' && occupied_neighbors == 0)
                     next(p) = '#';

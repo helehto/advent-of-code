@@ -10,7 +10,7 @@ enum { N, E, S, W };
 static Vec2u8 step(Vec2u8 p, int d)
 {
     static int8_t table[] = {0, 1, 0, -1};
-    return p.translate(table[d], table[(d - 1) & 3]);
+    return p + Vec2u8(table[d], table[(d - 1) & 3]);
 }
 
 static uint16_t encode_state(Vec2u8 p, int dir)

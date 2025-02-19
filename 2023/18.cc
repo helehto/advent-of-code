@@ -22,10 +22,10 @@ void run(std::string_view buf)
     uint64_t npoints = 0;
     for (Vec2i64 curr{0, 0}; std::string_view s : lines) {
         std::from_chars(s.begin() + 2, s.end(), n);
-        auto next = s.front() == 'R'   ? curr.translate(n, 0)
-                    : s.front() == 'D' ? curr.translate(0, n)
-                    : s.front() == 'L' ? curr.translate(-n, 0)
-                                       : curr.translate(0, -n);
+        auto next = s.front() == 'R'   ? curr + Vec2i64(n, 0)
+                    : s.front() == 'D' ? curr + Vec2i64(0, n)
+                    : s.front() == 'L' ? curr + Vec2i64(-n, 0)
+                                       : curr + Vec2i64(0, -n);
         npoints += manhattan(curr, next);
         polygon.push_back(curr);
         curr = next;
@@ -36,10 +36,10 @@ void run(std::string_view buf)
     npoints = 0;
     for (Vec2i64 curr{0, 0}; std::string_view s : lines) {
         std::from_chars(s.begin() + s.find('#') + 1, s.end() - 2, n, 16);
-        auto next = s[s.size() - 2] == '0'   ? curr.translate(n, 0)
-                    : s[s.size() - 2] == '1' ? curr.translate(0, n)
-                    : s[s.size() - 2] == '2' ? curr.translate(-n, 0)
-                                             : curr.translate(0, -n);
+        auto next = s[s.size() - 2] == '0'   ? curr + Vec2i64(n, 0)
+                    : s[s.size() - 2] == '1' ? curr + Vec2i64(0, n)
+                    : s[s.size() - 2] == '2' ? curr + Vec2i64(-n, 0)
+                                             : curr + Vec2i64(0, -n);
         npoints += manhattan(curr, next);
         polygon.push_back(curr);
         curr = next;

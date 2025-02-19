@@ -4,8 +4,7 @@
 namespace aoc_2024_6 {
 
 enum { N, E, S, W };
-constexpr int dx[] = {0, 1, 0, -1};
-constexpr int dy[] = {-1, 0, 1, 0};
+constexpr Vec2i dxdy[] = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
 
 struct State {
     uint16_t x : 15;
@@ -31,13 +30,13 @@ static std::pair<std::vector<State>, size_t> walk1(const Matrix<char> &grid, Vec
     dense_set<Vec2u16> unique{p};
 
     while (true) {
-        auto q = p.translate(dx[dir], dy[dir]);
+        auto q = p + dxdy[dir];
         if (!grid.in_bounds(q))
             break;
 
         while (grid(q) == '#') {
             dir = (dir + 1) & 3;
-            q = p.translate(dx[dir], dy[dir]);
+            q = p + dxdy[dir];
         }
 
         visited.push_back(State{q.x, q.y, dir});
@@ -59,13 +58,13 @@ static bool walk2(const Matrix<char> &grid,
     visited.insert(State{p.x, p.y, dir});
 
     while (true) {
-        auto q = p.translate(dx[dir], dy[dir]);
+        auto q = p + dxdy[dir];
         if (!grid.in_bounds(q))
             break;
 
         while (grid(q) == '#') {
             dir = (dir + 1) & 3;
-            q = p.translate(dx[dir], dy[dir]);
+            q = p + dxdy[dir];
         }
 
         if (!visited.insert(State{q.x, q.y, dir}).second)

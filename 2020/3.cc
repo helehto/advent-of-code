@@ -8,11 +8,11 @@ void run(std::string_view buf)
     auto grid = Matrix<char>::from_lines(lines);
 
     int slope_trees[5]{};
-    constexpr std::pair<int, int> walks[] = {{1, 1}, {3, 1}, {5, 1}, {7, 1}, {1, 2}};
-    for (size_t i = 0; const auto &[dx, dy] : walks) {
-        Vec2z p(0, 0);
+    constexpr Vec2z walks[] = {{1, 1}, {3, 1}, {5, 1}, {7, 1}, {1, 2}};
+    for (size_t i = 0; const Vec2z d : walks) {
+        Vec2z p{};
         while (true) {
-            p = p.translate(dx, dy);
+            p += d;
             if (p.y >= grid.rows)
                 break;
             if (p.x >= grid.cols)

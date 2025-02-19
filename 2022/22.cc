@@ -10,16 +10,6 @@ static constexpr std::pair<int, int> face_orientations[6][4] = {
     {{2, D}, {3, R}, {5, R}, {1, R}}, {{3, D}, {0, U}, {1, U}, {4, D}},
 };
 
-static Vec2i turn_left(Vec2i d)
-{
-    return {-d.y, d.x};
-}
-
-static Vec2i turn_right(Vec2i d)
-{
-    return {d.y, -d.x};
-}
-
 struct Move {
     enum { L, R, N };
     uint16_t n : 14;
@@ -57,10 +47,10 @@ static int part1(const std::vector<std::string> &map, const std::vector<Move> &m
     for (const auto &move : moves) {
         switch (move.type) {
         case Move::L:
-            d = turn_left(d);
+            d = d.cw();
             break;
         case Move::R:
-            d = turn_right(d);
+            d = d.ccw();
             break;
         case Move::N:
             for (size_t i = 0; i < move.n; i++) {
@@ -136,14 +126,14 @@ static int part2(const std::vector<std::string> &map, const std::vector<Move> &m
     for (const auto &move : moves) {
         switch (move.type) {
         case Move::L:
-            d = turn_left(d);
+            d = d.cw();
             break;
         case Move::R:
-            d = turn_right(d);
+            d = d.ccw();
             break;
         case Move::N:
             for (size_t i = 0; i < move.n; i++) {
-                auto [nlocal, nface, nd] = wrap(local.translate(d.x, d.y), face, d);
+                auto [nlocal, nface, nd] = wrap(local + d, face, d);
                 if (map[face_to_global[nface].x + nlocal.x]
                        [face_to_global[nface].y + nlocal.y] == '#')
                     break;

@@ -18,8 +18,8 @@ void run(std::string_view buf)
     };
 
     auto fits = [&](Vec2i p) {
-        return scan(p.translate(0, 0)) && scan(p.translate(0, 99)) &&
-               scan(p.translate(99, 0)) && scan(p.translate(99, 99));
+        return scan(p + Vec2i(0, 0)) && scan(p + Vec2i(0, 99)) &&
+               scan(p + Vec2i(99, 0)) && scan(p + Vec2i(99, 99));
     };
 
     Matrix<bool> g(50, 50);
@@ -39,18 +39,18 @@ void run(std::string_view buf)
     for (; !g(p); p.y++)
         ;
 
-    for (;; p = p.translate(1, 0)) {
+    for (;; p.x++) {
         while (!scan(p))
-            p = p.translate(0, 1);
-        if (p.x >= 99 && p.y >= 99 && fits(p.translate(-99, 0)))
+            p.y++;
+        if (p.x >= 99 && p.y >= 99 && fits(p + Vec2i(-99, 0)))
             break;
     }
 
-    p = p.translate(-99, 0);
+    p = p + Vec2i(-99, 0);
     while (true) {
-        if (Vec2i q = p.translate(-1, 0); fits(q))
+        if (Vec2i q = p + Vec2i(-1, 0); fits(q))
             p = q;
-        else if (Vec2i q = p.translate(0, -1); fits(q))
+        else if (Vec2i q = p + Vec2i(0, -1); fits(q))
             p = q;
         else
             break;

@@ -113,12 +113,6 @@ struct Vec2 {
     constexpr bool operator!=(const Vec2 &other) const = default;
 
     template <typename U>
-    constexpr Vec2<T> translate(U dx, U dy) const
-    {
-        return {static_cast<T>(x + dx), static_cast<T>(y + dy)};
-    }
-
-    template <typename U>
     constexpr Vec2<U> cast() const
     {
         ASSERT(static_cast<T>(x) == x);
@@ -128,7 +122,57 @@ struct Vec2 {
             static_cast<U>(y),
         };
     }
+
+    constexpr Vec2 cw() const { return Vec2(-y, x); }
+    constexpr Vec2 ccw() const { return Vec2(y, -x); }
+
+    template <typename U>
+    constexpr Vec2 operator+(const Vec2<U> &other) const
+    {
+        return {
+            static_cast<T>(x + other.x),
+            static_cast<T>(y + other.y),
+        };
+    }
+
+    template <typename U>
+    constexpr Vec2 &operator+=(const Vec2<U> &other)
+    {
+        x += other.x;
+        y += other.y;
+        return *this;
+    }
+
+    template <typename U>
+    constexpr Vec2 operator-(const Vec2<U> &other) const
+    {
+        return {
+            static_cast<T>(x - other.x),
+            static_cast<T>(y - other.y),
+        };
+    }
+
+    template <typename U>
+    constexpr Vec2 &operator-=(const Vec2<U> &other)
+    {
+        x -= other.x;
+        y -= other.y;
+        return *this;
+    }
+
+    template <typename Scalar>
+    constexpr Vec2<std::common_type_t<T, Scalar>> operator*(const Scalar &scalar) const
+    {
+        return Vec2<std::common_type_t<T, Scalar>>(scalar * x, scalar * y);
+    }
 };
+
+template <typename U, typename Scalar>
+constexpr Vec2<std::common_type_t<U, Scalar>> operator*(const Scalar &scalar,
+                                                        const Vec2<U> &v)
+{
+    return Vec2<std::common_type_t<U, Scalar>>(scalar * v.x, scalar * v.y);
+}
 
 using Vec2i8 = Vec2<int8_t>;
 using Vec2u8 = Vec2<uint8_t>;
@@ -861,10 +905,10 @@ template <typename T>
 constexpr static std::array<Vec2<T>, 4> neighbors4(Vec2<T> p)
 {
     return {{
-        p.translate(0, -1),
-        p.translate(+1, 0),
-        p.translate(0, +1),
-        p.translate(-1, 0),
+        p + Vec2<T>(0, -1),
+        p + Vec2<T>(+1, 0),
+        p + Vec2<T>(0, +1),
+        p + Vec2<T>(-1, 0),
     }};
 }
 
@@ -884,14 +928,14 @@ template <typename T>
 constexpr static std::array<Vec2<T>, 8> neighbors8(Vec2<T> p)
 {
     return {{
-        p.translate(-1, -1),
-        p.translate(-1, +0),
-        p.translate(-1, +1),
-        p.translate(+0, -1),
-        p.translate(+0, +1),
-        p.translate(+1, -1),
-        p.translate(+1, +0),
-        p.translate(+1, +1),
+        p + Vec2<T>(-1, -1),
+        p + Vec2<T>(-1, +0),
+        p + Vec2<T>(-1, +1),
+        p + Vec2<T>(+0, -1),
+        p + Vec2<T>(+0, +1),
+        p + Vec2<T>(+1, -1),
+        p + Vec2<T>(+1, +0),
+        p + Vec2<T>(+1, +1),
     }};
 }
 

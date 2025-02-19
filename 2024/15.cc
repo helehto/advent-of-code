@@ -3,18 +3,18 @@
 namespace aoc_2024_15 {
 
 constexpr auto move_to_dir = [] {
-    std::array<std::pair<int8_t, int8_t>, 256> result{};
-    result['^'] = std::pair(0, -1);
-    result['<'] = std::pair(-1, 0);
-    result['>'] = std::pair(+1, 0);
-    result['v'] = std::pair(0, +1);
+    std::array<Vec2i8, 256> result{};
+    result['^'] = Vec2i8(0, -1);
+    result['<'] = Vec2i8(-1, 0);
+    result['>'] = Vec2i8(+1, 0);
+    result['v'] = Vec2i8(0, +1);
     return result;
 }();
 
 static Vec2i step1(Matrix<char> &grid, const Vec2i from, const char c)
 {
-    auto [dx, dy] = move_to_dir[c];
-    const auto p = from.translate(dx, dy);
+    const auto d = move_to_dir[c];
+    const auto p = from + d;
 
     if (grid(p) == '#')
         return from;
@@ -26,7 +26,7 @@ static Vec2i step1(Matrix<char> &grid, const Vec2i from, const char c)
     }
 
     ASSERT(grid(p) == 'O');
-    auto q = p.translate(dx, dy);
+    auto q = p + d;
     while (true) {
         if (grid(q) == '.') {
             grid(q) = 'O';
@@ -36,7 +36,7 @@ static Vec2i step1(Matrix<char> &grid, const Vec2i from, const char c)
         } else if (grid(q) == '#') {
             return from;
         } else {
-            q = q.translate(dx, dy);
+            q = q + d;
         }
     }
 }
@@ -73,14 +73,13 @@ static Vec2i step2(const Vec2i robot,
     auto box_at = [&](const Vec2i &p) -> std::optional<Vec2i> {
         if (boxes(p))
             return p;
-        if (auto q = p.translate(-1, 0); boxes(q))
+        if (auto q = p + Vec2i(-1, 0); boxes(q))
             return q;
         return std::nullopt;
     };
 
-    const auto [dx, dy] = move_to_dir[c];
-
-    const auto target = robot.translate(dx, dy);
+    const auto d = move_to_dir[c];
+    const auto target = robot + d;
     if (walls(target))
         return robot;
 
@@ -91,33 +90,33 @@ static Vec2i step2(const Vec2i robot,
     to_move.clear();
     to_move.push_back(*first_box);
 
-    if (dy != 0) {
+    if (d.y != 0) {
         for (size_t i = 0; i < to_move.size(); ++i) {
             for (int k : {-1, 0, 1}) {
-                auto b = to_move[i].translate(k, static_cast<int>(dy));
+                auto b = to_move[i] + Vec2i(k, d.y);
                 if (boxes(b))
                     to_move.push_back(b);
             }
         }
     } else {
-        auto step = 1 + (dx > 0);
+        auto step = 1 + (d.x > 0);
         auto p = target;
-        while (auto pp = box_at(p.translate(step * dx, step * dy))) {
+        while (auto pp = box_at(p + step * d)) {
             p = *pp;
             to_move.push_back(p);
         }
     }
 
     for (auto p : to_move) {
-        auto q = p.translate(dx, dy);
-        if (walls(q) || walls(q.translate(1, 0)))
+        auto q = p + d;
+        if (walls(q) || walls(q + Vec2i(1, 0)))
             return robot;
     }
 
     for (auto p : to_move)
         boxes(p) = false;
     for (auto p : to_move)
-        boxes(p.translate(dx, dy)) = true;
+        boxes(p + d) = true;
     return target;
 }
 
@@ -135,7 +134,7 @@ static int part2(const Matrix<char> &grid, std::string_view moves)
             boxes(pp) = true;
         } else if (grid(p) == '#') {
             walls(pp) = true;
-            walls(pp.translate(1, 0)) = true;
+            walls(pp + Vec2i(1, 0)) = true;
         }
     }
 

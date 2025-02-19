@@ -45,18 +45,17 @@ static int region_perimeter(const Matrix<char> &g, const std::vector<Vec2i> &poi
 
 static int region_sides(const Matrix<char> &g, const std::vector<Vec2i> &points)
 {
-    constexpr std::pair<int, int> d[] = {{-1, 0}, {+1, 0}, {0, -1}, {0, +1}};
+    constexpr Vec2i d[] = {{-1, 0}, {+1, 0}, {0, -1}, {0, +1}};
     Matrix<char> mask(g.rows, g.cols);
     int result = 0;
     std::vector<Vec2i> q;
 
     for (size_t i = 0; i < 4; i++) {
         std::ranges::fill(mask.all(), false);
-        auto [dx, dy] = d[i];
 
         q.clear();
         for (auto u : points) {
-            if (auto v = u.translate(dx, dy); !g.in_bounds(v) || g(u) != g(v)) {
+            if (auto v = u + d[i]; !g.in_bounds(v) || g(u) != g(v)) {
                 mask(u) = true;
                 q.push_back(u);
             }

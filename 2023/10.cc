@@ -8,17 +8,17 @@ static std::array<Vec2z, 2> get_pipe_neighbors(Vec2z p, char c)
 {
     switch (c) {
     case '|':
-        return {{p.translate(0, -1), p.translate(0, +1)}};
+        return {{p + Vec2i(0, -1), p + Vec2i(0, +1)}};
     case '-':
-        return {{p.translate(-1, 0), p.translate(+1, 0)}};
+        return {{p + Vec2i(-1, 0), p + Vec2i(+1, 0)}};
     case 'L':
-        return {{p.translate(0, -1), p.translate(+1, 0)}};
+        return {{p + Vec2i(0, -1), p + Vec2i(+1, 0)}};
     case 'J':
-        return {{p.translate(0, -1), p.translate(-1, 0)}};
+        return {{p + Vec2i(0, -1), p + Vec2i(-1, 0)}};
     case '7':
-        return {{p.translate(-1, 0), p.translate(0, +1)}};
+        return {{p + Vec2i(-1, 0), p + Vec2i(0, +1)}};
     case 'F':
-        return {{p.translate(+1, 0), p.translate(0, +1)}};
+        return {{p + Vec2i(+1, 0), p + Vec2i(0, +1)}};
     }
     ASSERT(false);
 }
@@ -52,13 +52,13 @@ void run(std::string_view buf)
     std::array<Vec2z, 2> start_neighbors;
     {
         size_t i = 0;
-        if (auto q = start.translate(0, -1); strchr("|F7", grid(q)))
+        if (auto q = start + Vec2i(0, -1); strchr("|F7", grid(q)))
             start_neighbors[i++] = q;
-        if (auto q = start.translate(-1, 0); strchr("-LF", grid(q)))
+        if (auto q = start + Vec2i(-1, 0); strchr("-LF", grid(q)))
             start_neighbors[i++] = q;
-        if (auto q = start.translate(+1, 0); strchr("-J7", grid(q)))
+        if (auto q = start + Vec2i(+1, 0); strchr("-J7", grid(q)))
             start_neighbors[i++] = q;
-        if (auto q = start.translate(0, +1); strchr("|JL", grid(q)))
+        if (auto q = start + Vec2i(0, +1); strchr("|JL", grid(q)))
             start_neighbors[i++] = q;
         ASSERT(i == 2);
     }
@@ -109,15 +109,14 @@ void run(std::string_view buf)
     for (size_t i = 1; i < path.size(); i++) {
         const Vec2z p0 = path[i - 1];
         const Vec2z p1 = path[i];
-        const auto dx = int64_t(p1.x) - int64_t(p0.x);
-        const auto dy = int64_t(p1.y) - int64_t(p0.y);
+        const Vec2z d = p1 - p0;
 
-        fill(p1.translate(-dy, dx));
+        fill(p1 + Vec2i(-d.y, d.x));
 
         // Corners have two possibly adjacent squares inside the polygon; check
         // the other one as well.
         if (grid(p1) == 'F')
-            fill(p1.translate(dx, -dy));
+            fill(p1 + Vec2i(d.x, -d.y));
     }
 
     // Flood fill from the initially marked points near the edges to count the

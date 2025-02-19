@@ -33,14 +33,12 @@ struct Grid {
 
     auto get_moves(Vec2i v, Vec2i goal, int t) const
     {
-        static constexpr Vec2i neighbors[4] = {{-1, 0}, {1, 0}, {0, 1}, {0, -1}};
         static_vector<Vec2i, 6> result;
 
         if (is_unoccupied(v, t))
             result.push_back(v);
 
-        for (auto [dx, dy] : neighbors) {
-            auto w = v.translate(dx, dy);
+        for (auto w : neighbors4(v)) {
             if (w == goal || (0 < w.x && w.x < m - 1 && 0 < w.y && w.y < n - 1 &&
                               is_unoccupied(w, t))) {
                 result.push_back(w);

@@ -18,17 +18,18 @@ static std::vector<Vec2i> rock_templates[] = {
 };
 
 static bool
-try_move(const dense_set<Vec2i> &occupied, std::vector<Vec2i> &rock, int dx, int dy)
+try_move(const dense_set<Vec2i> &occupied, std::vector<Vec2i> &rock, const Vec2i d)
 {
     for (const auto &p : rock) {
-        if (p.x + dx < 0 || p.x + dx >= 7 || p.y + dy < 0)
+        auto next = p + d;
+        if (next.x < 0 || next.x >= 7 || next.y < 0)
             return false;
-        if (occupied.count(p.translate(dx, dy)))
+        if (occupied.count(next))
             return false;
     }
 
     for (auto &p : rock)
-        p = p.translate(dx, dy);
+        p += d;
 
     return true;
 }
@@ -124,10 +125,10 @@ void run(std::string_view buf)
             // It gets pushed by the jet of gas, if possible:
             const auto jet = buf[jet_idx];
             jet_idx = (jet_idx + 1) % buf.size();
-            try_move(occupied, rock, (jet == '<' ? -1 : 1), 0);
+            try_move(occupied, rock, Vec2i(jet == '<' ? -1 : 1, 0));
 
             // It falls, if possible:
-            if (!try_move(occupied, rock, 0, -1)) {
+            if (!try_move(occupied, rock, Vec2i(0, -1))) {
                 occupied.insert(begin(rock), end(rock));
 
                 int max_y = INT_MIN;
