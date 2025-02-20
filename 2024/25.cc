@@ -2,43 +2,45 @@
 
 namespace aoc_2024_25 {
 
-// Each key and lock is represented using a 32-bit integer, with the lowest 20
-// bits grouped into 5 groups of 4 bits each. The upper 12 bits are unused.
-// Each group consists of a dedicated carry bit along with a 3-bit counter that
-// holds the number of occupied slots in that column, excluding the top row and
-// bottom row.
+// Each key and lock is represented using a 16-bit integer, with the lowest 15
+// bit consisting of five 3-bit counters holding the number of occupied slots
+// in that column, excluding the top row and bottom row. With a picture, where
+// aaa to eee are the five counters, and the highest bit C only being used as a
+// carry-out for the counter in bits 12 to 14 (aaa):
 //
-//                        carry bit --.   .-- 3-bit counter
-//                                    |   |
-//                                    v v-v-v
-//   .-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-.
-//   |            0          |C|x|y|z|C|x|y|z|C|x|y|z|C|x|y|z|C|x|y|z|
-//   '-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-'
+//    .---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---.
+//    | C | a | a | a | b | b | b | c | c | c | d | d | d | e | e | e |
+//    '---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---'
+//     15  14  13  12  11   10  9   8   7   6   5   4   3   2   1   0
 //
-// With this representation, we can use a single uint32_t addition to add the
+// With this representation, we can use a single uint16_t addition to add the
 // number of occupied slots of all columns for a given (lock, key) pair. If the
-// 3-bit counter for a group overflows, the carry bit for the group will be
-// set. Checking whether addition has overflowed for _any_ column is then just
-// a matter of checking if _any_ carry bit is set, i.e. (x & 0x88888) != 0.
+// 3-bit counter for a group overflows, the carry will propagate into the next
+// group. Checking whether there is a overlap in _any_ column is then just a
+// matter of checking if a carry has propagated into _any_ group.
 //
 // To check whether the total number of occupied slots in a column is greater
-// than 5, we bias the addition by making each 3-bit counter start at 2 (or
-// 0x22222 seen as a 32-bit word). This means we can add anything lower than 5
-// to such a group without overflow, but anything greater will, again, set the
-// carry bit.
+// than 5, we bias the addition by making each 3-bit counter start at 2 (see
+// `counter_bias` below). This means we can add anything lower than or equal to
+// 5 to such a group without overflow, but anything greater will, again, result
+// in a carry-out into the next group.
 //
-// For a given lock + key, they fit if ((lock + key + 0x22222) & 0x88888) != 0.
-// This is expression is trivially vectorizable to check a given lock against 8
-// keys in parallel (with AVX).
-constexpr uint32_t carry_bit_mask = 0x88888;
-constexpr uint32_t counter_bias = 0x22222;
+// Overflows are detected by comparing the actual result of the sum with carry-
+// less addition (XOR): if sum = lock + key (a normal 16-bit addition), the
+// expression (lock ^ key ^ sum) yields a mask with a bit set in all places
+// that received a carry in. ANDing this with `carry_bit_mask` below, with the
+// low bit of each counter set to 1, results in a non-zero value if any carry
+// was propagated between groups, meaning that there was an overlap. A zero
+// value means that here is no overlap.
+constexpr uint16_t counter_bias = 0b0'010'010'010'010'010;
+constexpr uint16_t carry_bit_mask = 0b1'001'001'001'001'001;
 
 void run(std::string_view buf)
 {
-    std::vector<uint32_t> locks;
-    std::vector<uint32_t> keys;
-    locks.reserve(buf.size() / (6 * 7));
-    keys.reserve(buf.size() / (6 * 7));
+    std::vector<uint16_t> locks;
+    std::vector<uint16_t> keys;
+    locks.reserve(256);
+    keys.reserve(256);
 
     size_t i = 0;
     for (; i + 3 < buf.size(); i += 6 * 7 + 1) {
@@ -49,13 +51,13 @@ void run(std::string_view buf)
 
         // Add an entire column/group at a time to `u`. The highest bit in each
         // group of 6 here is the newline, which we ignore:
-        uint32_t u = 0;
+        uint16_t u = 0;
         constexpr uint32_t column_mask = 0b000001'000001'000001'000001'000001;
         u += std::popcount(filled & (column_mask << 0)) << 0;
-        u += std::popcount(filled & (column_mask << 1)) << 4;
-        u += std::popcount(filled & (column_mask << 2)) << 8;
-        u += std::popcount(filled & (column_mask << 3)) << 12;
-        u += std::popcount(filled & (column_mask << 4)) << 16;
+        u += std::popcount(filled & (column_mask << 1)) << 3;
+        u += std::popcount(filled & (column_mask << 2)) << 6;
+        u += std::popcount(filled & (column_mask << 3)) << 9;
+        u += std::popcount(filled & (column_mask << 4)) << 12;
 
         // Split locks and keys into separate vectors so that we never check a
         // lock against a lock, or a key against a key.
@@ -65,43 +67,49 @@ void run(std::string_view buf)
             keys.push_back(u);
     }
 
+    // Make sure the key vector is a multiple of 128 so that we can use 8-way
+    // unrolling in the loop below without needing a 1-way vectorized or scalar
+    // fallback for the remaining elements. The value 0xffff will always result
+    // in an overlap, so this does not affect the final value.
+    if (auto r = keys.size() % 128; r != 0)
+        for (size_t i = 0; i < 128 - r; ++i)
+            keys.push_back(0xffff);
+
     uint64_t count = 0;
-    __m256i vcount[4]{};
+    __m256i vcount[8]{};
 
-    const __m256i carry_bit_mask_8x32 = _mm256_set1_epi32(carry_bit_mask);
-    const __m256i counter_bias_8x32 = _mm256_set1_epi32(counter_bias);
+    const __m256i carry_bit_mask_16x16 = _mm256_set1_epi16(carry_bit_mask);
 
-    auto compatible8 = [&](const __m256i vlock_biased, size_t j, __m256i &count) {
+    auto compatible16 = [&](const __m256i vlock_biased, size_t j, __m256i &count) {
         __m256i vkeys = _mm256_loadu_si256(reinterpret_cast<__m256i *>(&keys[j]));
-        __m256i vcols = _mm256_add_epi32(vlock_biased, vkeys);
-        __m256i vcarry = _mm256_and_si256(vcols, carry_bit_mask_8x32);
-        __m256i vgood = _mm256_cmpeq_epi32(vcarry, _mm256_setzero_si256());
-        count = _mm256_sub_epi32(count, vgood);
+        __m256i vsum = _mm256_add_epi16(vlock_biased, vkeys);
+        __m256i vcarries = _mm256_xor_si256(_mm256_xor_si256(vlock_biased, vkeys), vsum);
+        __m256i vgroup_carry_in = _mm256_and_si256(vcarries, carry_bit_mask_16x16);
+        __m256i vgood = _mm256_cmpeq_epi16(vgroup_carry_in, _mm256_setzero_si256());
+        count = _mm256_sub_epi16(count, vgood);
     };
 
     for (size_t i = 0; i < locks.size(); ++i) {
-        __m256i vlock = _mm256_set1_epi32(locks[i]);
-        __m256i vlock_biased = _mm256_add_epi32(vlock, counter_bias_8x32);
+        const __m256i counter_bias_16x16 = _mm256_set1_epi16(counter_bias);
+        const __m256i vlock = _mm256_set1_epi16(locks[i]);
+        const __m256i vlock_biased = _mm256_add_epi16(vlock, counter_bias_16x16);
 
-        size_t j = 0;
-        for (; j + 31 < keys.size(); j += 32) {
-            compatible8(vlock_biased, j, vcount[0]);
-            compatible8(vlock_biased, j + 8, vcount[1]);
-            compatible8(vlock_biased, j + 16, vcount[2]);
-            compatible8(vlock_biased, j + 24, vcount[3]);
+        for (size_t j = 0; j < keys.size(); j += 128) {
+            compatible16(vlock_biased, j + 0 * 16, vcount[0]);
+            compatible16(vlock_biased, j + 1 * 16, vcount[1]);
+            compatible16(vlock_biased, j + 2 * 16, vcount[2]);
+            compatible16(vlock_biased, j + 3 * 16, vcount[3]);
+            compatible16(vlock_biased, j + 4 * 16, vcount[4]);
+            compatible16(vlock_biased, j + 5 * 16, vcount[5]);
+            compatible16(vlock_biased, j + 6 * 16, vcount[6]);
+            compatible16(vlock_biased, j + 7 * 16, vcount[7]);
         }
-
-        for (; j + 7 < keys.size(); j += 8)
-            compatible8(vlock_biased, j, vcount[0]);
-
-        for (; j < keys.size(); ++j)
-            count += ((locks[i] + keys[j] + counter_bias) & carry_bit_mask) == 0;
     }
 
     for (size_t j = 0; j < std::size(vcount); ++j) {
-        std::array<uint32_t, 8> c;
+        std::array<uint16_t, 16> c;
         _mm256_store_si256(reinterpret_cast<__m256i *>(&c), vcount[j]);
-        for (size_t k = 0; k < 8; ++k)
+        for (size_t k = 0; k < 16; ++k)
             count += c[k];
     }
 
