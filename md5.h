@@ -1,8 +1,10 @@
-// Shared code between 2015/4 and 2016/5.
+// Shared code between 2015/4, 2016/5 and 2016/14.
 
 #pragma once
 
 #include "common.h"
+
+namespace md5 {
 
 inline __m256i mm256_rol(const __m256i a, const int n)
 {
@@ -14,38 +16,104 @@ inline __m256i mm256_not(const __m256i v)
     return _mm256_xor_si256(v, _mm256_set1_epi32(-1));
 }
 
-// Hash eight single-block messages simultaneously. The lengths are given in
-// `lengths`, and the return values is a vector containing the first 32-bit
-// words of the eight resulting hashes.
-inline __m256i md5_block_avx2(uint8_t *const __restrict messages,
-                              const uint32_t *const __restrict lengths)
+static char *format_hex(char *p, uint32_t h)
 {
-    // Padding and appending message length. (There is no scatter instruction
-    // in AVX2, so this has to be a scalar loop.)
+    constexpr char hex[] = "0123456789abcdef";
+    p[0] = hex[(h >> 4) & 0xf];
+    p[1] = hex[(h >> 0) & 0xf];
+    p[2] = hex[(h >> 12) & 0xf];
+    p[3] = hex[(h >> 8) & 0xf];
+    p[4] = hex[(h >> 20) & 0xf];
+    p[5] = hex[(h >> 16) & 0xf];
+    p[6] = hex[(h >> 28) & 0xf];
+    p[7] = hex[(h >> 24) & 0xf];
+    return p + 8;
+}
+
+struct alignas(32) Result {
+    __m256i a;
+    __m256i b;
+    __m256i c;
+    __m256i d;
+
+    std::array<std::array<uint32_t, 8>, 4> to_arrays() const
+    {
+        std::array<uint32_t, 8> a, b, c, d;
+        _mm256_storeu_si256(reinterpret_cast<__m256i *>(&a), this->a);
+        _mm256_storeu_si256(reinterpret_cast<__m256i *>(&b), this->b);
+        _mm256_storeu_si256(reinterpret_cast<__m256i *>(&c), this->c);
+        _mm256_storeu_si256(reinterpret_cast<__m256i *>(&d), this->d);
+
+        return {a, b, c, d};
+    }
+
+    std::array<std::array<char, 32>, 8> to_hex() const
+    {
+        const auto [a, b, c, d] = to_arrays();
+        std::array<std::array<char, 32>, 8> result;
+
+        for (size_t i = 0; i < 8; i++) {
+            char *p = result[i].data();
+            p = format_hex(p, a[i]);
+            p = format_hex(p, b[i]);
+            p = format_hex(p, c[i]);
+            p = format_hex(p, d[i]);
+        }
+
+        return result;
+    }
+};
+
+struct alignas(32) Block8x8x64 {
+    char data[512];
+};
+
+struct alignas(32) Block32x16x8 {
+    uint32_t data[16 * 8];
+};
+
+// Reshuffles `input` which contains eight 64-byte blocks laid out one after
+// another into interleaved 4-byte words from each block.
+inline Block32x16x8 permute_input(const Block8x8x64 &input)
+{
+    Block32x16x8 result;
+
+    // GCC does a decent job of vectorizing this into a bunch of shuffles
+    // (vpermi2d and vpermt2d); doing it by hand is unlikely to yield any
+    // significant speedup.
+    auto *input32 = reinterpret_cast<const uint32_t *>(&input.data);
+    for (int i = 0; i < 16; i++)
+        for (int j = 0; j < 8; j++)
+            result.data[8 * i + j] = input32[16 * j + i];
+
+    return result;
+}
+
+// Prepare the final messages blocks by inserting the block lengths into the
+// `messages`, assuming that the messages are already padded with zero bits.
+inline void prepare_final_blocks(Block8x8x64 &__restrict messages,
+                                 const uint32_t (&__restrict length_bytes)[8])
+{
     for (int i = 0; i < 8; i++) {
-        // The buffer is zero-initialized and the length of each message is
-        // non-decreasing, so this is all that is needed to properly pad it for
-        // each iteration.
-        messages[64 * i + lengths[i]] = 0x80;
+        // The buffer is assumed to be padded and the length of each message is
+        // non-decreasing, so all we need to do is to insert the 1 bit (0x80)
+        // and add the length in bits.
+        messages.data[64 * i + length_bytes[i]] = 0x80;
 
         // The message is never going to be more than 65536 bits.
-        messages[64 * i + 56] = (lengths[i] << 3) & 0xff;
-        messages[64 * i + 57] = (lengths[i] >> 5) & 0xff;
+        messages.data[64 * i + 56] = (length_bytes[i] << 3) & 0xff;
+        messages.data[64 * i + 57] = (length_bytes[i] >> 5) & 0xff;
     }
+}
 
+// Hash eight blocks simultaneously. The return values is an array where index
+// `k` contains the `k`:th 32-bit word of the eight resulting hashes.
+inline Result do_block_avx2(Block8x8x64 &__restrict messages)
+{
     // The original input is eight 64-byte blocks laid out one after another.
     // The actual MD5 code below expects memory to contain interleaved 4-byte
-    // words from each block, so reshuffle the original input into that
-    // format.
-    alignas(32) uint32_t M[16 * 8];
-    {
-        auto *W = reinterpret_cast<const uint32_t *>(messages);
-        for (int i = 0; i < 16; i++) {
-            for (int j = 0; j < 8; j++) {
-                M[8 * i + j] = W[16 * j + i];
-            }
-        }
-    }
+    // words from each block, so reshuffle the original input into that format.
+    Block32x16x8 M = permute_input(messages);
 
     __m256i A = _mm256_set1_epi32(0x67452301);
     __m256i B = _mm256_set1_epi32(0xefcdab89);
@@ -61,7 +129,7 @@ inline __m256i md5_block_avx2(uint8_t *const __restrict messages,
     do {                                                                                 \
         a = _mm256_add_epi32(a, f(b, c, d));                                             \
         a = _mm256_add_epi32(a, _mm256_set1_epi32(K[k]));                                \
-        a = _mm256_add_epi32(a, _mm256_load_si256((const __m256i *)(&M[8 * (j)])));      \
+        a = _mm256_add_epi32(a, _mm256_load_si256((const __m256i *)(&M.data[8 * (j)]))); \
         a = mm256_rol(a, shift);                                                         \
         a = _mm256_add_epi32(a, b);                                                      \
     } while (0)
@@ -118,7 +186,12 @@ inline __m256i md5_block_avx2(uint8_t *const __restrict messages,
 #undef I
 #undef QUARTER_ROUND
 
-    return _mm256_add_epi32(A, _mm256_set1_epi32(0x67452301));
+    return Result{
+        .a = _mm256_add_epi32(A, _mm256_set1_epi32(0x67452301)),
+        .b = _mm256_add_epi32(B, _mm256_set1_epi32(0xefcdab89)),
+        .c = _mm256_add_epi32(C, _mm256_set1_epi32(0x98badcfe)),
+        .d = _mm256_add_epi32(D, _mm256_set1_epi32(0x10325476)),
+    };
 }
 
 constexpr uint64_t ctpow(uint64_t base, int exp)
@@ -169,6 +242,8 @@ constexpr uint64_t ctpow(uint64_t base, int exp)
     return {p + ndigits};
 }
 
+namespace detail {
+
 template <size_t N>
 constexpr static uint32_t make_leading_zero_mask()
 {
@@ -180,42 +255,46 @@ constexpr static uint32_t make_leading_zero_mask()
 static_assert(make_leading_zero_mask<5>() == 0xf0ffff);
 static_assert(make_leading_zero_mask<6>() == 0xffffff);
 
-struct md5_avx_state {
-    std::array<char, 512> buffer;
+}
+
+/// Return a 8-bit mask with a bit set for each element in `hashes` that
+/// has at least `N` leading zeroes when written as hexadecimal.
+template <size_t N>
+static uint32_t leading_zero_mask(const __m256i hashes)
+{
+    const auto mask = _mm256_set1_epi32(detail::make_leading_zero_mask<N>());
+    const auto zero = _mm256_setzero_si256();
+    const __m256i eq = _mm256_cmpeq_epi32(_mm256_and_si256(mask, hashes), zero);
+    return _mm256_movemask_ps(_mm256_castsi256_ps(eq));
+}
+
+struct State {
+    Block8x8x64 messages{};
     std::string_view prefix;
 
-    md5_avx_state(std::string_view pfx)
+    State(std::string_view pfx)
         : prefix(pfx)
     {
-        buffer.fill(0);
         for (int i = 0; i < 512; i += 64)
-            memcpy(&buffer[i], prefix.data(), prefix.size());
+            memcpy(&messages.data[i], prefix.data(), prefix.size());
     }
 
     /// Compute eight MD5 hashes with [block, block+1, ..., block+7] appended
     /// to each block. The internal buffers are not cleared between calls, so
     /// the block number must never decrease between calls to this method.
-    __m256i run(const int block)
+    Result run(const int block)
     {
-        std::array<uint32_t, 8> lengths;
+        uint32_t lengths[8];
 
         for (int i = 0; i < 8; i++) {
-            char *p = buffer.data() + 64 * i;
+            char *p = messages.data + 64 * i;
             char *q = to_chars(p + prefix.size(), block + i);
             lengths[i] = q - p;
         }
 
-        return md5_block_avx2((uint8_t *)buffer.data(), lengths.data());
-    }
-
-    /// Return a 8-bit mask with a bit set for each element in `hashes` that
-    /// has at least `N` leading zeroes when written as hexadecimal.
-    template <size_t N>
-    static uint32_t leading_zero_mask(const __m256i hashes)
-    {
-        const auto mask = _mm256_set1_epi32(make_leading_zero_mask<N>());
-        const auto zero = _mm256_setzero_si256();
-        const __m256i eq = _mm256_cmpeq_epi32(_mm256_and_si256(mask, hashes), zero);
-        return _mm256_movemask_ps(_mm256_castsi256_ps(eq));
+        prepare_final_blocks(messages, lengths);
+        return do_block_avx2(messages);
     }
 };
+
+}

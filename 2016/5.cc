@@ -5,7 +5,7 @@ namespace aoc_2016_5 {
 
 static std::pair<uint32_t, uint32_t> solve(std::string_view prefix)
 {
-    md5_avx_state md5(prefix);
+    md5::State md5(prefix);
 
     int characters = 0;
     uint32_t password1 = 0;
@@ -13,8 +13,8 @@ static std::pair<uint32_t, uint32_t> solve(std::string_view prefix)
     int password2_mask = 0;
 
     for (int n = 0;; n += 8) {
-        const __m256i hashes = md5.run(n);
-        const uint32_t mask5 = md5_avx_state::leading_zero_mask<5>(hashes);
+        const __m256i hashes = md5.run(n).a;
+        const uint32_t mask5 = md5::leading_zero_mask<5>(hashes);
 
         if (mask5 == 0)
             continue;

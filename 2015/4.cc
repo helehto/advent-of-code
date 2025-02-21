@@ -14,15 +14,15 @@ hash_search(std::string_view s, int n, int stride, std::atomic_int &limit)
     int part1 = INT_MAX;
     int part2 = INT_MAX;
 
-    md5_avx_state md5(s);
+    md5::State md5(s);
 
     for (size_t i = 0; n < limit.load(); i++, n += stride) {
-        __m256i hashes = md5.run(n);
+        __m256i hashes = md5.run(n).a;
 
-        if (uint32_t eqmask5 = md5_avx_state::leading_zero_mask<5>(hashes))
+        if (uint32_t eqmask5 = md5::leading_zero_mask<5>(hashes))
             part1 = std::min(part1, n + std::countr_zero(eqmask5));
 
-        if (uint32_t eqmask6 = md5_avx_state::leading_zero_mask<6>(hashes)) {
+        if (uint32_t eqmask6 = md5::leading_zero_mask<6>(hashes)) {
             auto part2 = n + std::countr_zero(eqmask6);
             if (limit.load() >= part2)
                 limit.store(part2);
