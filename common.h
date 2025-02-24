@@ -286,6 +286,22 @@ constexpr int digit_count_base10(uint64_t n)
     return floor_log10_2exp[lzcnt] + extra;
 }
 
+/// Compute the modular inverse of `a` modulo `m`.
+constexpr int64_t modinv(int64_t a, int64_t m)
+{
+    int64_t m0 = m;
+    int64_t x0 = 0;
+    int64_t x1 = 1;
+
+    while (a > 1) {
+        const int64_t q = a / m;
+        std::tie(a, m) = std::pair(m, a % m);
+        std::tie(x0, x1) = std::pair(x1 - q * x0, x0);
+    }
+
+    return x1 < 0 ? x1 + m0 : x1;
+}
+
 /// Implementation of a binary min-heap with a decrease-key operation as used
 /// in Dijkstra's algorithm and A*. This only supports 32-bit integer keys and
 /// has a fixed size by construction.

@@ -2,21 +2,6 @@
 
 namespace aoc_2020_13 {
 
-int64_t modinv(int64_t a, int64_t m)
-{
-    int64_t m0 = m;
-    int64_t x0 = 0;
-    int64_t x1 = 1;
-
-    while (a > 1) {
-        const int64_t q = a / m;
-        std::tie(a, m) = std::pair(m, a % m);
-        std::tie(x0, x1) = std::pair(x1 - q * x0, x0);
-    }
-
-    return x1 < 0 ? x1 + m0 : x1;
-}
-
 void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
