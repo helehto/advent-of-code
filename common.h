@@ -576,7 +576,7 @@ constexpr void find_numbers(std::string_view s, std::vector<T> &result)
 template <typename T, size_t N>
 constexpr std::array<T, N> find_numbers_n(std::string_view s)
 {
-    std::array<T, N> result;
+    std::array<T, N> result{};
     size_t i = 0;
 
     find_numbers_impl<T>(s, [&](auto &&v) {
