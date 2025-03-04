@@ -30,7 +30,7 @@ void run(std::string_view buf)
     fmt::print("{}\n", viable_pairs);
 
     Matrix<char> grid(max_y + 1, max_x + 1);
-    Vec2i empty_node;
+    Vec2i empty_node{};
     for (size_t i = 2; i < lines.size(); ++i) {
         const auto [x, y, size, used, avail, usepct] = find_numbers_n<int, 6>(lines[i]);
         if (usepct > 95) {
