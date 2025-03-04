@@ -1,4 +1,5 @@
 #include "common.h"
+#include "inplace_vector.h"
 
 namespace aoc_2024_25 {
 
@@ -37,10 +38,8 @@ constexpr uint16_t carry_bit_mask = 0b1'001'001'001'001'001;
 
 void run(std::string_view buf)
 {
-    std::vector<uint16_t> locks;
-    std::vector<uint16_t> keys;
-    locks.reserve(256);
-    keys.reserve(256);
+    inplace_vector<uint16_t, 256> locks;
+    inplace_vector<uint16_t, 256> keys;
 
     size_t i = 0;
     for (; i + 3 < buf.size(); i += 6 * 7 + 1) {
@@ -62,9 +61,9 @@ void run(std::string_view buf)
         // Split locks and keys into separate vectors so that we never check a
         // lock against a lock, or a key against a key.
         if (buf[i] == '#')
-            locks.push_back(u);
+            locks.unchecked_push_back(u);
         else
-            keys.push_back(u);
+            keys.unchecked_push_back(u);
     }
 
     // Make sure the key vector is a multiple of 128 so that we can use 8-way
@@ -73,7 +72,7 @@ void run(std::string_view buf)
     // in an overlap, so this does not affect the final value.
     if (auto r = keys.size() % 128; r != 0)
         for (size_t i = 0; i < 128 - r; ++i)
-            keys.push_back(0xffff);
+            keys.unchecked_push_back(0xffff);
 
     uint64_t count = 0;
     __m256i vcount[8]{};
