@@ -32,11 +32,14 @@
 #define ASSERT(x)                                                                        \
     do {                                                                                 \
         if (!(x)) [[unlikely]] {                                                         \
-            fflush(stdout);                                                              \
-            fprintf(stderr,                                                              \
-                    "\x1b[1;31m" __FILE__                                                \
-                    ":" STRINGIFY(__LINE__) ": %s: Assertion `%s' failed.\x1b[m\n",      \
-                    __PRETTY_FUNCTION__, #x);                                            \
+            const char *_pretty_function = __PRETTY_FUNCTION__;                          \
+            [&] [[gnu::cold, gnu::noinline]] () {                                        \
+                fflush(stdout);                                                          \
+                fprintf(stderr,                                                          \
+                        "\x1b[1;31m" __FILE__                                            \
+                        ":" STRINGIFY(__LINE__) ": %s: Assertion `%s' failed.\x1b[m\n",  \
+                        _pretty_function, #x);                                           \
+            }();                                                                         \
             __builtin_trap();                                                            \
         }                                                                                \
     } while (0)
@@ -44,12 +47,15 @@
 #define ASSERT_MSG(x, format, ...)                                                       \
     do {                                                                                 \
         if (!(x)) [[unlikely]] {                                                         \
-            fflush(stdout);                                                              \
-            fprintf(stderr,                                                              \
-                    "\x1b[1;31m" __FILE__                                                \
-                    ":" STRINGIFY(__LINE__) ": %s: Assertion `%s' failed:\x1b[m ",       \
-                    __PRETTY_FUNCTION__, #x);                                            \
-            fmt::print(stderr, format "\n" __VA_OPT__(, ) __VA_ARGS__);                  \
+            const char *_pretty_function = __PRETTY_FUNCTION__;                          \
+            [&] [[gnu::cold, gnu::noinline]] () {                                        \
+                fflush(stdout);                                                          \
+                fprintf(stderr,                                                          \
+                        "\x1b[1;31m" __FILE__                                            \
+                        ":" STRINGIFY(__LINE__) ": %s: Assertion `%s' failed:\x1b[m ",   \
+                        _pretty_function, #x);                                           \
+                fmt::print(stderr, format "\n" __VA_OPT__(, ) __VA_ARGS__);              \
+            }();                                                                         \
             __builtin_trap();                                                            \
         }                                                                                \
     } while (0)
