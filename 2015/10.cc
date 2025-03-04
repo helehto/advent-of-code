@@ -241,7 +241,7 @@ static constexpr std::string_view atomic_sequences[] = {
 };
 static_assert(std::size(atomic_decay) == NUM_ATOMS);
 
-static void step(std::vector<int> &new_counts, std::span<int> counts)
+static void step(std::array<int, NUM_ATOMS> &new_counts, std::span<int> counts)
 {
     std::fill(begin(new_counts), end(new_counts), 0);
 
@@ -267,27 +267,30 @@ static size_t length_of(std::span<int> counts)
 
 void run(std::string_view buf)
 {
-    std::vector<int> counts(NUM_ATOMS), new_counts(NUM_ATOMS);
+    std::array<int, NUM_ATOMS> counts_vec{}, new_counts_vec;
     for (size_t i = 1; i < std::size(atomic_sequences); i++) {
         if (buf == atomic_sequences[i]) {
-            counts[i]++;
+            counts_vec[i]++;
             break;
         }
     }
 
     int i = 0;
 
+    auto *counts = &counts_vec;
+    auto *new_counts = &new_counts_vec;
+
     for (; i < 40; i++) {
-        step(new_counts, counts);
+        step(*new_counts, *counts);
         std::swap(new_counts, counts);
     }
-    fmt::print("{}\n", length_of(counts));
+    fmt::print("{}\n", length_of(*counts));
 
     for (; i < 50; i++) {
-        step(new_counts, counts);
+        step(*new_counts, *counts);
         std::swap(new_counts, counts);
     }
-    fmt::print("{}\n", length_of(counts));
+    fmt::print("{}\n", length_of(*counts));
 }
 
 }
