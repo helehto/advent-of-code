@@ -1,4 +1,5 @@
 #include "common.h"
+#include "inplace_vector.h"
 
 namespace aoc_2024_15 {
 
@@ -68,7 +69,7 @@ static Vec2i step2(const Vec2i robot,
                    Matrix<bool> &boxes,
                    const Matrix<bool> &walls,
                    const char c,
-                   std::vector<Vec2i> &to_move)
+                   inplace_vector<Vec2i, 64> &to_move)
 {
     auto box_at = [&](const Vec2i &p) -> std::optional<Vec2i> {
         if (boxes(p))
@@ -88,14 +89,14 @@ static Vec2i step2(const Vec2i robot,
         return target;
 
     to_move.clear();
-    to_move.push_back(*first_box);
+    to_move.unchecked_push_back(*first_box);
 
     if (d.y != 0) {
         for (size_t i = 0; i < to_move.size(); ++i) {
             for (int k : {-1, 0, 1}) {
                 auto b = to_move[i] + Vec2i(k, d.y);
                 if (boxes(b))
-                    to_move.push_back(b);
+                    to_move.unchecked_push_back(b);
             }
         }
     } else {
@@ -103,7 +104,7 @@ static Vec2i step2(const Vec2i robot,
         auto p = target;
         while (auto pp = box_at(p + step * d)) {
             p = *pp;
-            to_move.push_back(p);
+            to_move.unchecked_push_back(p);
         }
     }
 
@@ -138,8 +139,7 @@ static int part2(const Matrix<char> &grid, std::string_view moves)
         }
     }
 
-    std::vector<Vec2i> to_move;
-    to_move.reserve(16);
+    inplace_vector<Vec2i, 64> to_move;
     for (char c : moves)
         robot = step2(robot, boxes, walls, c, to_move);
 
