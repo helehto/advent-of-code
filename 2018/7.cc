@@ -1,6 +1,5 @@
 #include "common.h"
 #include <algorithm>
-#include <boost/container/static_vector.hpp>
 
 namespace aoc_2018_7 {
 
@@ -39,8 +38,8 @@ static void part2(std::array<std::vector<int>, 26> dependencies, int max_task)
 
     constexpr int n_workers = 5;
 
-    boost::container::static_vector<int, 26> pending_tasks;
-    boost::container::static_vector<Task, n_workers> active_tasks;
+    inplace_vector<int, 26> pending_tasks;
+    inplace_vector<Task, n_workers> active_tasks;
 
     for (int i = 0; i <= max_task; i++)
         if (dependencies[i].empty())

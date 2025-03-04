@@ -15,7 +15,7 @@ struct Comparison {
     int16_t target;
 };
 
-using Workflow = boost::container::static_vector<std::variant<Comparison, int>, 8>;
+using Workflow = inplace_vector<std::variant<Comparison, int>, 8>;
 using Hypercube = std::array<std::pair<int64_t, int64_t>, 4>;
 
 static Workflow parse_workflow(const dense_map<std::string_view, int> &workflow_index,

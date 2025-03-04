@@ -6,7 +6,6 @@
 namespace aoc_2022_24 {
 
 enum { U, D, L, R };
-using boost::container::static_vector;
 
 struct Grid {
     std::vector<uint8_t> grid[4];
@@ -33,7 +32,7 @@ struct Grid {
 
     auto get_moves(Vec2i v, Vec2i goal, int t) const
     {
-        static_vector<Vec2i, 6> result;
+        inplace_vector<Vec2i, 6> result;
 
         if (is_unoccupied(v, t))
             result.push_back(v);

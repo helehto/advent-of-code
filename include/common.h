@@ -1,8 +1,8 @@
 #pragma once
 
+#include "inplace_vector.h"
 #include <algorithm>
 #include <bit>
-#include <boost/container/static_vector.hpp>
 #include <cassert>
 #include <charconv>
 #include <cmath>
@@ -59,6 +59,14 @@
             __builtin_trap();                                                            \
         }                                                                                \
     } while (0)
+
+#ifdef NDEBUG
+#define DEBUG_ASSERT(...)
+#define DEBUG_ASSERT_MSG(...)
+#else
+#define DEBUG_ASSERT(...) ASSERT(__VA_ARGS__)
+#define DEBUG_ASSERT_MSG(...) ASSERT_MSG(__VA_ARGS__)
+#endif
 
 #ifdef DEBUG
 #define D(x, ...) fmt::print("[DEBUG] " x "\n" __VA_OPT__(, ) __VA_ARGS__)
@@ -935,10 +943,9 @@ constexpr static std::array<Vec2<T>, 4> neighbors4(Vec2<T> p)
 }
 
 template <typename T, typename U>
-static boost::container::static_vector<Vec2<U>, 4> neighbors4(const Matrix<T> &chart,
-                                                              Vec2<U> p)
+static inplace_vector<Vec2<U>, 4> neighbors4(const Matrix<T> &chart, Vec2<U> p)
 {
-    boost::container::static_vector<Vec2<U>, 4> result;
+    inplace_vector<Vec2<U>, 4> result;
     for (auto n : neighbors4(p))
         if (chart.in_bounds(n))
             result.push_back(n);
@@ -962,10 +969,9 @@ constexpr static std::array<Vec2<T>, 8> neighbors8(Vec2<T> p)
 }
 
 template <typename T, typename U>
-static boost::container::static_vector<Vec2<U>, 8> neighbors8(const Matrix<T> &grid,
-                                                              Vec2<U> p)
+static inplace_vector<Vec2<U>, 8> neighbors8(const Matrix<T> &grid, Vec2<U> p)
 {
-    boost::container::static_vector<Vec2<U>, 8> result;
+    inplace_vector<Vec2<U>, 8> result;
     for (auto n : neighbors8(p))
         if (grid.in_bounds(n))
             result.push_back(n);

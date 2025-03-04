@@ -3,10 +3,10 @@
 
 namespace aoc_2023_3 {
 
-static boost::container::static_vector<Vec2z, 8>
-surrounding_part_numbers(const Matrix<char> &grid, Vec2z p)
+static inplace_vector<Vec2z, 8> surrounding_part_numbers(const Matrix<char> &grid,
+                                                         Vec2z p)
 {
-    boost::container::static_vector<Vec2z, 8> result;
+    inplace_vector<Vec2z, 8> result;
 
     for (auto n : neighbors8(grid, p)) {
         if (isdigit(grid(n))) {
