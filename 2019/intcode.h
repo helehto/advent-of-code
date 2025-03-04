@@ -250,6 +250,17 @@ struct IntcodeVM {
                 if (input.empty())
                     return HaltReason::need_input;
 
+                if (input.data() == nullptr) {
+                    // For whatever reason, GCC 14.2.1 emits a warning due to
+                    // -Warray-bounds inside the .erase() call below, noting
+                    // that the "source object is likely at address zero",
+                    // despite the fact that vector is definitely not empty at
+                    // this point. Tell the compiler that it can assume that
+                    // vector buffer is non-null at this point to silence the
+                    // warning.
+                    __builtin_unreachable();
+                }
+
                 write_op(instr, 1, input.front());
                 input.erase(input.begin());
                 pc += 2;
