@@ -851,18 +851,35 @@ struct Matrix {
         return !(*this == other);
     }
 
-    constexpr T &operator()(size_t i, size_t j) { return data[i * cols + j]; }
-    constexpr const T &operator()(size_t i, size_t j) const { return data[i * cols + j]; }
+    constexpr T &operator()(size_t i, size_t j)
+    {
+        DEBUG_ASSERT_MSG(i < rows && j < cols,
+                         "({}, {}) is not a valid matrix entry (x<{}, y<{})", j, i, rows,
+                         cols);
+        return data[i * cols + j];
+    }
+
+    constexpr const T &operator()(size_t i, size_t j) const
+    {
+        DEBUG_ASSERT_MSG(i < rows && j < cols,
+                         "({}, {}) is not a valid matrix entry (x<{}, y<{})", j, i, rows,
+                         cols);
+        return data[i * cols + j];
+    }
 
     template <typename U>
     constexpr T &operator()(Vec2<U> p)
     {
+        DEBUG_ASSERT_MSG(in_bounds(p), "{} is not a valid matrix entry (x<{}, y<{})", p,
+                         cols, rows);
         return data[p.y * cols + p.x];
     }
 
     template <typename U>
     constexpr const T &operator()(Vec2<U> p) const
     {
+        DEBUG_ASSERT_MSG(in_bounds(p), "{} is not a valid matrix entry (x<{}, y<{})", p,
+                         cols, rows);
         return data[p.y * cols + p.x];
     }
 
@@ -874,17 +891,27 @@ struct Matrix {
         return {data.get(), data.get() + rows * cols};
     }
 
-    constexpr StridedRange<T> col(size_t i) { return {{}, data.get() + i, rows, cols}; }
-    constexpr StridedRange<const T> col(size_t i) const
+    constexpr StridedRange<T> col(size_t i)
     {
+        DEBUG_ASSERT_MSG(i < cols, "{} is not a valid column", i);
         return {{}, data.get() + i, rows, cols};
     }
+
+    constexpr StridedRange<const T> col(size_t i) const
+    {
+        DEBUG_ASSERT_MSG(i < cols, "{} is not a valid column", i);
+        return {{}, data.get() + i, rows, cols};
+    }
+
     constexpr StridedRange<T> row(size_t i)
     {
+        DEBUG_ASSERT_MSG(i < rows, "{} is not a valid row", i);
         return {{}, data.get() + i * cols, cols, 1};
     }
+
     constexpr StridedRange<const T> row(size_t i) const
     {
+        DEBUG_ASSERT_MSG(i < rows, "{} is not a valid row", i);
         return {{}, data.get() + i * cols, cols, 1};
     }
 
