@@ -174,6 +174,12 @@ struct Vec2 {
         return *this;
     }
 
+    constexpr Vec2 operator-()
+        requires(std::is_signed_v<T>)
+    {
+        return {-x, -y};
+    }
+
     template <typename Scalar>
     constexpr Vec2<std::common_type_t<T, Scalar>> operator*(const Scalar &scalar) const
     {
