@@ -43,11 +43,11 @@ def main() -> None:
             except FileNotFoundError:
                 pass
         else:
-            raise Exception('Session token not specified!')
+            raise Exception("Session token not specified!")
 
     # Download the file.
     with requests.Session() as s:
-        cookies = {"session": session_cookie}
+        cookies = {"session": session_cookie.strip()}
         headers = {"User-Agent": USER_AGENT}
         response = s.get(url, cookies=cookies, headers=headers)
         response.raise_for_status()
