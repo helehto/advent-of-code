@@ -41,7 +41,7 @@ foreach year, days : solutions
 endforeach
 
 config_h = configure_file(
-  input: files('config.h.in'),
+  input: files('include/config.h.in'),
   output: 'config.h',
   configuration: {'PROBLEMS': xmacro_body}
 )
@@ -54,5 +54,6 @@ executable(
   dependencies: [
     eigen3,
     libfmt,
-  ]
+  ],
+  include_directories: include_directories('include'),
 )
