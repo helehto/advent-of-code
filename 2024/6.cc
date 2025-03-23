@@ -8,7 +8,7 @@ constexpr Vec2i dxdy[] = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
 
 struct State {
     uint16_t x : 15;
-    uint16_t y : 15;
+    uint16_t y : 14;
     uint16_t dir : 2;
 
     constexpr bool operator==(const State &) const = default;
@@ -16,9 +16,7 @@ struct State {
     struct Hasher {
         size_t operator()(const State &state) const
         {
-            size_t h = 0;
-            hash_combine(h, state.x, state.y, state.dir);
-            return h;
+            return _mm_crc32_u32(0, std::bit_cast<uint32_t>(state));
         }
     };
 };

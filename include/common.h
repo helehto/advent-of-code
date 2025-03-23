@@ -221,6 +221,18 @@ template <typename T>
 struct std::hash<Vec2<T>> {
     constexpr size_t operator()(const Vec2<T> &p) const
     {
+        if (!std::is_constant_evaluated()) {
+            if constexpr (sizeof(T) == 1) {
+                return _mm_crc32_u64(0, std::bit_cast<uint16_t>(p));
+            } else if constexpr (sizeof(T) == 2) {
+                return _mm_crc32_u64(0, std::bit_cast<uint32_t>(p));
+            } else if constexpr (sizeof(T) == 4) {
+                return _mm_crc32_u64(0, std::bit_cast<uint64_t>(p));
+            } else if constexpr (sizeof(T) == 8) {
+                return _mm_crc32_u64(_mm_crc32_u64(0, p.x), p.y);
+            }
+        }
+
         size_t h = 0;
         hash_combine(h, p.x, p.y);
         return h;

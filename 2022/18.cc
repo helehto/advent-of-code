@@ -6,11 +6,11 @@
 
 template <>
 struct std::hash<std::array<int, 3>> {
-    constexpr size_t operator()(const std::array<int, 3> a) const
+    size_t operator()(const std::array<int, 3> a) const
     {
-        size_t h = 0;
-        hash_combine(h, a[0], a[1], a[2]);
-        return h;
+        uint64_t u;
+        memcpy(&u, &a, sizeof(u));
+        return _mm_crc32_u64(_mm_crc32_u64(0, u), a[2]);
     }
 };
 

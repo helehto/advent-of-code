@@ -32,14 +32,9 @@ struct alignas(8) CacheKey19 {
 
 template <>
 struct std::hash<aoc_2022_19::CacheKey19> {
-    constexpr size_t operator()(const aoc_2022_19::CacheKey19 &k) const
+    size_t operator()(const aoc_2022_19::CacheKey19 &k) const
     {
-        size_t h = 0;
-        for (int x : k.income)
-            hash_combine(h, x);
-        for (int x : k.resources)
-            hash_combine(h, x);
-        return h;
+        return _mm_crc32_u64(0, std::bit_cast<uint64_t>(k));
     }
 };
 
