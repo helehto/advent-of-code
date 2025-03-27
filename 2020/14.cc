@@ -4,28 +4,6 @@
 
 namespace aoc_2020_14 {
 
-static uint64_t pdep(uint64_t src, uint64_t mask)
-{
-#if defined(__BMI2__)
-    return _pdep_u64(src, mask);
-#else
-    uint64_t dest = 0;
-
-    int k = 0;
-    for (int m = 0; m < 64; m++) {
-        const auto maskbit = uint64_t(1) << m;
-        if (mask & maskbit) {
-            const auto srcbit = uint64_t(1) << k;
-            if (src & srcbit)
-                dest |= maskbit;
-            k++;
-        }
-    }
-
-    return dest;
-#endif
-}
-
 static std::pair<uint64_t, uint64_t> parse_mask_line(std::string_view line)
 {
     uint64_t maskx = 0;
@@ -84,7 +62,7 @@ void run(std::string_view buf)
                 uint64_t addr = raw_addr | mask1;
                 const uint64_t max_addr = uint64_t(1) << std::popcount(maskx);
                 for (uint64_t a = 0; a < max_addr; a++)
-                    memory[(addr & ~maskx) | pdep(a, maskx)] = value;
+                    memory[(addr & ~maskx) | _pdep_u64(a, maskx)] = value;
             }
         }
         fmt::print("{}\n", memory_sum(memory));
