@@ -33,11 +33,11 @@ constexpr static uint8_t state_hash_mask = 0b00111111;
 constexpr static size_t simd_align = 16;
 constexpr static size_t max_simd_size = 32;
 
-__attribute__((noinline)) inline size_t find_occupied(const uint8_t *states, size_t i)
+inline size_t find_occupied(const uint8_t *states, size_t i)
 {
-    for (;; i += 16) {
-        const auto *p = reinterpret_cast<const __m128i *>(states + i);
-        if (unsigned int mask = _mm_movemask_epi8(_mm_loadu_si128(p)))
+    for (;; i += 32) {
+        const auto *p = reinterpret_cast<const __m256i *>(states + i);
+        if (unsigned int mask = _mm256_movemask_epi8(_mm256_loadu_si256(p)))
             return i + std::countr_zero(mask);
     }
 }
