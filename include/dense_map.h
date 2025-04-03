@@ -88,6 +88,15 @@ compound_allocate(std::span<const std::pair<size_t, size_t>> fields, Pointers...
     return storage;
 }
 
+/// Array of sentinel states used for empty maps. Some operations, e.g.
+/// iterators, expected the array of bucket states to be non-null, and rather
+/// than introducing null checks everywhere, the states_ member points here.
+constexpr auto empty_map_states = [] {
+    std::array<uint8_t, max_simd_size> a;
+    a.fill(static_cast<uint8_t>(bucket_state::sentinel));
+    return a;
+}();
+
 } // namespace detail
 
 template <typename Key,
@@ -188,9 +197,14 @@ private:
 
     size_t find_occupied_(size_t i) const { return detail::find_occupied(states_, i); }
 
-    std::tuple<size_t, bool, size_t> find_bucket_(const Key &key) const
+    std::tuple<size_t, bool> find_bucket_with_hash_(const size_t hash,
+                                                    const Key &key) const
     {
-        const size_t hash = hash_(key);
+        if (capacity_ == 0) [[unlikely]] {
+            // We cannot find the corresponding in an empty map, by definition.
+            return {0, false};
+        }
+
         const auto mask = capacity_ - 1;
         size_t i = hash & mask;
         uint8_t expected_state = 0b11000000 | (hash & detail::state_hash_mask);
@@ -199,9 +213,9 @@ private:
         // Fast path before we drop into the SIMD loop: is the very first
         // bucket we landed at empty or the key we're looking for?
         if (states_[i] == 0)
-            return {i, false, hash};
+            return {i, false};
         if (states_[i] == expected_state && equal_(buckets_[i].data().first, key))
-            return {i, true, hash};
+            return {i, true};
 
         // No, unfortunately not. Skip it and start checking buckets en masse.
         i = (i + 1) & mask;
@@ -235,7 +249,7 @@ private:
             for (; match_mask != 0; match_mask &= match_mask - 1) {
                 int offset = std::countr_zero(match_mask);
                 if (equal_(buckets_[i + offset].data().first, key))
-                    return {i + offset, true, hash};
+                    return {i + offset, true};
             }
 
             // At this point, none of the candidate buckets we checked matched
@@ -243,23 +257,61 @@ private:
             // the key does not exist in this probe chain, since we would have
             // stopped there with a linear search.
             if (empty_mask != 0)
-                return {i + std::countr_zero(empty_mask), false, hash};
+                return {i + std::countr_zero(empty_mask), false};
         }
     }
 
+    std::tuple<size_t, bool, size_t> find_bucket_(const Key &key) const
+    {
+        const size_t hash = hash_(key);
+        auto [i, found] = find_bucket_with_hash_(hash, key);
+        return std::tuple(i, found, hash);
+    }
+
     constexpr static auto max_load_ = std::make_pair(3, 4);
+
+    void initialize_allocate(size_t new_capacity)
+    {
+        const std::pair<size_t, size_t> fields[] = {
+            {sizeof(bucket) * new_capacity, alignof(bucket)},
+            {sizeof(bucket_state) * (new_capacity + detail::max_simd_size),
+             detail::simd_align},
+        };
+        storage_ = detail::compound_allocate(fields, &buckets_, &states_);
+
+        capacity_ = new_capacity;
+        memset(states_, 0, capacity_);
+        for (size_t i = 0; i < detail::max_simd_size; i++)
+            set_state_of(capacity_ + i, bucket_state::occupied);
+    }
 
     template <typename ConstructFn>
     std::pair<iterator, bool> do_insert_helper_(const key_type &key,
                                                 ConstructFn &&construct)
     {
-        auto [i, found, hash] = find_bucket_(key);
+        size_t i;
+        bool found = false;
+        const size_t hash = hash_(key);
+
+        // For an empty map, the key is obviously not present, and there are
+        // also no other keys that could cause a collision. In that case, we
+        // can compute the resulting index and skip directly to construction of
+        // the element.
+        if (capacity_ == 0) [[unlikely]] {
+            constexpr size_t new_capacity = 16;
+            initialize_allocate(new_capacity);
+            i = hash & (new_capacity - 1);
+            goto insert_key;
+        }
+
+        std::tie(i, found) = find_bucket_with_hash_(hash, key);
         if (!found) {
-            if (max_load_.second * (size_with_tombs_ + 1) >=
-                capacity_ * max_load_.first) {
+            if (max_load_.second * (size_with_tombs_ + 1) >= capacity_ * max_load_.first)
+                [[unlikely]] {
                 rehash(2 * capacity_);
-                i = std::get<0>(find_bucket_(key));
+                i = std::get<0>(find_bucket_with_hash_(hash, key));
             }
+        insert_key:
             construct(buckets_[i].buffer);
             set_state_of(i, bucket_state::occupied, hash & detail::state_hash_mask);
             size_++;
@@ -281,12 +333,6 @@ private:
         });
     }
 
-    constexpr static size_type next_power_of_two(size_type x)
-    {
-        auto lzcnt = std::countl_zero(x - 1);
-        return size_type(1) << (8 * sizeof(size_type) - lzcnt);
-    }
-
     struct internal_tag {};
 
     dense_map(internal_tag,
@@ -299,16 +345,7 @@ private:
         , hash_(hash)
         , equal_(equal)
     {
-        const std::pair<size_t, size_t> fields[] = {
-            {sizeof(bucket) * capacity_, alignof(bucket)},
-            {sizeof(bucket_state) * (capacity_ + detail::max_simd_size),
-             detail::simd_align},
-        };
-        storage_ = detail::compound_allocate(fields, &buckets_, &states_);
-
-        memset(states_, 0, capacity_);
-        for (size_t i = 0; i < detail::max_simd_size; i++)
-            set_state_of(capacity_ + i, bucket_state::occupied);
+        initialize_allocate(bucket_count);
     }
 
     void rehash(size_type count)
@@ -325,7 +362,11 @@ public:
     //-------------------------------------------------------------------------
 
     dense_map()
-        : dense_map(size_type(0))
+        : buckets_(nullptr)
+        , states_((uint8_t *)detail::empty_map_states.data())
+        , capacity_(0)
+        , size_(0)
+        , size_with_tombs_(0)
     {
     }
 
@@ -333,7 +374,8 @@ public:
               const Hash &hash = Hash(),
               const KeyEqual &equal = KeyEqual())
         : dense_map(internal_tag{},
-                    bucket_count ? next_power_of_two(2 * bucket_count / max_load_factor())
+                    bucket_count ? std::bit_ceil(static_cast<size_type>(
+                                       2 * bucket_count / max_load_factor()))
                                  : 16,
                     hash,
                     equal)
