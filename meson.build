@@ -1,5 +1,6 @@
 project('sub1sec', 'cpp', default_options: ['cpp_std=c++20'])
 
+cpp = meson.get_compiler('cpp')
 add_project_arguments('-march=native', language: 'cpp')
 
 if get_option('buildtype') == 'debug'
@@ -57,4 +58,5 @@ executable(
     libfmt,
   ],
   include_directories: include_directories('include'),
+  link_args: cpp.get_supported_link_arguments('-fuse-ld=mold'),
 )
