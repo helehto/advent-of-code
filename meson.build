@@ -1,4 +1,4 @@
-project('sub1sec', 'cpp', default_options: ['cpp_std=c++20'])
+project('sub1sec', 'cpp', default_options: ['cpp_std=c++23'])
 
 cpp = meson.get_compiler('cpp')
 add_project_arguments('-march=native', language: 'cpp')
