@@ -14,13 +14,13 @@ struct Blueprint {
     uint8_t costs[4][3];
 };
 
-struct alignas(8) CacheKey19 {
+struct alignas(8) CacheKey {
     std::array<uint8_t, 3> income;
     std::array<uint8_t, 3> resources;
     uint8_t pad0 = 0;
     uint8_t pad1 = 0;
 
-    constexpr bool operator==(const CacheKey19 &o) const
+    constexpr bool operator==(const CacheKey &o) const
     {
         static_assert(sizeof(*this) == 8 && alignof(*this) == 8);
         return *reinterpret_cast<const uint64_t *>(this) ==
@@ -31,8 +31,8 @@ struct alignas(8) CacheKey19 {
 } // namespace aoc_2022_19
 
 template <>
-struct std::hash<aoc_2022_19::CacheKey19> {
-    size_t operator()(const aoc_2022_19::CacheKey19 &k) const
+struct std::hash<aoc_2022_19::CacheKey> {
+    size_t operator()(const aoc_2022_19::CacheKey &k) const
     {
         return _mm_crc32_u64(0, std::bit_cast<uint64_t>(k));
     }
@@ -44,7 +44,7 @@ struct SearchParameters {
     Blueprint blueprint;
     int target;
     std::array<uint8_t, 3> max_cost_per_material;
-    dense_map<CacheKey19, int> &cache;
+    dense_map<CacheKey, int> &cache;
     int largest = 0;
 };
 
@@ -67,7 +67,7 @@ static int search(SearchParameters &p, const SearchState &state = {})
     if (upper_bound < p.largest)
         return 0;
 
-    CacheKey19 key{income, resources};
+    CacheKey key{income, resources};
     if (auto it = p.cache.find(key); it != end(p.cache))
         return it->second;
 
@@ -154,7 +154,7 @@ void run(std::string_view buf)
 
     int part1 = 0;
     int part2 = 1;
-    dense_map<CacheKey19, int> cache;
+    dense_map<CacheKey, int> cache;
     for (size_t i = 0; i < blueprints.size(); i++) {
         std::array<uint8_t, 3> max_cost_per_material;
         for (size_t j = 0; j < 4; j++) {
