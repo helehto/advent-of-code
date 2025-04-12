@@ -20,7 +20,7 @@ void run(std::string_view buf)
 
         for (int j = 0; j < 16; ++j) {
             auto dep = _pdep_u64(hash[j], uint64_t(0x0101010101010101));
-            auto dep_rev = __builtin_bswap64(dep);
+            auto dep_rev = std::byteswap(dep);
             *reinterpret_cast<uint64_t *>(&grid(i, 8 * j)) = dep_rev;
         }
     }

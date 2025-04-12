@@ -22,7 +22,7 @@ part1(const std::vector<int> &containers, uint64_t used_mask, int left, size_t s
 static inline size_t next_bit_permutation(size_t v) noexcept
 {
     const auto t = v | (v - 1);
-    return (t + 1) | (((~t & -~t) - 1) >> (__builtin_ctzl(v) + 1));
+    return (t + 1) | (((~t & -~t) - 1) >> (std::countr_zero(v) + 1));
 }
 
 static int capacity(const std::vector<int> &containers, uint64_t mask)
@@ -30,7 +30,7 @@ static int capacity(const std::vector<int> &containers, uint64_t mask)
     int capacity = 0;
 
     for (; mask; mask &= mask - 1) {
-        const auto bit = __builtin_ctzll(mask);
+        const auto bit = std::countr_zero(mask);
         capacity += containers[bit];
     }
 

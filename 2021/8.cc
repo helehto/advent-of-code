@@ -36,14 +36,14 @@ void run(std::string_view buf)
         }
 
         for (int i = 10; i < 14; i++) {
-            int c = __builtin_popcount(masks[i]);
+            int c = std::popcount(masks[i]);
             if (c == 2 || c == 3 || c == 4 || c == 7)
                 part1++;
         }
 
         // 1, 4, 7, 8
         for (int i = 0; i < 10; i++) {
-            int c = __builtin_popcount(masks[i]);
+            int c = std::popcount(masks[i]);
             if (c == 2)
                 resolve(i, 1);
             else if (c == 3)
@@ -56,26 +56,26 @@ void run(std::string_view buf)
 
         // 2, 3
         for (int i = 0; i < 10; i++) {
-            if (__builtin_popcount(masks[i]) == 5) {
+            if (std::popcount(masks[i]) == 5) {
                 if ((masks[shuffle[1]] & ~masks[i]) == 0)
                     resolve(i, 3);
-                else if (__builtin_popcount(masks[i] & ~masks[shuffle[4]]) == 3)
+                else if (std::popcount(masks[i] & ~masks[shuffle[4]]) == 3)
                     resolve(i, 2);
             }
         }
 
         // 9
         for (int i = 0; i < 10; i++) {
-            if (__builtin_popcount(masks[i]) == 6 &&
-                __builtin_popcount(masks[i] & ~masks[shuffle[3]]) == 1) {
+            if (std::popcount(masks[i]) == 6 &&
+                std::popcount(masks[i] & ~masks[shuffle[3]]) == 1) {
                 resolve(i, 9);
             }
         }
 
         // 0
         for (int i = 0; i < 10; i++) {
-            if (__builtin_popcount(masks[i]) == 6 &&
-                __builtin_popcount(masks[i] & ~masks[shuffle[9]]) == 1 &&
+            if (std::popcount(masks[i]) == 6 &&
+                std::popcount(masks[i] & ~masks[shuffle[9]]) == 1 &&
                 (masks[shuffle[1]] & ~masks[i]) == 0) {
                 resolve(i, 0);
             }
@@ -85,9 +85,9 @@ void run(std::string_view buf)
         for (int i = 0; i < 10; i++) {
             if (unshuffle[i] != -1)
                 continue;
-            if (__builtin_popcount(masks[i]) == 5)
+            if (std::popcount(masks[i]) == 5)
                 resolve(i, 5);
-            else if (__builtin_popcount(masks[i]) == 6)
+            else if (std::popcount(masks[i]) == 6)
                 resolve(i, 6);
         }
 

@@ -37,11 +37,11 @@ static size_t find_avx(const int64_t *p, const size_t n, const int64_t needle)
             static_cast<uint8_t>(_mm256_movemask_ps(eq3ps)),
         };
 
-        int32_t masks01;
+        uint32_t masks01;
         memcpy(&masks01, masks01_32, sizeof(masks01));
 
         if (masks01)
-            return k + __builtin_ctz(masks01) / 2;
+            return k + std::countr_zero(masks01) / 2;
     }
 
     // Vectorized loop for 4-15 remaining elements.
@@ -49,8 +49,8 @@ static size_t find_avx(const int64_t *p, const size_t n, const int64_t needle)
         const auto v = _mm256_loadu_si256((const __m256i *)&p[k]);
         const auto eq = _mm256_cmpeq_epi64(v, vneedle);
 
-        if (const auto mask = _mm256_movemask_epi8(eq))
-            return k + __builtin_ctz(mask) / 8;
+        if (const uint32_t mask = _mm256_movemask_epi8(eq))
+            return k + std::countr_zero(mask) / 8;
     }
 
     // Scalar loop for 1-3 remaining elements.
@@ -58,7 +58,7 @@ static size_t find_avx(const int64_t *p, const size_t n, const int64_t needle)
         if (p[k] == needle)
             return k;
 
-    __builtin_unreachable();
+    std::unreachable();
 }
 
 static void mix(const std::vector<int64_t> &original, std::vector<int64_t> &nums)

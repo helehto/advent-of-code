@@ -18,8 +18,8 @@ void run(std::string_view buf)
         for (size_t i = 11; i < v.size(); i++)
             have[v[i] / 64] |= UINT64_C(1) << (v[i] % 64);
 
-        int n_correct = __builtin_popcountl(winning[0] & have[0]) +
-                        __builtin_popcountl(winning[1] & have[1]);
+        int n_correct =
+            std::popcount(winning[0] & have[0]) + std::popcount(winning[1] & have[1]);
         matches.push_back(n_correct);
     }
 

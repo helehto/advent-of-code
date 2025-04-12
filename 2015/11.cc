@@ -31,7 +31,7 @@ static bool has_nonoverlapping_pairs(std::string_view s)
             mask |= 1U << (s[i] - 'a');
     }
 
-    return __builtin_popcount(mask) >= 2;
+    return std::popcount(mask) >= 2;
 }
 
 static bool is_valid(std::string_view s)

@@ -109,7 +109,7 @@ void run(std::string_view buf)
             else if (n % 3 == 0)
                 n = 4 * n / 3;
             else
-                __builtin_unreachable();
+                std::unreachable();
         }
         return (n + 3) & ~3;
     }();

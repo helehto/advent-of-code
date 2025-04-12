@@ -86,7 +86,7 @@ static std::vector<int> floyd_warshall(const std::vector<Valve> &valves)
 
     for (size_t u = 0; u < n; u++) {
         for (size_t i = valves[u].neighbor_mask; i; i &= i - 1) {
-            const auto v = __builtin_ctzl(i);
+            const auto v = std::countr_zero(i);
             d[u * n + v] = 1;
         }
     }
@@ -143,7 +143,7 @@ static void search(const SearchParameters &p, State s)
 
         // Step through the available mask bit by bit and recurse.
         for (; vmask; vmask &= vmask - 1) {
-            const size_t v = __builtin_ctzl(vmask);
+            const size_t v = std::countr_zero(vmask);
             const auto new_remaining =
                 s.remaining - p.costs[s.u * p.input.valves.size() + v] - 1;
             if (new_remaining <= 0)

@@ -100,7 +100,7 @@ struct SplitMemory {
     value_type rd(const value_type addr_value)
     {
         const address_type addr = addr_from_value(addr_value);
-        if (__builtin_expect(addr < highmem_start_addr, 1)) {
+        if (addr < highmem_start_addr) [[likely]] {
             return low[addr];
         } else {
             auto it = high.find(addr);
@@ -112,7 +112,7 @@ struct SplitMemory {
     void wr(const value_type addr_value, const value_type val)
     {
         const address_type addr = addr_from_value(addr_value);
-        if (__builtin_expect(addr < highmem_start_addr, 1)) {
+        if (addr < highmem_start_addr) [[likely]] {
             low[addr] = val;
         } else {
             high[addr] = val;
@@ -174,7 +174,7 @@ struct IntcodeVM {
         case Mode::relative:
             return mem.rd(operand + relative_base);
         }
-        __builtin_unreachable();
+        std::unreachable();
     }
 
     /// Write `val` to the address given by the value of the operand at offset
@@ -258,7 +258,7 @@ struct IntcodeVM {
                     // this point. Tell the compiler that it can assume that
                     // vector buffer is non-null at this point to silence the
                     // warning.
-                    __builtin_unreachable();
+                    std::unreachable();
                 }
 
                 write_op(instr, 1, input.front());
@@ -296,9 +296,9 @@ struct IntcodeVM {
 
             default:
                 // Check for uncommon opcodes here rather than folding into
-                // them into a case statement above, so that __builtin_expect()
-                // can be used.
-                if (__builtin_expect(instr.opcode == OP_HALT, 0)) {
+                // them into a case statement above, so that [[unlikely]] can
+                // be used.
+                if (instr.opcode == OP_HALT) [[unlikely]] {
                     return HaltReason::op99;
                 } else {
                     ASSERT_MSG(false, "Unknown opcode {}", instr.opcode);

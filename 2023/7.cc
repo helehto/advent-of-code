@@ -35,26 +35,26 @@ struct Hand {
 static std::pair<uint32_t, uint8_t> evaluate_hand(uint8_t *counts)
 {
     const __m128i vcounts = _mm_loadu_si128(reinterpret_cast<__m128i *>(counts));
-    const int mask5 = _mm_movemask_epi8(_mm_cmpeq_epi8(vcounts, _mm_set1_epi8(5)));
-    const int mask4 = _mm_movemask_epi8(_mm_cmpeq_epi8(vcounts, _mm_set1_epi8(4)));
-    const int mask3 = _mm_movemask_epi8(_mm_cmpeq_epi8(vcounts, _mm_set1_epi8(3)));
-    const int mask2 = _mm_movemask_epi8(_mm_cmpeq_epi8(vcounts, _mm_set1_epi8(2)));
-    const int mask1 = _mm_movemask_epi8(_mm_cmpeq_epi8(vcounts, _mm_set1_epi8(1)));
+    const uint32_t mask5 = _mm_movemask_epi8(_mm_cmpeq_epi8(vcounts, _mm_set1_epi8(5)));
+    const uint32_t mask4 = _mm_movemask_epi8(_mm_cmpeq_epi8(vcounts, _mm_set1_epi8(4)));
+    const uint32_t mask3 = _mm_movemask_epi8(_mm_cmpeq_epi8(vcounts, _mm_set1_epi8(3)));
+    const uint32_t mask2 = _mm_movemask_epi8(_mm_cmpeq_epi8(vcounts, _mm_set1_epi8(2)));
+    const uint32_t mask1 = _mm_movemask_epi8(_mm_cmpeq_epi8(vcounts, _mm_set1_epi8(1)));
 
     if (mask5)
-        return {five_of_a_kind, __builtin_ctz(mask5)};
+        return {five_of_a_kind, std::countr_zero(mask5)};
 
     if (mask4)
-        return {four_of_a_kind, __builtin_ctz(mask4)};
+        return {four_of_a_kind, std::countr_zero(mask4)};
 
     if (mask3)
-        return {mask2 ? full_house : three_of_a_kind, __builtin_ctz(mask3)};
+        return {mask2 ? full_house : three_of_a_kind, std::countr_zero(mask3)};
 
     if (mask2)
-        return {(mask2 & (mask2 - 1)) ? two_pair : one_pair, __builtin_ctz(mask2)};
+        return {(mask2 & (mask2 - 1)) ? two_pair : one_pair, std::countr_zero(mask2)};
 
     ASSERT(mask1 != 0);
-    return {high_card, __builtin_ctz(mask1)};
+    return {high_card, std::countr_zero(mask1)};
 }
 
 static uint32_t evaluate_hand_with_jokers(std::array<uint8_t, 16> &counts)

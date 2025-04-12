@@ -25,7 +25,7 @@ void run(std::string_view buf)
         auto mid = s.begin() + s.size() / 2;
         const auto mask1 = make_mask({s.begin(), mid});
         const auto mask2 = make_mask({mid, s.end()});
-        part1 += __builtin_ctzll(mask1 & mask2) + 1;
+        part1 += std::countr_zero(mask1 & mask2) + 1;
     }
 
     int part2 = 0;
@@ -33,7 +33,7 @@ void run(std::string_view buf)
         const auto mask1 = make_mask(lines[i]);
         const auto mask2 = make_mask(lines[i + 1]);
         const auto mask3 = make_mask(lines[i + 2]);
-        part2 += __builtin_ctzll(mask1 & mask2 & mask3) + 1;
+        part2 += std::countr_zero(mask1 & mask2 & mask3) + 1;
     }
 
     fmt::print("{}\n", part1);

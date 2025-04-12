@@ -4,7 +4,7 @@ namespace aoc_2022_4 {
 
 void run(std::string_view buf)
 {
-    int a0, a1, b0, b1;
+    int a0 = 0, a1 = 0, b0 = 0, b1 = 0;
     int part1 = 0;
     int part2 = 0;
     std::vector<std::string_view> tokens;

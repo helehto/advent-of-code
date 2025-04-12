@@ -10,7 +10,7 @@ static size_t solve(std::string_view s, size_t n)
     for (; i < n; i++)
         mask ^= 1U << (s[i] - 'a');
 
-    for (; __builtin_popcount(mask) != n; i++) {
+    for (; std::popcount(mask) != n; i++) {
         mask ^= 1U << (s[i - n] - 'a');
         mask ^= 1U << (s[i] - 'a');
     }
