@@ -12,7 +12,7 @@ class inplace_vector {
         Capacity > 0,
         "I can't be bothered to think about the case of a vector with zero capacity.");
 
-    alignas(T) std::byte storage_[Capacity * sizeof(T)];
+    alignas(T) std::byte storage_[Capacity * sizeof(T)]{};
     std::size_t n_ = 0;
 
 public:
