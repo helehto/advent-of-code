@@ -34,7 +34,7 @@ static int part2(const std::vector<std::string_view> &fields)
         const auto h = hash(lens);
         auto &box = boxes[h];
 
-        auto it = r::find_if(box, [&](auto p) { return p.first == lens; });
+        auto it = r::find_if(box, λx(x.first == lens));
 
         if (f[sep] == '-') {
             if (it != box.end()) {
@@ -52,7 +52,7 @@ static int part2(const std::vector<std::string_view> &fields)
     int sum = 0;
     for (auto &[lens, h] : lens_to_box) {
         const auto &box = boxes[h];
-        auto jt = r::find_if(box, [&](auto p) { return p.first == lens; });
+        auto jt = r::find_if(box, λx(x.first == lens));
         ASSERT(jt != box.end());
         sum += (h + 1) * (jt - box.begin() + 1) * jt->second;
     }

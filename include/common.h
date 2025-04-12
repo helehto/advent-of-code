@@ -97,6 +97,22 @@
         "\x1b[1;30;43m {:>4d} \x1b[m " DV_FORMAT(var __VA_OPT__(, ) __VA_ARGS__) "\n",   \
         __LINE__, var __VA_OPT__(, ) __VA_ARGS__)
 
+// Concise form of a common pattern of lambda functions.
+#define λ_1(a, body) [&]() { return body; }
+#define λ_2(a, body) [&](auto &&a) { return body; }
+#define λ_3(a, b, body) [&](auto &&a, auto &&b) { return body; }
+#define λ_4(a, b, c, body) [&](auto &&a, auto &&b, auto &&c) { return body; }
+#define λ_5(a, b, c, d, body) [&](auto &&a, auto &&b, auto &&c, auto &&d) { return body; }
+#define λ_(...) GLUE(λ_, ARG_COUNT(__VA_ARGS__))(__VA_ARGS__)
+#define λ(...) λ_(__VA_ARGS__)
+
+// Even more concise form for a few different common argument names and
+// arities.
+#define λa(body) λ(a, body)
+#define λx(body) λ(x, body)
+#define λab(body) λ(a, b, body)
+#define λxy(body) λ(x, y, body)
+
 template <typename T, typename... Rest>
 constexpr void hash_combine(std::size_t &h, const T &v, const Rest &...rest)
 {

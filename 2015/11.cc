@@ -36,8 +36,7 @@ static bool has_nonoverlapping_pairs(std::string_view s)
 
 static bool is_valid(std::string_view s)
 {
-    auto is_iol = [](char c) { return c == 'i' || c == 'o' || c == 'l'; };
-    if (std::any_of(begin(s), end(s), is_iol))
+    if (std::any_of(s.begin(), s.end(), λx(x == 'i' || x == 'o' || x == 'l')))
         return false;
 
     return has_increasing_triple(s) && has_nonoverlapping_pairs(s);

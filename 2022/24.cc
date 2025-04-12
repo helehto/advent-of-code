@@ -116,7 +116,7 @@ void run(std::string_view buf)
         std::vector<QueueEntry> q{{start, manhattan(start, goal), t}};
 
         while (!q.empty()) {
-            auto heap_cmp = [](auto &a, auto &b) { return a.heuristic > b.heuristic; };
+            auto heap_cmp = λab(a.heuristic > b.heuristic);
             std::pop_heap(begin(q), end(q), heap_cmp);
             auto e = q.back();
             q.pop_back();

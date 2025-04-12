@@ -52,8 +52,7 @@ static int64_t run(std::vector<Monkey> monkeys)
         }
     }
 
-    auto cmp = [](auto &a, auto &b) { return a.inspections > b.inspections; };
-    std::sort(begin(monkeys), end(monkeys), cmp);
+    std::ranges::sort(monkeys, λab(a > b), λx(x.inspections));
     return monkeys[0].inspections * monkeys[1].inspections;
 }
 

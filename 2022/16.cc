@@ -193,8 +193,7 @@ void run(std::string_view buf)
         // circuiting below when finding disjoint paths with the maximum sum.
         std::vector<std::pair<uint64_t, int>> sorted_scores(begin(path_scores),
                                                             end(path_scores));
-        std::sort(sorted_scores.begin(), sorted_scores.end(),
-                  [](const auto &a, const auto &b) { return a.second > b.second; });
+        std::ranges::sort(sorted_scores, λab(a > b), λx(x.second));
 
         int score = 0;
         for (size_t i = 1; i < sorted_scores.size(); i++) {

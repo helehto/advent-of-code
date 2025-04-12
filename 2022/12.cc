@@ -6,8 +6,7 @@ namespace aoc_2022_12 {
 
 static int dijkstra(const Matrix<char> &m, size_t target, std::vector<int> &dist)
 {
-    auto cmp = [&](size_t a, size_t b) { return dist[a] < dist[b]; };
-    BinaryHeap q(cmp, m.size());
+    BinaryHeap q(λab(dist[a] < dist[b]), m.size());
     std::vector<size_t> neighbors;
 
     neighbors.reserve(4);

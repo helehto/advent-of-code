@@ -42,7 +42,7 @@ void run(std::string_view buf)
 
     bool first_printed = false;
     while (carts.size() > 1) {
-        std::ranges::sort(carts, {}, [](auto &c) { return std::pair(c.p.y, c.p.x); });
+        std::ranges::sort(carts, {}, λa(std::pair(a.p.y, a.p.x)));
 
         size_t i = 0;
     restart:

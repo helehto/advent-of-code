@@ -17,7 +17,7 @@ static int part1(const std::vector<std::string_view> &lines)
     std::vector<std::string_view> segments;
 
     for (std::string_view line : lines) {
-        split(line, segments, [](char c) { return c == '[' || c == ']'; });
+        split(line, segments, λx(x == '[' || x == ']'));
 
         for (size_t i = 1; i < segments.size(); i += 2)
             if (contains_abba(segments[i]))
@@ -44,7 +44,7 @@ static int part2(const std::vector<std::string_view> &lines)
     std::vector<std::string_view> segments;
 
     for (std::string_view line : lines) {
-        split(line, segments, [](char c) { return c == '[' || c == ']'; });
+        split(line, segments, λx(x == '[' || x == ']'));
 
         aba.assign(32 * 32, false);
         bab.assign(32 * 32, false);

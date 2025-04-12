@@ -13,7 +13,7 @@ void run(std::string_view buf)
         unmerged.emplace_back(a, b);
     }
 
-    std::ranges::sort(unmerged, {}, [](auto &p) { return p.first; });
+    std::ranges::sort(unmerged, {}, λx(x.first));
 
     std::vector<std::pair<uint32_t, uint32_t>> merged;
     merged.reserve(unmerged.size());

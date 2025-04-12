@@ -47,8 +47,7 @@ void run(std::string_view buf)
 
     // Part 1:
     {
-        auto &[id, sched] = *std::ranges::max_element(
-            schedules, {}, [&](auto x) { return x.second.total; });
+        auto &[id, sched] = *std::ranges::max_element(schedules, {}, λx(x.second.total));
         fmt::print("{}\n", id * sched.sleepiest_minute);
     }
 

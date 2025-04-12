@@ -92,12 +92,9 @@ static Graph parse_input(std::string_view buf)
 static std::pair<int, int> min_cut_phase(Graph &g, uint16_t a)
 {
     std::vector<int> connected_weights(g.nodes.size(), 0);
-    auto cmp = [&](uint16_t a, uint16_t b) {
-        return connected_weights[a] > connected_weights[b];
-    };
     connected_weights[a] = INT_MIN / 2;
 
-    BinaryHeap heap(cmp, g.nodes.size());
+    BinaryHeap heap(λab(connected_weights[a] > connected_weights[b]), g.nodes.size());
 
     auto propagate_weights = [&](Node &v) {
         for (size_t i = 0; i < v.edges.size(); i++) {

@@ -39,12 +39,11 @@ static int part2(std::vector<Particle> &particles)
     next.reserve(particles.size());
 
     auto collide = [&] {
-        auto proj = [](const Particle &p) { return p.p; };
-        std::ranges::sort(particles, {}, proj);
+        std::ranges::sort(particles, {}, λx(x.p));
 
         next.clear();
         for (auto it = particles.begin(); it != particles.end();) {
-            auto e = std::ranges::equal_range(it, particles.end(), it->p, {}, proj);
+            auto e = std::ranges::equal_range(it, particles.end(), it->p, {}, λx(x.p));
             const auto len = std::ranges::size(e);
             if (len == 1)
                 next.push_back(*it);
@@ -58,7 +57,7 @@ static int part2(std::vector<Particle> &particles)
         step();
         collide();
 
-        if (std::ranges::all_of(hist, [&](uint16_t h) { return h == particles.size(); }))
+        if (std::ranges::all_of(hist, λx(x == particles.size())))
             break;
         hist[i] = particles.size();
     }

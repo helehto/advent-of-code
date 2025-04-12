@@ -52,12 +52,9 @@ void run(std::string_view buf)
     std::vector<std::pair<Vec2i16, std::vector<Vec2i16>>> targets_by_direction(
         best_angles.begin(), best_angles.end());
 
-    std::ranges::sort(targets_by_direction, {},
-                      [](auto &p) { return to_angle(p.first); });
-    for (auto &[_, points] : targets_by_direction) {
-        std::ranges::sort(points, std::greater<>(),
-                          [&](const auto &p) { return manhattan(station, p); });
-    }
+    std::ranges::sort(targets_by_direction, {}, λx(to_angle(x.first)));
+    for (auto &[_, points] : targets_by_direction)
+        std::ranges::sort(points, λab(a > b), λx(manhattan(station, x)));
 
     int num_vaporized = 0;
     while (!targets_by_direction.empty()) {

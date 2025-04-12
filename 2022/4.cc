@@ -10,7 +10,7 @@ void run(std::string_view buf)
     std::vector<std::string_view> tokens;
 
     for (std::string_view line : split_lines(buf)) {
-        split(line, tokens, [](char c) { return c == ',' || c == '-'; });
+        split(line, tokens, λx(x == ',' || x == '-'));
         std::from_chars(tokens[0].begin(), tokens[0].end(), a0);
         std::from_chars(tokens[1].begin(), tokens[1].end(), a1);
         std::from_chars(tokens[2].begin(), tokens[2].end(), b0);

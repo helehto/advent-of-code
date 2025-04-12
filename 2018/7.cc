@@ -59,8 +59,7 @@ static void part2(std::array<std::vector<int>, 26> dependencies, int max_task)
         t = std::ranges::min(active_tasks, {}, &Task::complete_at).complete_at;
 
         // Handle all work which has been done at time `t`:
-        auto completed = std::ranges::partition(
-            active_tasks, [&](Task &task) { return task.complete_at != t; });
+        auto completed = std::ranges::partition(active_tasks, λx(x.complete_at != t));
         for (auto &task : completed) {
             for (int j = 0; j <= max_task; j++) {
                 if (!dependencies[j].empty()) {
@@ -82,7 +81,7 @@ void run(std::string_view buf)
     std::array<std::vector<int>, 26> dependencies;
     int max_task = 0;
     for (auto line : split_lines(buf)) {
-        split(line, cs, [](char c) { return (uint8_t)(c - 'A') >= 26; });
+        split(line, cs, λx((uint8_t)(x - 'A') >= 26));
         int c1 = cs[1][0] - 'A';
         int c2 = cs[2][0] - 'A';
         dependencies[c2].push_back(c1);

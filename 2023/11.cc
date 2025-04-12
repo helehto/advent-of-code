@@ -24,7 +24,7 @@ static int64_t solve(std::vector<std::array<int, 2>> galaxies, int factor)
     // Expand by y first since the input is naturally sorted by it (we read the
     // input line-by-line).
     expand_dimension(galaxies, factor, 1);
-    std::ranges::sort(galaxies, [](auto a, auto b) { return a[0] < b[0]; });
+    std::ranges::sort(galaxies, λab(a[0] < b[0]));
     expand_dimension(galaxies, factor, 0);
 
     int64_t sum = 0;

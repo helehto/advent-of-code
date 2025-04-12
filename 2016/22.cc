@@ -64,10 +64,10 @@ void run(std::string_view buf)
     //
 
     // Move around the all and to the goal node in the top-right corner:
-    move_while({0, -1}, [&](auto, auto q) { return grid(q) == '.'; });
-    move_while({-1, 0}, [&](auto p, auto) { return grid(p + Vec2i{0, -1}) == '#'; });
-    move_while({0, -1}, [&](auto, auto q) { return grid.in_bounds(q); });
-    move_while({1, 0}, [&](auto, auto q) { return grid(q) != 'G'; });
+    move_while({0, -1}, λ(p, q, grid(q) == '.'));
+    move_while({-1, 0}, λ(p, q, grid(p + Vec2i{0, -1}) == '#'));
+    move_while({0, -1}, λ(p, q, grid.in_bounds(q)));
+    move_while({1, 0}, λ(p, q, grid(q) != 'G'));
 
     // Move the goal data to (0,0):
     constexpr Vec2i target{0, 0};

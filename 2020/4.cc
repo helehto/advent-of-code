@@ -38,9 +38,8 @@ struct Passport {
     {
         if (s.size() != 7 || s[0] != '#')
             return false;
-        return std::ranges::all_of(s.substr(1), [](char c) {
-            return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
-        });
+        return std::ranges::all_of(s.substr(1),
+                                   λx((x >= '0' && x <= '9') || (x >= 'a' && x <= 'f')));
     }
 
     static bool valid_ecl(std::string_view s)
@@ -53,9 +52,7 @@ struct Passport {
 
     static bool valid_pid(std::string_view s)
     {
-        if (s.size() != 9)
-            return false;
-        return std::ranges::all_of(s, [](char c) { return c >= '0' && c <= '9'; });
+        return s.size() == 9 && std::ranges::all_of(s, λx(x >= '0' && x <= '9'));
     }
 
     bool valid() const

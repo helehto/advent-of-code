@@ -110,7 +110,7 @@ static int dijkstra(const Matrix<uint8_t> &grid,
 void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
-    auto grid = Matrix<uint8_t>::from_lines(lines, [&](auto c) { return c - '0'; });
+    auto grid = Matrix<uint8_t>::from_lines(lines, λx(x - '0'));
     const Vec2u8 goal{
         static_cast<uint8_t>(grid.cols - 1),
         static_cast<uint8_t>(grid.rows - 1),

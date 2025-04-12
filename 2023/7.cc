@@ -71,7 +71,7 @@ static uint32_t evaluate_hand_with_jokers(std::array<uint8_t, 16> &counts)
 
 static int total_winnings(std::vector<Hand> hands)
 {
-    std::ranges::sort(hands, {}, [](const Hand &h) { return h.cards_and_eval; });
+    std::ranges::sort(hands, {}, λx(x.cards_and_eval));
 
     int sum = 0;
     for (size_t i = 0; i < hands.size(); i++)

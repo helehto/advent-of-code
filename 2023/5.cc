@@ -69,8 +69,7 @@ void run(std::string_view buf)
     }
 
     for (auto &table : tables)
-        std::sort(table.begin(), table.end(),
-                  [](auto &a, auto &b) { return a.from < b.from; });
+        std::ranges::sort(table, λab(a.from < b.from));
 
     uint64_t part1 = UINT64_MAX;
     for (auto seed : seeds)

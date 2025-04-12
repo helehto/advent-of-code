@@ -38,7 +38,7 @@ void run(std::string_view buf)
     int oxygen_rating = 0;
     for (size_t bit = bit_length - 1; candidates.size() > 1; bit--) {
         int b = most_common_bit(candidates, bit);
-        erase_if(candidates, [&](auto x) { return ((x >> bit) & 1) != b; });
+        erase_if(candidates, λx(((x >> bit) & 1) != b));
     }
     oxygen_rating = candidates.front();
 
@@ -46,7 +46,7 @@ void run(std::string_view buf)
     candidates = xs;
     for (size_t bit = bit_length - 1; candidates.size() > 1; bit--) {
         int b = most_common_bit(candidates, bit);
-        erase_if(candidates, [&](auto x) { return ((x >> bit) & 1) == b; });
+        erase_if(candidates, λx(((x >> bit) & 1) == b));
     }
     co2_rating = candidates.front();
 

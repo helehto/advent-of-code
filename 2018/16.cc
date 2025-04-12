@@ -56,10 +56,10 @@ static void execute(std::array<int, 4> &regs, const std::array<int, 4> &instr)
         ri(std::bit_or<>());
         break;
     case instr_setr:
-        rr([](int a, int) { return a; });
+        rr(λab(a));
         break;
     case instr_seti:
-        ir([](int a, int) { return a; });
+        ir(λab(a));
         break;
     case instr_gtir:
         ir(std::greater<>());

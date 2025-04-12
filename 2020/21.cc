@@ -167,13 +167,12 @@ void run(std::string_view buf)
             if (ingredient_of_allergen[i] >= 0)
                 danger_list.push_back(i);
 
-        std::ranges::sort(danger_list, {}, [&](size_t i) {
-            return input.allergens.names[ingredient_of_allergen[i]];
-        });
+        std::ranges::sort(danger_list, {},
+                          λx(input.allergens.names[ingredient_of_allergen[x]]));
 
-        auto f = [&](auto i) { return input.ingredients.names[i]; };
-        fmt::print("{}\n",
-                   fmt::join(danger_list | std::ranges::views::transform(f), ","));
+        fmt::print("{}\n", fmt::join(danger_list | std::ranges::views::transform(
+                                                       λx(input.ingredients.names[x])),
+                                     ","));
     }
 }
 

@@ -123,9 +123,8 @@ static void press_button(State &state, Circuit &circuit)
         if (comp_name == rx_input_name && v) {
             state.cycle_lengths.emplace(source_name, state.presses);
 
-            bool done = std::ranges::all_of(rx_comp_input_names, [&](auto s) {
-                return state.cycle_lengths.count(s) != 0;
-            });
+            bool done = std::ranges::all_of(rx_comp_input_names,
+                                            λx(state.cycle_lengths.count(x)));
             if (done) {
                 state.total_cycle_length = 1;
                 for (std::string_view input : rx_comp_input_names)

@@ -30,7 +30,7 @@ void run(std::string_view buf)
         bricks.emplace_back(x0, y0, z0, x1, y1, z1);
         max_z = std::max<uint16_t>(max_z, z1);
     }
-    std::ranges::sort(bricks, {}, [](auto &b) { return b.z0; });
+    std::ranges::sort(bricks, {}, λa(a.z0));
 
     std::vector<std::vector<Brick *>> bricks_by_z(max_z + 1);
     for (auto &b : bricks) {
@@ -91,7 +91,7 @@ void run(std::string_view buf)
 
             for (auto *s : b.resting_on) {
                 auto j = s - bricks.data();
-                std::erase_if(supporting[j], [&](Brick *w) { return &b == w; });
+                std::erase_if(supporting[j], λx(&b == x));
                 if (supporting[j].empty())
                     topo_sorted.push_back(j);
             }

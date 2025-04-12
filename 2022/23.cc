@@ -125,8 +125,7 @@ void run(std::string_view buf)
             new_map.increment(dest);
         }
 
-        auto f = [&](auto e) { return new_map.at(e); };
-        if (std::all_of(begin(elves), end(elves), f)) {
+        if (std::ranges::all_of(elves, λx(new_map.at(x)))) {
             fmt::print("{}\n", round);
             break;
         }
@@ -138,10 +137,8 @@ void run(std::string_view buf)
         new_elves.clear();
 
         if (round == 10) {
-            auto [xmin, xmax] = std::minmax_element(
-                begin(elves), end(elves), [&](auto &a, auto &b) { return a.x < b.x; });
-            auto [ymin, ymax] = std::minmax_element(
-                begin(elves), end(elves), [&](auto &a, auto &b) { return a.y < b.y; });
+            auto [xmin, xmax] = std::ranges::minmax_element(elves, λab(a.x < b.x));
+            auto [ymin, ymax] = std::ranges::minmax_element(elves, λab(a.y < b.y));
             fmt::print("{}\n", ((xmax->x - xmin->x + 1) * (ymax->y - ymin->y + 1) -
                                 elves.size()));
         }

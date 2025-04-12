@@ -8,7 +8,7 @@ namespace aoc_2021_11 {
 void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
-    auto grid = Matrix<char>::from_lines(lines, [](char c) { return c - '0'; });
+    auto grid = Matrix<char>::from_lines(lines, λx(x - '0'));
 
     dense_set<Vec2z> flashed;
     std::vector<Vec2z> queue;

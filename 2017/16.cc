@@ -27,7 +27,7 @@ void run(std::string_view buf)
                 auto [a, b] = find_numbers_n<int, 2>(move);
                 std::swap(programs[a], programs[b]);
             } else if (move[0] == 'p') {
-                auto f = [&](char c) { return c == move[1] || c == move[3]; };
+                auto f = λa(a == move[1] || a == move[3]);
                 auto it1 = std::find_if(programs.begin(), programs.end(), f);
                 auto it2 = std::find_if(std::next(it1), programs.end(), f);
                 std::swap(*it1, *it2);
