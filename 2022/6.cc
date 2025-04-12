@@ -2,9 +2,9 @@
 
 namespace aoc_2022_6 {
 
-static size_t solve(std::string_view s, size_t n)
+static size_t solve(std::string_view s, int n)
 {
-    size_t i = 0;
+    int i = 0;
     unsigned int mask = 0;
 
     for (; i < n; i++)
