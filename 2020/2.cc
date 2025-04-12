@@ -4,7 +4,7 @@ namespace aoc_2020_2 {
 
 void run(std::string_view buf)
 {
-    int part1 = 0, part2 = 0, a, b;
+    int part1 = 0, part2 = 0, a = 0, b = 0;
     for (std::string_view line : split_lines(buf)) {
         auto r1 = std::from_chars(line.begin(), line.end(), a);
         auto r2 = std::from_chars(r1.ptr + 1, line.end(), b);
