@@ -1,5 +1,6 @@
 #include "common.h"
 #include "dense_map.h"
+#include "monotonic_bucket_queue.h"
 #include <map>
 
 namespace aoc_2019_18 {
@@ -34,59 +35,6 @@ struct std::hash<aoc_2019_18::State> {
 
 namespace aoc_2019_18 {
 
-template <typename T>
-struct MonotonicBucketQueue {
-    std::vector<std::vector<T>> buckets;
-    uint32_t curr = 0;
-    uint32_t mask;
-
-    MonotonicBucketQueue() = default;
-
-    MonotonicBucketQueue(uint32_t max_weight)
-        : mask(std::bit_ceil(max_weight + 1) - 1)
-    {
-        buckets.resize(mask + 1);
-    }
-
-    uint32_t d() const { return curr; }
-
-    template <typename... Args>
-    void emplace(const uint32_t new_d, Args &&...args)
-    {
-        DEBUG_ASSERT(new_d >= curr);
-        DEBUG_ASSERT(new_d <= curr + mask);
-        buckets[new_d & mask].emplace_back(std::forward<Args>(args)...);
-    }
-
-    std::optional<T> pop()
-    {
-        for (size_t end = curr + mask + 1; curr < end; ++curr) {
-            if (std::vector<T> &bucket = buckets[curr & mask]; !bucket.empty()) {
-                T state(std::move(bucket.back()));
-                bucket.pop_back();
-                return state;
-            }
-        }
-        return std::nullopt;
-    }
-
-    void reset()
-    {
-        for (std::vector<T> &bucket : buckets)
-            bucket.clear();
-        curr = 0;
-    }
-
-    void reset(size_t new_max_weight)
-    {
-        for (std::vector<T> &bucket : buckets)
-            bucket.clear();
-        curr = 0;
-        mask = std::bit_ceil(new_max_weight + 1) - 1;
-        buckets.resize(mask + 1);
-    }
-};
-
 struct KeyInfo {
     uint32_t d;
     uint32_t door_mask;
@@ -100,7 +48,7 @@ static void flood(const Matrix<char> &grid,
                   Sink &&sink)
 {
     std::ranges::fill(visited.all(), false);
-    queue.reset();
+    queue.clear();
     queue.emplace(0, start, 0);
 
     while (auto state = queue.pop()) {
@@ -111,11 +59,11 @@ static void flood(const Matrix<char> &grid,
         if (c >= 'A' && c <= 'Z')
             doors |= 1 << (c - 'A');
         else if (c >= 'a' && c <= 'z')
-            sink(c - 'a', queue.d(), doors);
+            sink(c - 'a', queue.current_priority(), doors);
 
         for (auto v : neighbors4(grid, u))
             if (grid(v) != '#' && !visited(v))
-                queue.emplace(queue.d() + 1, v, doors);
+                queue.emplace(queue.current_priority() + 1, v, doors);
     }
 }
 
@@ -197,13 +145,14 @@ void run(std::string_view buf)
             const auto [pos, keys] = *state;
 
             if (std::popcount(keys) == num_keys)
-                return bq.d();
+                return bq.current_priority();
 
             for (int r = 0; r < num_robots; ++r) {
                 if (pos[r] == 0xff) {
                     for (auto &[k, d, doors] : reachable_from_start[r]) {
                         if ((~keys & doors) == 0)
-                            expand(bq.d() + d, *state, state->move_robot(r, k));
+                            expand(bq.current_priority() + d, *state,
+                                   state->move_robot(r, k));
                     }
                 } else {
                     const uint32_t all_keys_mask = (uint32_t(1) << num_keys) - 1;
@@ -211,7 +160,8 @@ void run(std::string_view buf)
                         const uint32_t k = std::countr_zero(km);
                         const auto &[d, doors] = key_info(pos[r], k);
                         if ((~keys & doors) == 0)
-                            expand(bq.d() + d, *state, state->move_robot(r, k));
+                            expand(bq.current_priority() + d, *state,
+                                   state->move_robot(r, k));
                     }
                 }
             }
