@@ -1,21 +1,13 @@
-project('sub1sec', 'cpp', default_options: ['cpp_std=c++23'])
-
-cpp = meson.get_compiler('cpp')
-add_project_arguments('-march=native', language: 'cpp')
-
-if get_option('buildtype') == 'debug'
-  # AVX-512 breaks Valgrind.
-  add_project_arguments('-mno-avx512f', language: 'cpp')
-  add_project_arguments('-D_GLIBCXX_DEBUG', language: 'cpp')
-else
-  add_project_arguments('-U_GLIBCXX_ASSERTIONS', language: 'cpp')
-  add_project_arguments('-DNDEBUG', language: 'cpp')
-endif
-
-
-add_project_arguments('-fno-omit-frame-pointer', language: 'cpp')
-add_project_arguments('-fno-exceptions', language: 'cpp')
-add_project_arguments('-Wno-stringop-overflow', language: 'cpp')
+project(
+  'aoc-sub1sec',
+  'cpp',
+  default_options: [
+    'cpp_std=c++23',
+    'buildtype=release',
+    'b_ndebug=if-release',
+    'debug=true',
+  ],
+)
 
 solutions = {
   '2015': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 21],
@@ -30,8 +22,7 @@ solutions = {
   '2024': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 25],
 }
 
-eigen3 = dependency('eigen3')
-libfmt = dependency('fmt')
+cpp = meson.get_compiler('cpp')
 
 sources = []
 xmacro_body = ''
@@ -48,15 +39,44 @@ config_h = configure_file(
   configuration: {'PROBLEMS': xmacro_body}
 )
 
+cpp_args = [
+  # Try to make use of anything that the CPU supports for optimization.
+  '-march=native',
+
+  # Omitting the frame pointer doesn't matter much performance-wise in our case
+  # (±0.2%), but makes debugging release builds more painful than it has to be.
+  '-fno-omit-frame-pointer',
+
+  # We don't use exceptions or RTTI.
+  '-fno-exceptions',
+  '-fno-rtti',
+
+  cpp.get_supported_arguments(
+    # Warnings that we don't care about:
+    '-Wno-missing-field-initializers',
+    '-Wno-pedantic',
+    # False positives which are hard to squelch:
+    '-Wno-stringop-overflow',
+  ),
+
+  # _GLIBCXX_DEBUG makes things drastically slower and changes the ABI, so it
+  # is completely opt-in:
+  get_option('glibcxx_debug') ? '-D_GLIBCXX_DEBUG' : [],
+
+  # AVX-512 breaks Valgrind. Disable it for debug builds, where we might want
+  # to use it, but not in release builds where we want the compiler to
+  # autovectorize stuff as well as it can.
+  get_option('buildtype') == 'debug' ? '-mno-avx512f' : [],
+]
+
 executable(
   'aoc',
   sources,
   config_h,
   'main.cc',
-  dependencies: [
-    eigen3,
-    libfmt,
-  ],
+  cpp_args: cpp_args,
+  dependencies: [dependency('eigen3'), dependency('fmt')],
   include_directories: include_directories('include'),
+  # mold is faster than standard GNU ld; use it if possible.
   link_args: cpp.get_supported_link_arguments('-fuse-ld=mold'),
 )

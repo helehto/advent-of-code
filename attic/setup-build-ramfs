@@ -1,0 +1,14 @@
+#!/bin/sh
+
+if ! (return 0 2>/dev/null); then
+    echo "error: Source me!" >&2
+    exit 1
+fi
+
+set -x
+export GIT_DISCOVERY_ACROSS_FILESYSTEM=1
+mkdir -p build &&
+sudo mount -t ramfs ramfs build &&
+sudo chown -R $USER: build &&
+meson setup . build -Dunity=on -Dunity_size=8
+set +x

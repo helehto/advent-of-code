@@ -64,7 +64,7 @@ def binary_for_commit(
         exe = Path(d) / f"aoc-{commit}"
 
         with git_worktree(commit, patch, worktree):
-            meson_cmd = "meson setup --wipe . build -Dbuildtype=release -Dunity=on -Dunity_size=4 -Db_ndebug=true".split()
+            meson_cmd = "meson setup --wipe . build -Dunity=on -Dunity_size=4".split()
             sp.run(meson_cmd, cwd=worktree, stdout=sp.DEVNULL, check=True)
             sp.run("ninja", cwd=worktree / "build", check=True)
             exe.write_bytes((worktree / "build" / "aoc").read_bytes())

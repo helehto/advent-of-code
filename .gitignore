@@ -4,5 +4,6 @@ inputs/*.txt
 *.png
 __pycache__
 *.txt
+!meson_options.txt
 .session
 tags

@@ -1,0 +1,3 @@
+#!/bin/sh -x
+meson configure -Dbuildtype=release -Ddebug=true -Dglibcxx_debug=false -Db_sanitize=none
+ninja
