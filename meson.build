@@ -69,6 +69,11 @@ cpp_args = [
   get_option('buildtype') == 'debug' ? '-mno-avx512f' : [],
 ]
 
+link_args = [
+  # mold is faster than standard GNU ld; use it if possible.
+  cpp.get_supported_link_arguments('-fuse-ld=mold'),
+]
+
 executable(
   'aoc',
   sources,
@@ -77,6 +82,19 @@ executable(
   cpp_args: cpp_args,
   dependencies: [dependency('eigen3'), dependency('fmt')],
   include_directories: include_directories('include'),
-  # mold is faster than standard GNU ld; use it if possible.
-  link_args: cpp.get_supported_link_arguments('-fuse-ld=mold'),
+  link_args: link_args,
 )
+
+doctest = dependency('doctest', required: false, disabler: true)
+test('aoc-tests', executable(
+  'aoc-tests',
+  'tests/small_vector.cc',
+  cpp_args: [
+    cpp_args,
+    '-mno-avx512f',
+    '-DDOCTEST_CONFIG_NO_EXCEPTIONS_BUT_WITH_ALL_ASSERTS',
+  ],
+  dependencies: [doctest, dependency('fmt')],
+  include_directories: include_directories('include'),
+  link_args: link_args,
+))

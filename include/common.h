@@ -2,6 +2,7 @@
 
 #include "inplace_vector.h"
 #include "macros.h"
+#include "small_vector.h"
 #include <algorithm>
 #include <bit>
 #include <cassert>

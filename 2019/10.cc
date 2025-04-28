@@ -1,5 +1,6 @@
 #include "common.h"
 #include "dense_map.h"
+#include "small_vector.h"
 
 namespace aoc_2019_10 {
 
@@ -26,7 +27,7 @@ void run(std::string_view buf)
     }
 
     Vec2i16 station;
-    dense_map<Vec2i16, std::vector<Vec2i16>> angles, best_angles;
+    dense_map<Vec2i16, small_vector<Vec2i16, 4>> angles, best_angles;
     for (size_t i = 0; i < asteroids.size(); ++i) {
         angles.clear();
 
@@ -49,7 +50,7 @@ void run(std::string_view buf)
     }
     fmt::print("{}\n", best_angles.size());
 
-    std::vector<std::pair<Vec2i16, std::vector<Vec2i16>>> targets_by_direction(
+    std::vector<std::pair<Vec2i16, small_vector<Vec2i16, 4>>> targets_by_direction(
         best_angles.begin(), best_angles.end());
 
     std::ranges::sort(targets_by_direction, {}, λx(to_angle(x.first)));

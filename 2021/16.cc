@@ -1,5 +1,4 @@
 #include "common.h"
-#include <boost/container/small_vector.hpp>
 
 namespace aoc_2021_16 {
 
@@ -7,7 +6,7 @@ struct Packet {
     uint8_t version;
     uint8_t type;
     int64_t value = 0;
-    boost::container::small_vector<uint16_t, 4> operands;
+    small_vector<uint16_t, 4> operands;
 };
 
 template <size_t N>
