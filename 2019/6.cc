@@ -9,8 +9,8 @@ void run(std::string_view buf)
     auto lines = split_lines(buf);
 
     dense_map<std::string_view, int16_t> name_to_id;
-    std::vector<std::vector<int16_t>> directed_edges(lines.size() + 1);
-    std::vector<std::vector<int16_t>> undirected_edges(lines.size() + 1);
+    std::vector<small_vector<int16_t, 4>> directed_edges(lines.size() + 1);
+    std::vector<small_vector<int16_t, 4>> undirected_edges(lines.size() + 1);
 
     name_to_id.reserve(lines.size() + 1);
 

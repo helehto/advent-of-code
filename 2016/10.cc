@@ -14,7 +14,7 @@ void run(std::string_view buf)
     held.fill(-1);
 
     dense_set<int> remaining;
-    std::vector<int> pending;
+    small_vector<int, 4> pending;
 
     auto take = [&](size_t bot) {
         int16_t *chips = &held[2 * bot];

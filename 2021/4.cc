@@ -60,13 +60,13 @@ void run(std::string_view buf)
 
     std::vector<Board> boards;
     std::vector<uint8_t> curr_board;
-    std::vector<uint8_t> curr_line;
+    small_vector<uint8_t> curr_line;
     for (size_t i = 1; i < lines.size(); i++) {
         std::string_view s = lines[i];
         if (!s.empty()) {
             curr_line.clear();
             find_numbers(s, curr_line);
-            curr_board.insert(end(curr_board), begin(curr_line), end(curr_line));
+            curr_board.insert(end(curr_board), curr_line.begin(), curr_line.end());
             ASSERT(curr_board.size() <= 25);
             if (curr_board.size() == 25) {
                 Board b;

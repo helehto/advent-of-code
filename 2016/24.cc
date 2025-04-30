@@ -4,8 +4,7 @@ namespace aoc_2016_24 {
 
 void run(std::string_view buf)
 {
-    std::vector<Vec2i> locations;
-    locations.reserve(10);
+    small_vector<Vec2i, 16> locations;
 
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
@@ -20,11 +19,11 @@ void run(std::string_view buf)
     }
 
     Matrix<int> distances(locations.size(), locations.size(), -1);
+    std::vector<std::pair<int, Vec2i>> queue;
+    Matrix<bool> visited(grid.rows, grid.cols, false);
     for (size_t i = 0; i < locations.size(); ++i) {
-        std::vector<std::pair<int, Vec2i>> queue;
-        Matrix<bool> visited(grid.rows, grid.cols, false);
-
-        queue.emplace_back(0, locations[i]);
+        queue = {{0, locations[i]}};
+        std::ranges::fill(visited.all(), false);
 
         for (size_t j = 0; j < queue.size(); ++j) {
             const auto [d, u] = queue[j];
@@ -46,7 +45,7 @@ void run(std::string_view buf)
         }
     }
 
-    auto solve = [&](std::vector<int> order_, bool loop) {
+    auto solve = [&](const small_vector<int> &order_, bool loop) {
         auto order = order_;
         int result = INT_MAX;
         do {
@@ -60,7 +59,7 @@ void run(std::string_view buf)
         return result;
     };
 
-    std::vector<int> order;
+    small_vector<int> order;
     for (size_t i = 0; i < locations.size(); ++i)
         order.push_back(i);
     fmt::print("{}\n", solve(order, false));

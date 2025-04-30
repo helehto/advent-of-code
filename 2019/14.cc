@@ -5,7 +5,7 @@ namespace aoc_2019_14 {
 
 struct Recipe {
     int n;
-    std::vector<std::pair<int, int>> ingredients;
+    small_vector<std::pair<int, int>> ingredients;
 };
 
 static auto parse_quantity_and_name(std::string_view s)
@@ -44,7 +44,6 @@ void run(std::string_view buf)
         auto b = line.substr(arrow + 3);
 
         split(a, tmp, ',');
-        std::vector<std::pair<int, int>> ingredients;
         recipes[i].ingredients.reserve(tmp.size());
         for (std::string_view v : tmp) {
             auto [q, name] = parse_quantity_and_name(v);

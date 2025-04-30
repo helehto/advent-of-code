@@ -27,7 +27,7 @@ void run(std::string_view buf)
         vm.run();
     }
 
-    std::vector<int> nums;
+    small_vector<int> nums;
     std::string s;
     for (char c : vm.output)
         s.push_back(c);

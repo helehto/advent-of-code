@@ -10,7 +10,7 @@ enum class Operation {
 };
 
 struct Monkey {
-    std::vector<int64_t> items;
+    small_vector<int64_t> items;
     Operation op;
     int operand;
     int divisor;
@@ -52,8 +52,11 @@ static int64_t run(std::vector<Monkey> monkeys)
         }
     }
 
-    std::ranges::sort(monkeys, λab(a > b), λx(x.inspections));
-    return monkeys[0].inspections * monkeys[1].inspections;
+    small_vector<int> indices;
+    for (size_t i = 0; i < monkeys.size(); ++i)
+        indices.push_back(i);
+    std::ranges::sort(indices, λab(a > b), λx(monkeys[x].inspections));
+    return monkeys[indices[0]].inspections * monkeys[indices[1]].inspections;
 }
 
 static std::vector<Monkey> parse_monkeys(std::string_view buf)
@@ -66,7 +69,7 @@ static std::vector<Monkey> parse_monkeys(std::string_view buf)
 
         // Starting items
         std::string_view s = lines[++i];
-        m.items = find_numbers<int64_t>(s);
+        find_numbers(s, m.items);
 
         // Operation
         {

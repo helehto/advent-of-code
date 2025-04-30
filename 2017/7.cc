@@ -20,7 +20,7 @@ void run(std::string_view buf)
         ++i;
     }
 
-    std::vector<std::vector<int16_t>> above(names.size());
+    std::vector<small_vector<int16_t, 2>> above(names.size());
     std::vector<int16_t> below(names.size(), -1);
     std::vector<std::string_view> tmp;
 
@@ -80,9 +80,10 @@ void run(std::string_view buf)
     }
     ASSERT(bad < names.size());
 
-    std::vector<std::pair<int, int>> r;
+    small_vector<std::pair<int, int>> r;
     for (int16_t u : above[bad])
         r.emplace_back(cumulative_weight[u], cumulative_weight[u] - local_weight[u]);
+    ASSERT(!r.empty());
     std::ranges::sort(r);
     fmt::print("{}\n", r[0].first != r[1].first
                            ? r[1].first - r[0].second

@@ -1,9 +1,8 @@
 #include "common.h"
-#include <vector>
 
 namespace aoc_2021_1 {
 
-static int solve(std::span<int> input, size_t window_size)
+static int solve(std::span<const int16_t> input, size_t window_size)
 {
     int count = 0;
     int sum = 0;
@@ -23,16 +22,9 @@ static int solve(std::span<int> input, size_t window_size)
 
 void run(std::string_view buf)
 {
-    std::vector<int> xs;
-
-    for (std::string_view s : split_lines(buf)) {
-        int x = 0;
-        std::from_chars(s.data(), s.data() + s.size(), x);
-        xs.push_back(x);
-    }
-
+    small_vector<int16_t, 2048> xs;
+    find_numbers(buf, xs);
     fmt::print("{}\n", solve(xs, 1));
     fmt::print("{}\n", solve(xs, 3));
 }
-
 }

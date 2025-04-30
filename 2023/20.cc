@@ -19,12 +19,12 @@ struct Component {
     int type;
     bool on = false;                          // flipflop
     dense_map<std::string_view, bool> inputs; // conjunction
-    std::vector<std::string_view> outputs;
+    small_vector<std::string_view, 8> outputs;
 };
 
 struct Circuit {
     dense_map<std::string_view, Component> components_by_name;
-    std::vector<std::string_view> rx_comp_input_names;
+    small_vector<std::string_view, 4> rx_comp_input_names;
     std::string_view rx_input_name;
 };
 
@@ -32,8 +32,12 @@ static Circuit parse_input(std::string_view buf)
 {
     dense_map<std::string_view, Component> components_by_name;
     std::string_view rx_input_name;
+    std::vector<std::string_view> outputs;
 
-    for (std::string_view line : split_lines(buf)) {
+    auto lines = split_lines(buf);
+    components_by_name.reserve(lines.size());
+
+    for (std::string_view line : lines) {
         auto arrow = line.find("->");
         ASSERT(arrow != std::string_view::npos);
 
@@ -55,7 +59,6 @@ static Circuit parse_input(std::string_view buf)
             type = BROADCASTER;
         }
 
-        std::vector<std::string_view> outputs;
         split(line.substr(arrow + 2), outputs, ',');
         for (auto &s : outputs)
             s = strip(s);
@@ -70,7 +73,7 @@ static Circuit parse_input(std::string_view buf)
         ASSERT(type != -1);
         components_by_name.emplace(name, Component{
                                              .type = type,
-                                             .outputs = std::move(outputs),
+                                             .outputs = {outputs.begin(), outputs.end()},
                                          });
     }
     ASSERT(!rx_input_name.empty());
@@ -84,7 +87,7 @@ static Circuit parse_input(std::string_view buf)
         }
     }
 
-    std::vector<std::string_view> rx_comp_input_names;
+    small_vector<std::string_view, 4> rx_comp_input_names;
     for (auto s : std::views::keys(components_by_name.at(rx_input_name).inputs))
         rx_comp_input_names.push_back(s);
     ASSERT(rx_comp_input_names.size() == 4);
@@ -112,12 +115,11 @@ struct Pulse {
 static void press_button(State &state, Circuit &circuit)
 {
     auto &[components_by_name, rx_comp_input_names, rx_input_name] = circuit;
-    std::queue<Pulse> pending{};
-    pending.emplace("broadcaster", "button", 0);
+    small_vector<Pulse, 256> pending;
+    pending.emplace_back("broadcaster", "button", 0);
 
-    while (!pending.empty()) {
-        const auto [comp_name, source_name, v] = pending.front();
-        pending.pop();
+    for (size_t i = 0; i < pending.size(); ++i) {
+        const auto [comp_name, source_name, v] = pending[i];
         state.pulses[v]++;
 
         if (comp_name == rx_input_name && v) {
@@ -161,7 +163,7 @@ static void press_button(State &state, Circuit &circuit)
 
         if (outgoing_pulse.has_value()) {
             for (auto &sink : comp.outputs)
-                pending.emplace(sink, comp_name, *outgoing_pulse);
+                pending.emplace_back(sink, comp_name, *outgoing_pulse);
         }
     }
 };

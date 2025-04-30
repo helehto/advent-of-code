@@ -1,13 +1,16 @@
 #include "common.h"
-#include <unordered_map>
+#include "dense_map.h"
 
 namespace aoc_2023_12 {
 
-static std::unordered_map<uint16_t, uint64_t> cache;
+struct u16_crc_hash {
+    size_t operator()(uint16_t v) const { return _mm_crc32_u32(0, v); }
+};
 
 struct SearchParameters {
     std::string_view str;
     std::span<const uint32_t> block_sizes;
+    dense_map<uint16_t, uint64_t, u16_crc_hash> &cache;
 };
 
 static uint64_t search(const SearchParameters &sp, size_t si, size_t bi)
@@ -21,7 +24,7 @@ static uint64_t search(const SearchParameters &sp, size_t si, size_t bi)
     si += dots;
 
     const uint16_t cache_key = si << 8 | bi;
-    if (auto it = cache.find(cache_key); it != cache.end())
+    if (auto it = sp.cache.find(cache_key); it != sp.cache.end())
         return it->second;
 
     if (bi >= sp.block_sizes.size())
@@ -42,7 +45,7 @@ static uint64_t search(const SearchParameters &sp, size_t si, size_t bi)
     if (s.front() == '?')
         solutions += search(sp, si + 1, bi);
 
-    cache.emplace(cache_key, solutions);
+    sp.cache.emplace(cache_key, solutions);
     return solutions;
 }
 
@@ -51,24 +54,26 @@ void run(std::string_view buf)
     uint64_t sum1 = 0;
     uint64_t sum2 = 0;
 
+    small_vector<uint32_t> n;
+    small_vector<uint32_t, 64> n2;
+    dense_map<uint16_t, uint64_t, u16_crc_hash> cache;
+    std::string s2;
+
     for (std::string_view sv : split_lines(buf)) {
-        auto n = find_numbers<uint32_t>(sv);
-        std::string q(sv.substr(0, sv.find(' ')));
+        find_numbers(sv, n);
+        std::string_view s = sv.substr(0, sv.find(' '));
         cache.clear();
-        auto solutions = search({q, n}, 0, 0);
-        sum1 += solutions;
+        sum1 += search({s, n, cache}, 0, 0);
 
-        auto s2 = std::string(q) + "?" + q + "?" + q + "?" + q + "?" + q;
-        std::vector<uint32_t> n2;
-        n2.insert(n2.end(), n.begin(), n.end());
-        n2.insert(n2.end(), n.begin(), n.end());
-        n2.insert(n2.end(), n.begin(), n.end());
-        n2.insert(n2.end(), n.begin(), n.end());
-        n2.insert(n2.end(), n.begin(), n.end());
+        s2.clear();
+        fmt::format_to(std::back_inserter(s2), "{}?{}?{}?{}?{}", s, s, s, s, s);
+
+        n2.clear();
+        for (size_t i = 0; i < 5; ++i)
+            n2.append_range(n);
 
         cache.clear();
-        auto sols2 = search({s2, n2}, 0, 0);
-        sum2 += sols2;
+        sum2 += search({s2, n2, cache}, 0, 0);
     }
     fmt::print("{}\n", sum1);
     fmt::print("{}\n", sum2);

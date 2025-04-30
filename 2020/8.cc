@@ -8,9 +8,9 @@ struct Instruction {
     int16_t val : 14;
 };
 
-std::pair<int, bool> run(const std::vector<Instruction> &prog)
+std::pair<int, bool> run(std::span<const Instruction> prog)
 {
-    std::vector<bool> executed(prog.size(), false);
+    small_vector<bool, 1024> executed(prog.size(), false);
     int acc = 0;
     size_t pc = 0;
     while (pc < prog.size() && !executed[pc]) {
@@ -36,7 +36,7 @@ void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
 
-    std::vector<Instruction> prog;
+    small_vector<Instruction, 1024> prog;
     prog.reserve(size(lines));
     for (std::string_view line : lines) {
         Instruction &instr = prog.emplace_back();

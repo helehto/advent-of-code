@@ -10,7 +10,8 @@ static int32_t step(int32_t turn, int32_t last, std::vector<int32_t> &seen)
 
 void run(std::string_view buf)
 {
-    auto init = find_numbers<int32_t>(buf);
+    small_vector<int32_t> init;
+    find_numbers(buf, init);
 
     std::vector<int32_t> seen(30'000'000, -1);
     for (size_t i = 0; i < init.size() - 1; i++)

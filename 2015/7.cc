@@ -119,7 +119,7 @@ static int solve(const Input &input)
     for (size_t i = 0; i < gates.size(); ++i)
         num_unresolved_inputs[i] = (gates[i].op1 < 0) + (gates[i].op2 < 0);
 
-    std::vector<std::vector<uint16_t>> outputs(gates.size());
+    std::vector<small_vector<uint16_t>> outputs(gates.size());
     for (size_t i = 0; i < gates.size(); ++i) {
         if (gates[i].op1 < 0)
             outputs[~gates[i].op1].push_back(i);
@@ -128,7 +128,7 @@ static int solve(const Input &input)
     }
 
     std::vector<int32_t> values(gates.size(), -1);
-    std::vector<uint16_t> queue;
+    small_vector<uint16_t, 512> queue;
     for (size_t i = 0; i < gates.size(); ++i) {
         if (num_unresolved_inputs[i] == 0) {
             ASSERT(gates[i].type == GateType::passthru);

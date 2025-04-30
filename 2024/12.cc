@@ -3,14 +3,13 @@
 
 namespace aoc_2024_12 {
 
-static std::vector<std::vector<Vec2i>> regions(const Matrix<char> &g,
-                                               const std::vector<Vec2i> &seeds)
+static std::vector<small_vector<Vec2i>> regions(const Matrix<char> &g,
+                                                const std::vector<Vec2i> &seeds)
 {
     Matrix<bool> visited(g.rows, g.cols, false);
-    std::vector<Vec2i> stack;
+    small_vector<Vec2i, 256> stack;
 
-    auto flood = [&](Vec2i start) {
-        std::vector<Vec2i> result;
+    auto flood = [&](Vec2i start, small_vector_base<Vec2i> &result) {
         stack = {start};
 
         while (!stack.empty()) {
@@ -23,18 +22,17 @@ static std::vector<std::vector<Vec2i>> regions(const Matrix<char> &g,
                         stack.push_back(v);
             }
         }
-
-        return result;
     };
 
-    std::vector<std::vector<Vec2i>> result;
+    std::vector<small_vector<Vec2i>> result;
+    result.reserve(seeds.size());
     for (auto p : seeds)
         if (!visited(p))
-            result.push_back(flood(p));
+            flood(p, result.emplace_back());
     return result;
 }
 
-static int region_perimeter(const Matrix<char> &g, const std::vector<Vec2i> &points)
+static int region_perimeter(const Matrix<char> &g, std::span<const Vec2i> points)
 {
     int result = 0;
     for (auto u : points)
@@ -43,7 +41,7 @@ static int region_perimeter(const Matrix<char> &g, const std::vector<Vec2i> &poi
     return result;
 }
 
-static int region_sides(const Matrix<char> &g, const std::vector<Vec2i> &points)
+static int region_sides(const Matrix<char> &g, std::span<const Vec2i> points)
 {
     constexpr Vec2i d[] = {{-1, 0}, {+1, 0}, {0, -1}, {0, +1}};
     Matrix<char> mask(g.rows, g.cols);
@@ -81,7 +79,7 @@ void run(std::string_view buf)
 
     int s1 = 0;
     int s2 = 0;
-    for (const std::vector<Vec2i> &r : ccs) {
+    for (const auto &r : ccs) {
         s1 += r.size() * region_perimeter(g, r);
         s2 += r.size() * region_sides(g, r);
     }

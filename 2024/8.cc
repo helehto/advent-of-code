@@ -8,7 +8,7 @@ void run(std::string_view buf)
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
 
-    dense_map<char, std::vector<Vec2u16>> antennas;
+    dense_map<char, small_vector<Vec2u16>> antennas;
     for (auto p : grid.ndindex<uint16_t>())
         if (grid(p) != '.' && grid(p) != '#')
             antennas[grid(p)].push_back(p);

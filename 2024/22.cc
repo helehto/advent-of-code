@@ -39,7 +39,7 @@ void run(std::string_view buf)
             p.unchecked_push_back(s[i] % 10 - s[i - 1] % 10 + 9);
     }
 
-    std::vector<std::vector<int>> sequences(19 * 19 * 19 * 19);
+    std::vector<std::vector<uint16_t>> sequences(19 * 19 * 19 * 19);
     std::bitset<19 * 19 * 19 * 19> seen;
     for (size_t i = 0; i < secrets.size(); i++) {
         seen.reset();
@@ -50,19 +50,19 @@ void run(std::string_view buf)
             uint32_t key = 19 * (19 * (19 * p[j - 4] + p[j - 3]) + p[j - 2]) + p[j - 1];
             if (!seen.test(key)) {
                 seen.set(key);
+                if (sequences[key].capacity() == 0)
+                    sequences[key].reserve(64);
                 sequences[key].push_back(s[j] % 10);
             }
         }
     }
 
-    std::vector<int64_t> q;
-    for (auto &seq : sequences) {
-        int64_t t = 0;
-        for (auto v : seq)
-            t += v;
-        q.push_back(t);
+    int64_t result = INT64_MIN;
+    for (const auto &seq : sequences) {
+        auto sum = std::ranges::fold_left(seq, int64_t(0), λab(a + b));
+        result = std::max(result, sum);
     }
-    fmt::print("{}\n", *std::max_element(q.begin(), q.end()));
+    fmt::print("{}\n", result);
 }
 
 }

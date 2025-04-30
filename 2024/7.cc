@@ -24,7 +24,7 @@ constexpr bool solve(int64_t goal, const int64_t *operands, size_t n, int64_t ac
 
 void run(std::string_view buf)
 {
-    std::vector<int64_t> nums;
+    small_vector<int64_t, 16> nums;
 
     int64_t s1 = 0;
     int64_t s2 = 0;

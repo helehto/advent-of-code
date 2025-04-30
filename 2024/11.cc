@@ -25,7 +25,7 @@ void run(std::string_view buf)
 {
     dense_map<int64_t, int64_t> counter;
     dense_map<int64_t, int64_t> tmp;
-    for (auto n : find_numbers<int64_t>(buf))
+    for (auto n : find_numbers_small<int64_t>(buf))
         counter[n]++;
 
     for (int steps : {25, 50}) {

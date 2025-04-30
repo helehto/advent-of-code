@@ -15,7 +15,7 @@ void run(std::string_view buf)
     int part1 = 0;
     int part2 = 0;
 
-    std::vector<int> v;
+    small_vector<int> v;
     for (std::string_view s : split_lines(buf)) {
         v.clear();
         for (size_t i = 0; i < s.size(); i++) {

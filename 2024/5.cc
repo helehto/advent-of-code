@@ -1,5 +1,4 @@
 #include "common.h"
-#include "dense_set.h"
 
 namespace aoc_2024_5 {
 
@@ -16,7 +15,7 @@ void run(std::string_view buf)
         ok[a << 7 | b] = true;
     }
 
-    std::vector<int> nums;
+    small_vector<int, 32> nums;
     int n[2]{};
     for (++i; i < lines.size(); ++i) {
         find_numbers(lines[i], nums);

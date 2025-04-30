@@ -30,7 +30,7 @@ void run(std::string_view buf)
 {
     int s1 = 0;
     int s2 = 0;
-    std::vector<int> nums;
+    small_vector<int> nums;
     for (std::string_view line : split_lines(buf)) {
         find_numbers(line, nums);
         s1 += is_safe1(nums);

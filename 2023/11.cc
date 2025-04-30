@@ -1,11 +1,10 @@
 #include "common.h"
-#include <algorithm>
 
 namespace aoc_2023_11 {
 
 static void expand_dimension(std::span<std::array<int, 2>> galaxies, int factor, int dim)
 {
-    std::vector<int> empty;
+    small_vector<int> empty;
     for (size_t i = 1; i < galaxies.size(); i++) {
         for (int j = galaxies[i - 1][dim] + 1; j < galaxies[i][dim]; j++)
             if (empty.empty() || empty.back() != j)
@@ -19,7 +18,7 @@ static void expand_dimension(std::span<std::array<int, 2>> galaxies, int factor,
     }
 }
 
-static int64_t solve(std::vector<std::array<int, 2>> galaxies, int factor)
+static int64_t solve(small_vector<std::array<int, 2>> galaxies, int factor)
 {
     // Expand by y first since the input is naturally sorted by it (we read the
     // input line-by-line).
@@ -40,7 +39,7 @@ static int64_t solve(std::vector<std::array<int, 2>> galaxies, int factor)
 
 void run(std::string_view buf)
 {
-    std::vector<std::array<int, 2>> galaxies;
+    small_vector<std::array<int, 2>> galaxies;
 
     for (size_t i = 0; std::string_view s : split_lines(buf)) {
         for (size_t j = 0; j < s.size(); j++) {

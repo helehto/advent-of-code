@@ -6,12 +6,12 @@ namespace aoc_2020_10 {
 void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
-    std::vector<int> joltages;
+    small_vector<int, 128> joltages;
     joltages.reserve(lines.size());
     find_numbers(buf, joltages);
 
     joltages.push_back(0);
-    std::sort(begin(joltages), end(joltages));
+    std::ranges::sort(joltages);
     joltages.push_back(joltages.back() + 3);
 
     int v1 = 0;

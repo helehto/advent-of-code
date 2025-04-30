@@ -526,6 +526,13 @@ constexpr void find_numbers_impl(std::string_view s, Fn &&sink)
 }
 
 template <typename T>
+constexpr void find_numbers(std::string_view s, small_vector_base<T> &result)
+{
+    result.clear();
+    find_numbers_impl<T>(s, [&](auto &&v) { result.push_back(static_cast<T &&>(v)); });
+}
+
+template <typename T>
 constexpr void find_numbers(std::string_view s, std::vector<T> &result)
 {
     result.clear();
@@ -551,6 +558,14 @@ template <typename T>
 constexpr std::vector<T> find_numbers(std::string_view s)
 {
     std::vector<T> result;
+    find_numbers(s, result);
+    return result;
+}
+
+template <typename T>
+constexpr small_vector<T> find_numbers_small(std::string_view s)
+{
+    small_vector<T> result;
     find_numbers(s, result);
     return result;
 }

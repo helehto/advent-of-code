@@ -11,8 +11,8 @@ static uint64_t ways(uint64_t t, uint64_t d)
 void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
-    auto ts = find_numbers<int>(lines[0]);
-    auto ds = find_numbers<int>(lines[1]);
+    auto ts = find_numbers_small<int>(lines[0]);
+    auto ds = find_numbers_small<int>(lines[1]);
 
     int prod = 1;
     for (size_t i = 0; i < ts.size(); i++)

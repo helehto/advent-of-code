@@ -1,14 +1,13 @@
 #include "common.h"
-#include "inplace_vector.h"
 #include <list>
 
 namespace aoc_2021_18 {
 
 enum { START_PAIR = -1, END_PAIR = -2 };
 
-static std::list<int> parse_line(std::string_view line)
+constexpr small_vector<int8_t> parse_line(std::string_view line)
 {
-    std::list<int> result;
+    small_vector<int8_t> result;
 
     for (size_t i = 0; i < line.size(); ++i) {
         const char c = line[i];
@@ -23,27 +22,28 @@ static std::list<int> parse_line(std::string_view line)
     return result;
 }
 
-static bool explode(std::list<int> &lst)
+[[gnu::noinline]] constexpr bool explode(small_vector_base<int8_t> &lst)
 {
     auto it = lst.begin();
     for (int depth = 0;; ++it) {
         if (it == lst.end())
             return false;
-        else if (*it == START_PAIR)
-            depth++;
-        else if (*it == END_PAIR)
-            depth--;
-        else if (depth > 4)
+        if (*it < 0) {
+            if (*it == START_PAIR)
+                depth++;
+            else
+                depth--;
+        } else if (depth > 4)
             break;
     }
 
-    const auto lbracket = std::next(it, -1);
+    const auto lbracket = it - 1;
     const auto a = it++;
     const auto b = it++;
     const auto rbracket = it;
 
-    if (auto l = std::find_if(std::reverse_iterator(lbracket), lst.rend(), λx(x >= 0));
-        l != lst.rend())
+    if (auto l = std::find_if(std::reverse_iterator(lbracket), lst.rbegin(), λx(x >= 0));
+        l != lst.rbegin())
         *l += *a;
     if (auto r = std::find_if(rbracket, lst.end(), λx(x >= 0)); r != lst.end())
         *r += *b;
@@ -53,61 +53,58 @@ static bool explode(std::list<int> &lst)
     return true;
 }
 
-static bool split(std::list<int> &lst)
+[[gnu::noinline]] constexpr bool split(small_vector_base<int8_t> &lst)
 {
     auto it = std::ranges::find_if(lst, λx(x >= 10));
     if (it != lst.end()) {
         const int n = *it;
         *it++ = START_PAIR;
-        it = std::next(lst.emplace(it, n / 2));
-        it = std::next(lst.emplace(it, (n + 1) / 2));
-        it = std::next(lst.emplace(it, END_PAIR));
+        lst.insert(it, {
+                           static_cast<int8_t>(n / 2),
+                           static_cast<int8_t>((n + 1) / 2),
+                           END_PAIR,
+                       });
         return true;
     }
     return false;
 }
 
-static std::list<int> add(std::list<int> &&a, std::list<int> &&b)
+constexpr void add(small_vector_base<int8_t> &a, std::span<const int8_t> b)
 {
-    std::list<int> sum;
-    sum.push_back(START_PAIR);
-    sum.splice(sum.end(), std::move(a));
-    sum.splice(sum.end(), std::move(b));
-    sum.push_back(END_PAIR);
+    a.reserve(a.size() + b.size() + 2);
+    a.insert(a.begin(), START_PAIR);
+    a.append_range(b);
+    a.push_back(END_PAIR);
 
-    while (explode(sum) || split(sum))
+    while (explode(a) || split(a))
         ;
-
-    return sum;
 }
 
-template <typename Iterator>
-static std::pair<int, Iterator> magnitude(Iterator i)
+constexpr std::pair<int, const int8_t *> magnitude(const int8_t *p)
 {
-    if (*i < 0) {
-        auto [l, j] = magnitude(std::next(i));
-        auto [r, k] = magnitude(j);
-        return std::pair(3 * l + 2 * r, std::next(k));
+    if (*p < 0) {
+        auto [l, p2] = magnitude(p + 1);
+        auto [r, p3] = magnitude(p2);
+        return std::pair(3 * l + 2 * r, p3 + 1);
     }
-    return std::pair(*i, std::next(i));
+    return std::pair(*p, p + 1);
 }
 
-static int part1(std::span<const std::string_view> lines)
+constexpr int part1(std::span<const small_vector<int8_t>> lines)
 {
-    std::list<int> sum = parse_line(lines[0]);
+    small_vector<int8_t> sum = lines[0];
     for (size_t i = 1; i < lines.size(); ++i)
-        sum = add(std::move(sum), parse_line(lines[i]));
+        add(sum, lines[i]);
     return magnitude(sum.begin()).first;
 }
 
-static int part2(std::span<const std::string_view> lines)
+constexpr int part2(std::span<const small_vector<int8_t>> lines)
 {
     int max_mag = INT_MIN;
     for (size_t i = 0; i < lines.size(); ++i) {
         for (size_t j = 0; j < lines.size(); ++j) {
-            auto a = parse_line(lines[i]);
-            auto b = parse_line(lines[j]);
-            auto sum = add(std::move(a), std::move(b));
+            auto sum = lines[i];
+            add(sum, lines[j]);
             max_mag = std::max(max_mag, magnitude(sum.begin()).first);
         }
     }
@@ -118,8 +115,14 @@ static int part2(std::span<const std::string_view> lines)
 void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
-    fmt::print("{}\n", part1(lines));
-    fmt::print("{}\n", part2(lines));
+
+    std::vector<small_vector<int8_t>> input;
+    input.reserve(lines.size());
+    for (std::string_view line : lines)
+        input.push_back(parse_line(line));
+
+    fmt::print("{}\n", part1(input));
+    fmt::print("{}\n", part2(input));
 }
 
 }

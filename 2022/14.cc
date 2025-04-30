@@ -15,7 +15,7 @@ struct Cave {
 static Cave make_cave(std::string_view buf)
 {
     Cave cave;
-    std::vector<int> nums;
+    small_vector<int> nums;
 
     for (std::string_view s : split_lines(buf)) {
         find_numbers(s, nums);

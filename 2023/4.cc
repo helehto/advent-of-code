@@ -5,8 +5,8 @@ namespace aoc_2023_4 {
 
 void run(std::string_view buf)
 {
-    std::vector<int> matches;
-    std::vector<int> v;
+    small_vector<int, 256> matches;
+    small_vector<int, 64> v;
     for (std::string_view s : split_lines(buf)) {
         find_numbers(s, v);
 
@@ -30,7 +30,7 @@ void run(std::string_view buf)
     }
     fmt::print("{}\n", score_sum);
 
-    std::vector<int> n_cards(matches.size(), 1);
+    small_vector<int, 256> n_cards(matches.size(), 1);
     for (size_t i = 0; i < n_cards.size(); i++) {
         for (int j = 0; j < matches[i]; j++)
             n_cards[i + j + 1] += n_cards[i];

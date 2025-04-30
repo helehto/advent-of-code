@@ -7,7 +7,7 @@ using namespace std;
 
 void run(std::string_view buf)
 {
-    std::vector<int> calories{0};
+    small_vector<int, 256> calories{0};
 
     for (std::string_view s : split_lines(buf)) {
         if (s.empty()) {

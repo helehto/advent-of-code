@@ -1,6 +1,6 @@
 #include "common.h"
+#include "dense_map.h"
 #include <climits>
-#include <unordered_map>
 
 namespace aoc_2022_16 {
 
@@ -30,11 +30,13 @@ static Valves parse_valves(std::string_view buf)
 
     Valves result;
 
-    std::unordered_map<std::string, size_t> name_map;
+    auto lines = split_lines(buf);
+    dense_map<std::string, size_t> name_map;
+    name_map.reserve(lines.size());
     std::string s;
     size_t i = 0;
     std::vector<ParsedValve> parsed_valves;
-    for (std::string_view line : split_lines(buf)) {
+    for (std::string_view line : lines) {
         s = line;
         auto &valve = parsed_valves.emplace_back();
 
@@ -106,10 +108,14 @@ static std::vector<int> floyd_warshall(const std::vector<Valve> &valves)
     return d;
 }
 
+struct u64_crc_hash {
+    size_t operator()(uint64_t v) const { return _mm_crc32_u64(0, v); }
+};
+
 struct SearchParameters {
     const Valves &input;
     const std::vector<int> &costs;
-    std::unordered_map<uint64_t, int> &path_scores;
+    dense_map<uint64_t, int, u64_crc_hash> &path_scores;
     uint64_t nonzero_mask;
 };
 
@@ -126,7 +132,7 @@ struct State {
 // specific path that was taken.
 static void search(const SearchParameters &p, State s)
 {
-    std::vector<State> stack{s};
+    small_vector<State, 64> stack{s};
 
     while (!stack.empty()) {
         auto s = stack.back();
@@ -172,9 +178,11 @@ void run(std::string_view buf)
             nonzero_mask |= bit(i);
     }
 
+    dense_map<uint64_t, int, u64_crc_hash> path_scores;
+    path_scores.reserve(10'000);
+
     // Part 1:
     {
-        std::unordered_map<uint64_t, int> path_scores;
         SearchParameters p{input, costs, path_scores, nonzero_mask};
         search(p, State{.u = input.start_index, .remaining = 30});
         int m = 0;
@@ -185,7 +193,7 @@ void run(std::string_view buf)
 
     // Part 2:
     {
-        std::unordered_map<uint64_t, int> path_scores;
+        path_scores.clear();
         SearchParameters p{input, costs, path_scores, nonzero_mask};
         search(p, State{.u = input.start_index, .remaining = 26});
 

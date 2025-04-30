@@ -8,8 +8,8 @@ void run(std::string_view buf)
 {
     std::vector<std::string_view> bags;
     using Edge = std::pair<std::string_view, int>;
-    dense_map<std::string_view, std::vector<Edge>> predecessors;
-    dense_map<std::string_view, std::vector<Edge>> successors;
+    dense_map<std::string_view, small_vector<Edge>> predecessors;
+    dense_map<std::string_view, small_vector<Edge>> successors;
     for (std::string_view line : split_lines(buf)) {
         const size_t i = line.find(" bags contain ");
         ASSERT(i != std::string_view::npos);
@@ -28,7 +28,7 @@ void run(std::string_view buf)
 
     // Part 1:
     {
-        std::vector<std::string_view> queue{"shiny gold"};
+        small_vector<std::string_view, 512> queue{"shiny gold"};
         dense_set<std::string_view> visited;
         while (!queue.empty()) {
             std::string_view v = queue.back();
@@ -45,7 +45,7 @@ void run(std::string_view buf)
 
     // Part 2:
     {
-        std::vector<std::pair<std::string_view, int>> queue{{"shiny gold", 1}};
+        small_vector<std::pair<std::string_view, int>, 512> queue{{"shiny gold", 1}};
         int sum_weight = 0;
         while (!queue.empty()) {
             auto [u, count] = queue.back();

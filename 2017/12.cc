@@ -23,14 +23,13 @@ void run(std::string_view buf)
         return std::span(&edges[offsets[i]], offsets[i + 1] - offsets[i]);
     };
 
-    std::vector<uint16_t> nums;
+    small_vector<uint16_t> nums;
     for (size_t i = 0; std::string_view line : lines) {
         find_numbers(line, nums);
         std::copy(nums.begin() + 1, nums.end(), &edges[offsets[i++]]);
     }
 
-    std::vector<uint16_t> queue;
-    queue.reserve(lines.size());
+    small_vector<uint16_t, 128> queue;
     std::vector<uint8_t> visited(lines.size(), false);
 
     auto flood = [&](uint16_t from) {
