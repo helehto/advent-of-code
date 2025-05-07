@@ -937,16 +937,16 @@ struct Matrix {
         return {{}, data.get() + i, rows, cols};
     }
 
-    constexpr StridedRange<T> row(size_t i)
+    constexpr std::span<T> row(size_t i)
     {
         DEBUG_ASSERT_MSG(i < rows, "{} is not a valid row", i);
-        return {{}, data.get() + i * cols, cols, 1};
+        return {data.get() + i * cols, data.get() + (i + 1) * cols};
     }
 
-    constexpr StridedRange<const T> row(size_t i) const
+    constexpr std::span<const T> row(size_t i) const
     {
         DEBUG_ASSERT_MSG(i < rows, "{} is not a valid row", i);
-        return {{}, data.get() + i * cols, cols, 1};
+        return {data.get() + i * cols, data.get() + (i + 1) * cols};
     }
 
     template <typename U = size_t>
