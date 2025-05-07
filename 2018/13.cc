@@ -20,7 +20,9 @@ struct Cart {
 void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
-    auto grid = Matrix<char>::from_lines(lines);
+    Matrix<char> grid(lines.size(), lines[0].size(), ' ');
+    for (size_t i = 0; i < lines.size(); i++)
+        std::ranges::copy(lines[i], grid.row(i).begin());
 
     std::vector<Cart> carts;
     for (auto p : grid.ndindex<uint8_t>()) {
