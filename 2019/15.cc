@@ -50,7 +50,7 @@ void run(std::string_view buf)
     // otherwise turn right if there was something in front of us. This assumes
     // that the corridors are only one tile wide.
     dir = turn(dir, false);
-    Vec2u8 goal;
+    Vec2u8 goal{};
     do {
         if (int r = step(dir); r == GOAL)
             goal = p;
