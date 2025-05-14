@@ -80,6 +80,7 @@ cpp_args = [
     '-Wduplicated-cond',
     '-Welaborated-enum-base',
     '-Wexceptions',
+    '-Wextra-semi',
     '-Wfloat-equal',
     '-Wformat',
     '-Wformat-nonliteral',

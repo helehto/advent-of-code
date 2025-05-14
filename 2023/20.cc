@@ -166,7 +166,7 @@ static void press_button(State &state, Circuit &circuit)
                 pending.emplace_back(sink, comp_name, *outgoing_pulse);
         }
     }
-};
+}
 
 void run(std::string_view buf)
 {

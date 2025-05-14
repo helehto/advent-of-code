@@ -45,7 +45,7 @@ struct Options {
     std::vector<const Problem *> problems_to_run;
 };
 
-X_FOR_EACH_PROBLEM(X_DECLARE_RUN_FUNCS);
+X_FOR_EACH_PROBLEM(X_DECLARE_RUN_FUNCS)
 static constexpr Problem problems[] = {X_FOR_EACH_PROBLEM(X_PROBLEM_TABLE_INITIALIZERS)};
 
 static std::vector<const Problem *> glob_problem(const char *pattern)
