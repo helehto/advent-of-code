@@ -222,6 +222,7 @@ public:
 
     constexpr void reserve(size_type count)
     {
+        DEBUG_ASSERT(count <= this->max_size());
         if (count > capacity_)
             grow_uninitialized_exact(count);
     }
@@ -356,6 +357,8 @@ public:
 
     constexpr void resize(const size_type count)
     {
+        DEBUG_ASSERT(count <= this->max_size());
+
         if (count > n_) {
             reserve(count);
             for (size_t i = n_; i < count; ++i)
@@ -368,6 +371,8 @@ public:
 
     constexpr void resize(const size_type count, const T &value)
     {
+        DEBUG_ASSERT(count <= this->max_size());
+
         if (count > n_) {
             reserve(count);
             for (size_t i = n_; i < count; ++i)
@@ -452,6 +457,7 @@ public:
         noexcept(std::is_nothrow_constructible_v<T>))
         : small_vector(reserving_constructor_t{}, count)
     {
+        DEBUG_ASSERT(count <= this->max_size());
         for (size_type i = 0; i < count; ++i)
             std::construct_at(this->data() + i);
     }
@@ -460,6 +466,7 @@ public:
         noexcept(std::is_nothrow_copy_constructible_v<T>))
         : small_vector(reserving_constructor_t{}, count)
     {
+        DEBUG_ASSERT(count <= this->max_size());
         for (size_type i = 0; i < count; ++i)
             std::construct_at(this->data() + i, value);
     }
@@ -469,6 +476,7 @@ public:
         noexcept(std::is_nothrow_constructible_v<T, decltype(*first)>))
         : small_vector(reserving_constructor_t{}, last - first)
     {
+        DEBUG_ASSERT(static_cast<size_t>(last - first) <= this->max_size());
         std::uninitialized_copy(first, last, this->data());
     }
 
@@ -485,6 +493,7 @@ public:
         noexcept(std::is_nothrow_constructible_v<T, decltype(*init.begin())>))
         : small_vector(init.begin(), init.end())
     {
+        DEBUG_ASSERT(init.size() <= this->max_size());
     }
 
     constexpr small_vector(const small_vector &other) noexcept(

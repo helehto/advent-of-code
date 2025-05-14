@@ -129,6 +129,8 @@ private:
             : set_(set)
             , index_(index)
         {
+            DEBUG_ASSERT(set);
+            DEBUG_ASSERT(index <= set->capacity_);
         }
 
         Const<dense_map> *set_;
@@ -145,10 +147,12 @@ private:
 
         bool operator==(const iterator_base &other) const
         {
+            DEBUG_ASSERT(set_ == other.set_);
             return index_ == other.index_;
         }
         bool operator!=(const iterator_base &other) const
         {
+            DEBUG_ASSERT(set_ == other.set_);
             return index_ != other.index_;
         }
         reference operator*() const { return set_->buckets_[index_].data(); }
@@ -380,6 +384,7 @@ public:
                     hash,
                     equal)
     {
+        DEBUG_ASSERT(bucket_count <= UINT32_MAX);
     }
 
     dense_map(const dense_map &other) noexcept(
@@ -522,6 +527,7 @@ public:
 
     void insert(std::initializer_list<value_type> list)
     {
+        DEBUG_ASSERT(list.size() <= UINT32_MAX);
         insert(list.begin(), list.end());
     }
 
@@ -571,8 +577,9 @@ public:
 
     iterator erase(const_iterator pos)
     {
-        assert(pos.set_ == this);
-        assert(state_of(pos.index_) == bucket_state::occupied);
+        DEBUG_ASSERT(pos.set_ == this);
+        DEBUG_ASSERT(state_of(pos.index_) == bucket_state::occupied);
+
         buckets_[pos.index_].data().~value_type();
         set_state_of(pos.index_, bucket_state::tombstone);
         size_--;
@@ -667,6 +674,8 @@ public:
 
     void reserve(size_type count)
     {
+        DEBUG_ASSERT(count <= UINT32_MAX);
+
         auto desired_bucket_count = std::ceil(count / max_load_factor());
         if (desired_bucket_count >= capacity_) {
             dense_map new_set(desired_bucket_count, hash_, equal_);
