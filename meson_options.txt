@@ -1,1 +1,2 @@
 option('glibcxx_debug', type: 'boolean', value: false)
+option('uberpedantic', type: 'boolean', value: false)

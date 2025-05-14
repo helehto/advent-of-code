@@ -1,6 +1,16 @@
 #include "common.h"
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Walloca"
+#pragma GCC diagnostic ignored "-Walloc-size-larger-than="
+#pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
+#pragma GCC diagnostic ignored "-Wduplicated-branches"
+#pragma GCC diagnostic ignored "-Wextra-semi"
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#pragma GCC diagnostic ignored "-Wunused-const-variable"
 #include <Eigen/Core>
 #include <Eigen/Dense>
+#pragma GCC diagnostic pop
 
 namespace aoc_2023_24 {
 
