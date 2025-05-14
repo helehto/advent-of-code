@@ -432,10 +432,9 @@ public:
     using typename small_vector_base<T>::const_reverse_iterator;
 
 private:
-    struct {
-    } reserving_constructor_t;
+    struct reserving_constructor_t {};
 
-    constexpr small_vector(decltype(reserving_constructor_t), const size_type n)
+    constexpr small_vector(reserving_constructor_t, const size_type n)
         : small_vector_base<T>(n > InlineCapacity ? this->allocate_buffer(n)
                                                   : inline_buffer_,
                                n,
@@ -451,7 +450,7 @@ public:
 
     constexpr small_vector(const size_type count) noexcept(
         noexcept(std::is_nothrow_constructible_v<T>))
-        : small_vector(reserving_constructor_t, count)
+        : small_vector(reserving_constructor_t{}, count)
     {
         for (size_type i = 0; i < count; ++i)
             std::construct_at(this->data() + i);
@@ -459,7 +458,7 @@ public:
 
     constexpr small_vector(const size_type count, const T &value) noexcept(
         noexcept(std::is_nothrow_copy_constructible_v<T>))
-        : small_vector(reserving_constructor_t, count)
+        : small_vector(reserving_constructor_t{}, count)
     {
         for (size_type i = 0; i < count; ++i)
             std::construct_at(this->data() + i, value);
@@ -468,7 +467,7 @@ public:
     template <std::input_iterator I, std::sized_sentinel_for<I> S>
     constexpr small_vector(I first, S last) noexcept(
         noexcept(std::is_nothrow_constructible_v<T, decltype(*first)>))
-        : small_vector(reserving_constructor_t, last - first)
+        : small_vector(reserving_constructor_t{}, last - first)
     {
         std::uninitialized_copy(first, last, this->data());
     }
