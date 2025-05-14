@@ -692,13 +692,11 @@ public:
     key_equal key_eq() const { return equal_; }
 };
 
-namespace std {
 template <typename Key, class Hash, class KeyEqual>
 void swap(dense_map<Key, Hash, KeyEqual> &a,
           dense_map<Key, Hash, KeyEqual> &b) noexcept(noexcept(a.swap(b)))
 {
     a.swap(b);
 }
-} // namespace std
 
 #endif /* DENSE_MAP_H */
