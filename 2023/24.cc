@@ -8,6 +8,7 @@
 #pragma GCC diagnostic ignored "-Wextra-semi"
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 #pragma GCC diagnostic ignored "-Wunused-const-variable"
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #pragma GCC diagnostic pop

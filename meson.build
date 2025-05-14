@@ -147,6 +147,7 @@ cpp_args = [
     '-Wvla',
     '-Wvolatile',
     '-Wwrite-strings',
+    '-Wzero-as-null-pointer-constant',
   ) : [],
 
  cpp.get_supported_arguments(

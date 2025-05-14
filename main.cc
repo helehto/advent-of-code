@@ -200,10 +200,10 @@ int main(int argc, char **argv)
 
     while (true) {
         static struct option long_options[] = {
-            {"input-file", required_argument, 0, 'f'},
-            {"iterations", required_argument, 0, 'i'},
-            {"json", no_argument, 0, 'j'},
-            {"target-time", required_argument, 0, 't'},
+            {"input-file", required_argument, nullptr, 'f'},
+            {"iterations", required_argument, nullptr, 'i'},
+            {"json", no_argument, nullptr, 'j'},
+            {"target-time", required_argument, nullptr, 't'},
         };
 
         int option_index;
