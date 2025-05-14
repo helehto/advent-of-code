@@ -8,7 +8,7 @@ static int64_t signed_area(std::span<const Vec2i64> points)
     for (size_t i = 0; i < points.size(); i++) {
         auto p0 = i ? points[i - 1] : points.back();
         auto p1 = points[i];
-        result += (int64_t)(p0.x * p1.y) - (int64_t)(p1.x * p0.y);
+        result += p0.x * p1.y - p1.x * p0.y;
     }
     return result;
 }

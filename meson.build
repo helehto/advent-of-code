@@ -140,6 +140,7 @@ cpp_args = [
     '-Wunused-macros',
     '-Wunused-parameter',
     '-Wuse-after-free=3',
+    '-Wuseless-cast',
     '-Wvariadic-macros',
     '-Wvector-operation-performance',
     '-Wvexing-parse',

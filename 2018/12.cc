@@ -31,7 +31,7 @@ void run(std::string_view buf)
         for (size_t j = 0; j < new_state.size(); j++) {
             int v = 0;
             for (int k = -2; k <= 2; k++) {
-                auto old_index = static_cast<size_t>(j + k - 2);
+                size_t old_index = j + k - 2;
                 if (old_index < state.size() && state[old_index] == '#')
                     v |= 1 << (k + 2);
             }
