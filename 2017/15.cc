@@ -65,7 +65,7 @@ static int part1(uint32_t a, uint32_t b)
     constexpr uint32_t a_skip4 = modexp_2p31m1_bounded(1, 16807, 4);
     constexpr uint32_t b_skip4 = modexp_2p31m1_bounded(1, 48271, 4);
 
-    auto search = [=, &result](const uint32_t start) {
+    auto search = [=, &result](const uint32_t start) noexcept {
         std::array<uint64_t, 4> a_init, b_init;
         for (size_t i = 0; i < 4; ++i) {
             a_init[i] = modexp_2p31m1_bounded(a, 16807, start + i);
@@ -150,7 +150,8 @@ static int part2(uint32_t a, uint32_t b)
     auto a_values = std::make_unique_for_overwrite<uint64_t[]>(limit + 3);
     auto b_values = std::make_unique_for_overwrite<uint64_t[]>(limit + 3);
 
-    auto search = [](uint64_t init, uint64_t k, uint64_t mask, uint64_t *buffer) {
+    auto search = [](uint64_t init, uint64_t k, uint64_t mask,
+                     uint64_t *buffer) noexcept {
         const uint32_t skip = modexp_2p31m1_bounded(1, k, 4);
 
         __m256i state_4x64 = _mm256_setr_epi64x(

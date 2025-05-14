@@ -99,16 +99,16 @@
         __LINE__, var __VA_OPT__(, ) __VA_ARGS__)
 
 // Implementation details of the λ() macro below.
-#define λ_1(a, body) [&]() { return body; }
-#define λ_2(a, body) [&]([[maybe_unused]] auto &&a) { return body; }
+#define λ_1(a, body) [&]() noexcept { return body; }
+#define λ_2(a, body) [&]([[maybe_unused]] auto &&a) noexcept { return body; }
 #define λ_3(a, b, body)                                                                  \
-    [&]([[maybe_unused]] auto &&a, [[maybe_unused]] auto &&b) { return body; }
+    [&]([[maybe_unused]] auto &&a, [[maybe_unused]] auto &&b) noexcept { return body; }
 #define λ_4(a, b, c, body)                                                               \
     [&]([[maybe_unused]] auto &&a, [[maybe_unused]] auto &&b,                            \
-        [[maybe_unused]] auto &&c) { return body; }
+        [[maybe_unused]] auto &&c) noexcept { return body; }
 #define λ_5(a, b, c, d, body)                                                            \
     [&]([[maybe_unused]] auto &&a, [[maybe_unused]] auto &&b, [[maybe_unused]] auto &&c, \
-        [[maybe_unused]] auto &&d) { return body; }
+        [[maybe_unused]] auto &&d) noexcept { return body; }
 #define λ_(...) GLUE(λ_, ARG_COUNT(__VA_ARGS__))(__VA_ARGS__)
 
 // Concise form of a common pattern of lambda functions; particularly useful

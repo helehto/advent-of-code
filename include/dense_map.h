@@ -361,7 +361,7 @@ public:
     // Construction and destruction.
     //-------------------------------------------------------------------------
 
-    dense_map()
+    dense_map() noexcept
         : buckets_(nullptr)
         , states_(const_cast<uint8_t *>(detail::empty_map_states.data()))
         , capacity_(0)
@@ -372,7 +372,7 @@ public:
 
     dense_map(size_type bucket_count,
               const Hash &hash = Hash(),
-              const KeyEqual &equal = KeyEqual())
+              const KeyEqual &equal = KeyEqual()) noexcept
         : dense_map(internal_tag{},
                     bucket_count ? std::bit_ceil(static_cast<size_type>(
                                        2 * bucket_count / max_load_factor()))
@@ -382,13 +382,16 @@ public:
     {
     }
 
-    dense_map(const dense_map &other)
+    dense_map(const dense_map &other) noexcept(
+        noexcept(std::is_nothrow_copy_constructible_v<value_type>))
         : dense_map(internal_tag{}, other.capacity_, other.hash_, other.equal_)
     {
         insert(other.begin(), other.end());
     }
 
-    dense_map &operator=(const dense_map &other)
+    dense_map &operator=(const dense_map &other) noexcept(
+        noexcept(std::is_nothrow_copy_constructible_v<value_type>) &&
+        noexcept(std::is_nothrow_destructible_v<value_type>))
     {
         clear();
         hash_ = other.hash_;
@@ -397,7 +400,7 @@ public:
         return *this;
     }
 
-    dense_map(dense_map &&other)
+    dense_map(dense_map &&other) noexcept
         : storage_(std::exchange(other.storage_, nullptr))
         , buckets_(std::exchange(other.buckets_, nullptr))
         , states_(std::exchange(other.states_, nullptr))
@@ -409,7 +412,7 @@ public:
     {
     }
 
-    dense_map &operator=(dense_map &&other)
+    dense_map &operator=(dense_map &&other) noexcept
     {
         swap(other);
         return *this;
@@ -420,7 +423,8 @@ public:
               InputIt end,
               size_type bucket_count = 16,
               const Hash &hash = Hash(),
-              const KeyEqual &equal = KeyEqual())
+              const KeyEqual &equal =
+                  KeyEqual()) noexcept(std::is_nothrow_copy_constructible_v<value_type>)
         : dense_map(bucket_count, hash, equal)
     {
         for (; begin != end; ++begin)
@@ -430,12 +434,13 @@ public:
     dense_map(std::initializer_list<value_type> list,
               size_type bucket_count = 16,
               const Hash &hash = Hash(),
-              const KeyEqual &equal = KeyEqual())
+              const KeyEqual &equal =
+                  KeyEqual()) noexcept(std::is_nothrow_copy_constructible_v<value_type>)
         : dense_map(list.begin(), list.end(), bucket_count, hash, equal)
     {
     }
 
-    ~dense_map()
+    ~dense_map() noexcept(noexcept(std::is_nothrow_destructible_v<value_type>))
     {
         // TODO: Better way to iterate all occupied buckets?
         if constexpr (!std::is_trivially_destructible_v<value_type>) {
@@ -583,7 +588,7 @@ public:
         return 0;
     }
 
-    void swap(dense_map &other)
+    void swap(dense_map &other) noexcept
     {
         using std::swap;
         swap(storage_, other.storage_);
@@ -628,13 +633,13 @@ public:
         return found ? 1 : 0;
     }
 
-    iterator find(const key_type &key)
+    iterator find(const key_type &key) noexcept
     {
         const auto [i, found, _] = find_bucket_(key);
         return found ? iterator(this, i) : end();
     }
 
-    const_iterator find(const key_type &key) const
+    const_iterator find(const key_type &key) const noexcept
     {
         const auto [i, found, _] = find_bucket_(key);
         return found ? const_iterator(this, i) : end();
@@ -676,7 +681,8 @@ public:
 
 namespace std {
 template <typename Key, class Hash, class KeyEqual>
-void swap(dense_map<Key, Hash, KeyEqual> &a, dense_map<Key, Hash, KeyEqual> &b)
+void swap(dense_map<Key, Hash, KeyEqual> &a,
+          dense_map<Key, Hash, KeyEqual> &b) noexcept(noexcept(a.swap(b)))
 {
     a.swap(b);
 }

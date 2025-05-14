@@ -20,7 +20,7 @@ struct alignas(8) CacheKey {
     uint8_t pad0 = 0;
     uint8_t pad1 = 0;
 
-    constexpr bool operator==(const CacheKey &o) const
+    constexpr bool operator==(const CacheKey &o) const noexcept
     {
         return std::bit_cast<uint64_t>(*this) == std::bit_cast<uint64_t>(o);
     }
@@ -30,7 +30,7 @@ struct alignas(8) CacheKey {
 
 template <>
 struct std::hash<aoc_2022_19::CacheKey> {
-    size_t operator()(const aoc_2022_19::CacheKey &k) const
+    size_t operator()(const aoc_2022_19::CacheKey &k) const noexcept
     {
         return _mm_crc32_u64(0, std::bit_cast<uint64_t>(k));
     }

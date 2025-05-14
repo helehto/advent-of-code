@@ -6,7 +6,7 @@
 
 template <>
 struct std::hash<std::array<int, 3>> {
-    size_t operator()(const std::array<int, 3> a) const
+    size_t operator()(const std::array<int, 3> a) const noexcept
     {
         uint64_t u;
         memcpy(&u, &a, sizeof(u));

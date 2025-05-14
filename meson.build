@@ -108,6 +108,7 @@ cpp_args = [
     '-Wmissing-requires',
     '-Wmissing-template-keyword',
     '-Wmultichar',
+    '-Wnoexcept',
     '-Wnon-template-friend',
     '-Wnon-virtual-dtor',
     '-Wnormalized',

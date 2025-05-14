@@ -27,9 +27,9 @@ protected:
 
 public:
     constexpr bool empty() const noexcept { return n_ == 0; }
-    constexpr size_t size() const { return n_; }
-    static constexpr size_t max_size() { return UINT32_MAX; }
-    constexpr size_t capacity() const { return capacity_; }
+    constexpr size_t size() const noexcept { return n_; }
+    static constexpr size_t max_size() noexcept { return UINT32_MAX; }
+    constexpr size_t capacity() const noexcept { return capacity_; }
 };
 
 /// The default number of inline elements for a small_vector<T>.
@@ -167,22 +167,25 @@ public:
     // Element access
     //-----------------------------------------------------------------------------------
 
-    constexpr reference at(const size_type pos)
+    constexpr reference at(const size_type pos) noexcept
     {
         DEBUG_ASSERT(pos < n_);
         return static_cast<T *>(data_)[pos];
     }
-    constexpr const_reference at(const size_type pos) const
+    constexpr const_reference at(const size_type pos) const noexcept
     {
         DEBUG_ASSERT(pos < n_);
         return static_cast<T *>(data_)[pos];
     }
-    constexpr reference operator[](const size_type pos) { return at(pos); }
-    constexpr const_reference operator[](const size_type pos) const { return at(pos); }
-    constexpr reference front() { return at(0); }
-    constexpr const_reference front() const { return at(0); }
-    constexpr reference back() { return at(n_ - 1); }
-    constexpr const_reference back() const { return at(n_ - 1); }
+    constexpr reference operator[](const size_type pos) noexcept { return at(pos); }
+    constexpr const_reference operator[](const size_type pos) const noexcept
+    {
+        return at(pos);
+    }
+    constexpr reference front() noexcept { return at(0); }
+    constexpr const_reference front() const noexcept { return at(0); }
+    constexpr reference back() noexcept { return at(n_ - 1); }
+    constexpr const_reference back() const noexcept { return at(n_ - 1); }
 
     //-----------------------------------------------------------------------------------
     // Iterators
@@ -227,7 +230,7 @@ public:
     // Modifiers
     //-----------------------------------------------------------------------------------
 
-    constexpr void clear()
+    constexpr void clear() noexcept(noexcept(std::is_nothrow_destructible_v<T>))
     {
         std::destroy_n(data(), n_);
         n_ = 0;
@@ -344,7 +347,7 @@ public:
         n_ += count;
     }
 
-    constexpr void pop_back() noexcept
+    constexpr void pop_back() noexcept(noexcept(std::is_nothrow_destructible_v<T>))
     {
         DEBUG_ASSERT(n_);
         --n_;
@@ -441,19 +444,21 @@ private:
     }
 
 public:
-    constexpr small_vector()
+    constexpr small_vector() noexcept
         : small_vector_base<T>(inline_buffer_, 0, InlineCapacity)
     {
     }
 
-    constexpr small_vector(const size_type count)
+    constexpr small_vector(const size_type count) noexcept(
+        noexcept(std::is_nothrow_constructible_v<T>))
         : small_vector(reserving_constructor_t, count)
     {
         for (size_type i = 0; i < count; ++i)
             std::construct_at(this->data() + i);
     }
 
-    constexpr small_vector(const size_type count, const T &value)
+    constexpr small_vector(const size_type count, const T &value) noexcept(
+        noexcept(std::is_nothrow_copy_constructible_v<T>))
         : small_vector(reserving_constructor_t, count)
     {
         for (size_type i = 0; i < count; ++i)
@@ -461,31 +466,35 @@ public:
     }
 
     template <std::input_iterator I, std::sized_sentinel_for<I> S>
-    constexpr small_vector(I first, S last)
+    constexpr small_vector(I first, S last) noexcept(
+        noexcept(std::is_nothrow_constructible_v<T, decltype(*first)>))
         : small_vector(reserving_constructor_t, last - first)
     {
         std::uninitialized_copy(first, last, this->data());
     }
 
     template <std::input_iterator I, std::sentinel_for<I> S>
-    constexpr small_vector(I first, S last)
+    constexpr small_vector(I first, S last) noexcept(
+        noexcept(std::is_nothrow_constructible_v<T, decltype(*first)>))
         : small_vector()
     {
         for (; first != last; ++first)
             this->push_back(*first);
     }
 
-    constexpr small_vector(std::initializer_list<T> init)
+    constexpr small_vector(std::initializer_list<T> init) noexcept(
+        noexcept(std::is_nothrow_constructible_v<T, decltype(*init.begin())>))
         : small_vector(init.begin(), init.end())
     {
     }
 
-    constexpr small_vector(const small_vector &other)
+    constexpr small_vector(const small_vector &other) noexcept(
+        noexcept(std::is_nothrow_copy_constructible_v<T>))
         : small_vector(other.begin(), other.end())
     {
     }
 
-    constexpr small_vector(small_vector &&other)
+    constexpr small_vector(small_vector &&other) noexcept
         : small_vector_base<T>(inline_buffer_, 0, 0)
     {
         this->n_ = std::exchange(other.n_, 0);
@@ -507,23 +516,33 @@ public:
         return *this;
     }
 
-    constexpr ~small_vector() {}
+    constexpr ~small_vector() noexcept(noexcept(std::is_nothrow_destructible_v<T>)) {}
 };
 
 template <std::equality_comparable T>
-constexpr bool operator==(const small_vector_base<T> &a, const small_vector_base<T> &b)
+constexpr bool operator==(const small_vector_base<T> &a,
+                          const small_vector_base<T> &b) noexcept
 {
     return a.size() == b.size() && std::equal(a.begin(), a.end(), b.begin());
 }
 
 template <std::three_way_comparable T>
-constexpr auto operator<=>(const small_vector_base<T> &a, const small_vector_base<T> &b)
+constexpr auto operator<=>(const small_vector_base<T> &a,
+                           const small_vector_base<T> &b) noexcept
 {
     return std::lexicographical_compare_three_way(a.begin(), a.end(), b.begin(), b.end());
 }
 
 template <typename T>
-constexpr void swap(small_vector_base<T> &a, small_vector_base<T> &b)
+constexpr void swap(small_vector_base<T> &a,
+                    small_vector_base<T> &b) noexcept(noexcept(a.swap(b)))
+{
+    a.swap(b);
+}
+
+template <typename T, std::size_t N>
+constexpr void swap(small_vector<T, N> &a,
+                    small_vector<T, N> &b) noexcept(noexcept(a.swap(b)))
 {
     a.swap(b);
 }

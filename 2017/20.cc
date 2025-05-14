@@ -12,7 +12,7 @@ static int part1(std::span<const Particle> particles)
 {
     constexpr static int64_t dt = 50'000;
 
-    auto it = std::ranges::min_element(particles, {}, [&](const Particle &p) {
+    auto it = std::ranges::min_element(particles, {}, [&](const Particle &p) noexcept {
         const auto x = p.p[0] + dt * p.v[0] + dt * (dt + 1) * p.a[0] / 2;
         const auto y = p.p[1] + dt * p.v[1] + dt * (dt + 1) * p.a[1] / 2;
         const auto z = p.p[2] + dt * p.v[2] + dt * (dt + 1) * p.a[2] / 2;

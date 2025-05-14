@@ -25,7 +25,7 @@
 #include <x86intrin.h>
 
 template <typename T, typename... Rest>
-constexpr void hash_combine(std::size_t &h, const T &v, const Rest &...rest)
+constexpr void hash_combine(std::size_t &h, const T &v, const Rest &...rest) noexcept
 {
     const std::uint64_t m = 0xc6a4a7935bd1e995ULL;
     std::uint64_t k = std::hash<T>{}(v);
@@ -146,7 +146,7 @@ constexpr T manhattan(const Vec2<T> &a, const Vec2<T> &b)
 
 template <typename T>
 struct std::hash<Vec2<T>> {
-    constexpr size_t operator()(const Vec2<T> &p) const
+    constexpr size_t operator()(const Vec2<T> &p) const noexcept
     {
         if (!std::is_constant_evaluated()) {
             if constexpr (sizeof(T) == 1) {
@@ -694,48 +694,51 @@ struct StridedIterator {
     size_t stride;
 
     constexpr std::strong_ordering
-    operator<=>(const StridedIterator &other) const = default;
-    constexpr reference operator*() const { return *p; }
-    constexpr pointer operator->() const { return p; }
-    constexpr reference operator[](difference_type n) const { return p[stride * n]; }
-    constexpr StridedIterator &operator++() { return p += stride, *this; }
-    constexpr StridedIterator operator++(int)
+    operator<=>(const StridedIterator &other) const noexcept = default;
+    constexpr reference operator*() const noexcept { return *p; }
+    constexpr pointer operator->() const noexcept { return p; }
+    constexpr reference operator[](difference_type n) const noexcept
+    {
+        return p[stride * n];
+    }
+    constexpr StridedIterator &operator++() noexcept { return p += stride, *this; }
+    constexpr StridedIterator operator++(int) noexcept
     {
         StridedIterator copy(*this);
         p += stride;
         return copy;
     }
-    constexpr StridedIterator &operator--() { return p -= stride, *this; }
-    constexpr StridedIterator operator--(int)
+    constexpr StridedIterator &operator--() noexcept { return p -= stride, *this; }
+    constexpr StridedIterator operator--(int) noexcept
     {
         StridedIterator copy(*this);
         p -= stride;
         return copy;
     }
-    constexpr StridedIterator &operator+=(difference_type n)
+    constexpr StridedIterator &operator+=(difference_type n) noexcept
     {
         return p += stride * n, *this;
     }
-    constexpr StridedIterator operator+(difference_type n) const
+    constexpr StridedIterator operator+(difference_type n) const noexcept
     {
         return StridedIterator(*this) += n;
     }
-    constexpr StridedIterator &operator-=(difference_type n)
+    constexpr StridedIterator &operator-=(difference_type n) noexcept
     {
         return p -= stride * n, *this;
     }
-    constexpr StridedIterator operator-(difference_type n) const
+    constexpr StridedIterator operator-(difference_type n) const noexcept
     {
         return StridedIterator(*this) -= n;
     }
 
-    constexpr difference_type operator-(const StridedIterator &o) const
+    constexpr difference_type operator-(const StridedIterator &o) const noexcept
     {
         return (p - o.p) / static_cast<ssize_t>(stride);
     }
 
     constexpr friend StridedIterator operator+(difference_type n,
-                                               const StridedIterator &it)
+                                               const StridedIterator &it) noexcept
     {
         return it + n;
     }
@@ -748,8 +751,8 @@ struct StridedRange : std::ranges::view_interface<StridedRange<T>> {
     size_t n;
     size_t stride;
 
-    constexpr StridedIterator<T> begin() { return {p, stride}; }
-    constexpr StridedIterator<T> end() { return {p + n * stride, stride}; }
+    constexpr StridedIterator<T> begin() const noexcept { return {p, stride}; }
+    constexpr StridedIterator<T> end() const noexcept { return {p + n * stride, stride}; }
 };
 static_assert(std::ranges::random_access_range<StridedRange<int>>);
 
@@ -811,7 +814,7 @@ struct Matrix {
         return !(*this == other);
     }
 
-    constexpr T &operator()(size_t i, size_t j)
+    constexpr T &operator()(size_t i, size_t j) noexcept
     {
         DEBUG_ASSERT_MSG(i < rows && j < cols,
                          "({}, {}) is not a valid matrix entry (x<{}, y<{})", j, i, rows,
@@ -819,7 +822,7 @@ struct Matrix {
         return data[i * cols + j];
     }
 
-    constexpr const T &operator()(size_t i, size_t j) const
+    constexpr const T &operator()(size_t i, size_t j) const noexcept
     {
         DEBUG_ASSERT_MSG(i < rows && j < cols,
                          "({}, {}) is not a valid matrix entry (x<{}, y<{})", j, i, rows,
@@ -828,7 +831,7 @@ struct Matrix {
     }
 
     template <typename U>
-    constexpr T &operator()(Vec2<U> p)
+    constexpr T &operator()(Vec2<U> p) noexcept
     {
         DEBUG_ASSERT_MSG(in_bounds(p), "{} is not a valid matrix entry (x<{}, y<{})", p,
                          cols, rows);
@@ -836,53 +839,56 @@ struct Matrix {
     }
 
     template <typename U>
-    constexpr const T &operator()(Vec2<U> p) const
+    constexpr const T &operator()(Vec2<U> p) const noexcept
     {
         DEBUG_ASSERT_MSG(in_bounds(p), "{} is not a valid matrix entry (x<{}, y<{})", p,
                          cols, rows);
         return data[p.y * cols + p.x];
     }
 
-    constexpr size_t size() const { return rows * cols; }
+    constexpr size_t size() const noexcept { return rows * cols; }
 
-    constexpr std::span<T> all() { return {data.get(), data.get() + rows * cols}; }
-    constexpr std::span<const T> all() const
+    constexpr std::span<T> all() noexcept
+    {
+        return {data.get(), data.get() + rows * cols};
+    }
+    constexpr std::span<const T> all() const noexcept
     {
         return {data.get(), data.get() + rows * cols};
     }
 
-    constexpr StridedRange<T> col(size_t i)
+    constexpr StridedRange<T> col(size_t i) noexcept
     {
         DEBUG_ASSERT_MSG(i < cols, "{} is not a valid column", i);
         return {{}, data.get() + i, rows, cols};
     }
 
-    constexpr StridedRange<const T> col(size_t i) const
+    constexpr StridedRange<const T> col(size_t i) const noexcept
     {
         DEBUG_ASSERT_MSG(i < cols, "{} is not a valid column", i);
         return {{}, data.get() + i, rows, cols};
     }
 
-    constexpr std::span<T> row(size_t i)
+    constexpr std::span<T> row(size_t i) noexcept
     {
         DEBUG_ASSERT_MSG(i < rows, "{} is not a valid row", i);
         return {data.get() + i * cols, data.get() + (i + 1) * cols};
     }
 
-    constexpr std::span<const T> row(size_t i) const
+    constexpr std::span<const T> row(size_t i) const noexcept
     {
         DEBUG_ASSERT_MSG(i < rows, "{} is not a valid row", i);
         return {data.get() + i * cols, data.get() + (i + 1) * cols};
     }
 
     template <typename U = size_t>
-    constexpr Ndindex2DRange<U> ndindex() const
+    constexpr Ndindex2DRange<U> ndindex() const noexcept
     {
         return {rows, cols};
     }
 
     template <typename U>
-    constexpr bool in_bounds(Vec2<U> p) const
+    constexpr bool in_bounds(Vec2<U> p) const noexcept
     {
         using Unsigned = std::make_unsigned_t<U>;
         return static_cast<Unsigned>(p.x) < cols && static_cast<Unsigned>(p.y) < rows;

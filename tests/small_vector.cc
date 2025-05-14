@@ -1,10 +1,21 @@
 #include "small_vector.h"
 #include <list>
+#include <type_traits>
 #include <vector>
 
 #define DOCTEST_CONFIG_SUPER_FAST_ASSERTS
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
+
+// Check that constructors and noexcept specifications are sane with POD type.
+static_assert(!std::is_default_constructible_v<small_vector_base<int>>);
+static_assert(!std::is_copy_constructible_v<small_vector_base<int>>);
+static_assert(!std::is_move_constructible_v<small_vector_base<int>>);
+static_assert(std::is_nothrow_default_constructible_v<small_vector<int>>);
+static_assert(std::is_nothrow_copy_constructible_v<small_vector<int>>);
+static_assert(std::is_nothrow_move_constructible_v<small_vector<int>>);
+static_assert(std::is_nothrow_destructible_v<small_vector<int>>);
+static_assert(std::is_nothrow_swappable_v<small_vector<int>>);
 
 TEST_CASE("small_vector typedefs look sensible")
 {
@@ -892,7 +903,7 @@ TEST_CASE("small_vector works with non-default-constructible types")
         int a;
         int b;
 
-        NoDefaultConstructor(int a_, int b_)
+        NoDefaultConstructor(int a_, int b_) noexcept
             : a(a_)
             , b(b_)
         {

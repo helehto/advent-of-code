@@ -81,7 +81,7 @@ constexpr CanonicalState State::canonicalize() const
 
 template <>
 struct std::hash<aoc_2016_11::CanonicalState> {
-    size_t operator()(const aoc_2016_11::CanonicalState &state) const
+    size_t operator()(const aoc_2016_11::CanonicalState &state) const noexcept
     {
         return _mm_crc32_u64(state.floor, std::bit_cast<uint64_t>(state.pairs));
     }

@@ -29,28 +29,19 @@ public:
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
 private:
-    constexpr pointer ptr(size_type i) noexcept
+    constexpr pointer ptr(size_type i)
     {
         return std::bit_cast<T *>(storage_ + sizeof(T) * i);
     }
 
-    constexpr const_pointer ptr(size_type i) const noexcept
+    constexpr const_pointer ptr(size_type i) const
     {
         return std::bit_cast<T *>(storage_ + sizeof(T) * i);
-    }
-
-    template <typename... Args>
-    constexpr pointer
-    do_emplace_back(Args &&...args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
-    {
-        return std::construct_at(ptr(n_++), static_cast<Args &&>(args)...);
     }
 
     template <typename... Args>
     constexpr void
-    construct_range(const size_type pos,
-                    const size_type count,
-                    Args &&...args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
+    construct_range(const size_type pos, const size_type count, Args &&...args)
     {
         DEBUG_ASSERT(pos <= Capacity);
         DEBUG_ASSERT(pos + count <= Capacity);
@@ -60,14 +51,12 @@ private:
             std::construct_at(ptr(i), static_cast<Args &&>(args)...);
     }
 
-    constexpr void destroy_range(const size_type, const size_type) noexcept
+    constexpr void destroy_range(const size_type, const size_type)
         requires(std::is_trivially_destructible_v<T>)
     {
     }
 
-    constexpr void
-    destroy_range(const size_type pos,
-                  const size_type count) noexcept(std::is_nothrow_destructible_v<T>)
+    constexpr void destroy_range(const size_type pos, const size_type count)
         requires(!std::is_trivially_destructible_v<T>)
     {
         DEBUG_ASSERT(pos <= Capacity);
@@ -88,14 +77,16 @@ private:
 public:
     inplace_vector() noexcept = default;
 
-    constexpr explicit inplace_vector(const size_type count)
+    constexpr explicit inplace_vector(const size_type count) noexcept(
+        noexcept(std::is_nothrow_constructible_v<T>))
         : n_(count)
     {
         ASSERT(count <= Capacity);
         construct_range(0, count);
     }
 
-    constexpr inplace_vector(const size_type count, const T &value)
+    constexpr inplace_vector(const size_type count, const T &value) noexcept(
+        noexcept(std::is_nothrow_copy_constructible_v<T>))
         : n_(count)
     {
         ASSERT(count <= Capacity);
@@ -103,7 +94,8 @@ public:
     }
 
     template <std::input_iterator I, std::sentinel_for<I> S>
-    constexpr inplace_vector(I first, S last)
+    constexpr inplace_vector(I first, S last) noexcept(
+        noexcept(std::is_nothrow_constructible_v<T, decltype(*first)>))
     {
         for (; first != last; first++) {
             ASSERT(n_ != Capacity);
@@ -112,13 +104,15 @@ public:
     }
 
     template <std::ranges::input_range R>
-    constexpr inplace_vector(R &&rg)
+    constexpr inplace_vector(R &&rg) noexcept(
+        noexcept(std::is_nothrow_constructible_v<T, decltype(*std::ranges::begin(rg))>))
         requires(std::convertible_to<std::ranges::range_reference_t<R>, T>)
         : inplace_vector(std::ranges::begin(rg), std::ranges::end(rg))
     {
     }
 
-    constexpr inplace_vector(std::initializer_list<T> init)
+    constexpr inplace_vector(std::initializer_list<T> init) noexcept(
+        noexcept(std::is_nothrow_copy_constructible_v<T>))
         : inplace_vector(init.begin(), init.end())
     {
     }
@@ -126,11 +120,12 @@ public:
     // Default constructors and assignment operators used for when the more
     // constrained alternatives below are not used. This way, they can be
     // conditionally trivial depending on T.
-    constexpr inplace_vector(const inplace_vector &other) = default;
-    constexpr inplace_vector(inplace_vector &&other) = default;
-    constexpr ~inplace_vector() = default;
+    constexpr inplace_vector(const inplace_vector &other) noexcept = default;
+    constexpr inplace_vector(inplace_vector &&other) noexcept = default;
+    constexpr ~inplace_vector() noexcept = default;
 
-    constexpr inplace_vector(const inplace_vector &other)
+    constexpr inplace_vector(const inplace_vector &other) noexcept(
+        noexcept(std::is_nothrow_copy_constructible_v<T>))
         requires(!std::is_trivially_copy_constructible_v<T>)
         : n_(other.n_)
     {
@@ -139,7 +134,8 @@ public:
             std::construct_at(ptr(i), other.ptr(i));
     }
 
-    constexpr inplace_vector(inplace_vector &&other)
+    constexpr inplace_vector(inplace_vector &&other) noexcept(
+        noexcept(std::is_nothrow_move_constructible_v<T>))
         requires(!std::is_trivially_move_constructible_v<T>)
         : n_(other.n_)
     {
@@ -148,13 +144,14 @@ public:
             std::construct_at(ptr(i), static_cast<T &&>(other.ptr(i)));
     }
 
-    constexpr ~inplace_vector()
+    constexpr ~inplace_vector() noexcept(noexcept(std::is_nothrow_destructible_v<T>))
         requires(!std::is_trivially_destructible_v<T>)
     {
         destroy_range(0, n_);
     }
 
-    constexpr inplace_vector &operator=(const inplace_vector &other)
+    constexpr inplace_vector &operator=(const inplace_vector &other) noexcept(
+        noexcept(std::is_nothrow_copy_constructible_v<T>))
     {
         DEBUG_ASSERT(other.n_ <= Capacity);
         clear_and_set_size(other.n_);
@@ -162,7 +159,8 @@ public:
         return *this;
     }
 
-    constexpr inplace_vector &operator=(inplace_vector &&other)
+    constexpr inplace_vector &operator=(inplace_vector &&other) noexcept(
+        noexcept(std::is_nothrow_move_constructible_v<T>))
     {
         DEBUG_ASSERT(other.n_ <= Capacity);
         clear_and_set_size(other.n_);
@@ -170,7 +168,8 @@ public:
         return *this;
     }
 
-    constexpr inplace_vector &operator=(std::initializer_list<T> init)
+    constexpr inplace_vector &operator=(std::initializer_list<T> init) noexcept(
+        noexcept(std::is_nothrow_copy_constructible_v<T>))
     {
         ASSERT(init.size() <= Capacity);
         clear_and_set_size(init.size());
@@ -212,42 +211,42 @@ public:
         assign(std::begin(rg), std::end(rg));
     }
 
-    constexpr reference at(size_type pos)
+    constexpr reference at(size_type pos) noexcept
     {
         DEBUG_ASSERT(pos < n_);
         return *ptr(pos);
     }
-    constexpr const_reference at(size_type pos) const
+    constexpr const_reference at(size_type pos) const noexcept
     {
         DEBUG_ASSERT(pos < n_);
         return *ptr(pos);
     }
-    constexpr reference operator[](size_type pos)
+    constexpr reference operator[](size_type pos) noexcept
     {
         DEBUG_ASSERT(pos < n_);
         return *ptr(pos);
     }
-    constexpr const_reference operator[](size_type pos) const
+    constexpr const_reference operator[](size_type pos) const noexcept
     {
         DEBUG_ASSERT(pos < n_);
         return *ptr(pos);
     }
-    constexpr reference front()
+    constexpr reference front() noexcept
     {
         DEBUG_ASSERT(n_);
         return *ptr(0);
     }
-    constexpr const_reference front() const
+    constexpr const_reference front() const noexcept
     {
         DEBUG_ASSERT(n_);
         return *ptr(0);
     }
-    constexpr reference back()
+    constexpr reference back() noexcept
     {
         DEBUG_ASSERT(n_);
         return *ptr(n_ - 1);
     }
-    constexpr const_reference back() const
+    constexpr const_reference back() const noexcept
     {
         DEBUG_ASSERT(n_);
         return *ptr(n_ - 1);
@@ -287,7 +286,10 @@ public:
     constexpr size_type size() const noexcept { return n_; }
     static constexpr size_type max_size() noexcept { return Capacity; }
     static constexpr size_type capacity() noexcept { return Capacity; }
-    static constexpr void reserve(size_type count) { DEBUG_ASSERT(count <= Capacity); }
+    static constexpr void reserve(size_type count) noexcept
+    {
+        DEBUG_ASSERT(count <= Capacity);
+    }
     static constexpr void shrink_to_fit() noexcept {}
 
     constexpr void resize(const size_type count)
@@ -372,7 +374,7 @@ public:
         return *std::construct_at(ptr(n_++), static_cast<T &&>(value));
     }
 
-    constexpr void pop_back() noexcept
+    constexpr void pop_back() noexcept(noexcept(std::is_nothrow_destructible_v<T>))
     {
         DEBUG_ASSERT(!empty());
         std::destroy_at(ptr(--n_));
@@ -420,7 +422,7 @@ public:
     }
 
     constexpr friend bool operator==(const inplace_vector<T, Capacity> &lhs,
-                                     const inplace_vector<T, Capacity> &rhs)
+                                     const inplace_vector<T, Capacity> &rhs) noexcept
         requires(std::equality_comparable<T>)
     {
         return lhs.size() == rhs.size() &&
@@ -434,7 +436,8 @@ static_assert(std::is_trivially_copy_constructible_v<inplace_vector<int, 2>>);
 static_assert(std::is_trivially_move_constructible_v<inplace_vector<int, 2>>);
 
 template <typename T, size_t N>
-void std::swap(inplace_vector<T, N> &a, inplace_vector<T, N> &b)
+void std::swap(inplace_vector<T, N> &a,
+               inplace_vector<T, N> &b) noexcept(noexcept(a.swap(b)))
 {
     a.swap(b);
 }

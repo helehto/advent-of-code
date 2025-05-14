@@ -12,7 +12,7 @@ struct Point4D : public std::array<int, 4> {
 
 template <>
 struct std::hash<aoc_2020_17::Point4D> {
-    constexpr size_t operator()(const aoc_2020_17::Point4D &p) const
+    constexpr size_t operator()(const aoc_2020_17::Point4D &p) const noexcept
     {
         size_t h = 0;
         for (int c : p)

@@ -130,7 +130,7 @@ static Graph build_graph(const Matrix<char> &grid, const Vec2z start, const Vec2
             if (neighbors.size() != 1) {
                 // It's a crossing; filter by icy slopes to get the next possible
                 // moves from here.
-                erase_if(neighbors, [&](const Vec2z &next) {
+                erase_if(neighbors, [&](const Vec2z &next) noexcept {
                     char c = grid(next);
                     int dx = next.x - curr.x;
                     int dy = next.y - curr.y;

@@ -77,7 +77,8 @@ struct Deck {
 
 template <>
 struct std::hash<std::pair<aoc_2020_22::Deck, aoc_2020_22::Deck>> {
-    size_t operator()(const std::pair<aoc_2020_22::Deck, aoc_2020_22::Deck> &p) const
+    size_t
+    operator()(const std::pair<aoc_2020_22::Deck, aoc_2020_22::Deck> &p) const noexcept
     {
         size_t h1 = 0;
         size_t h2 = 0;

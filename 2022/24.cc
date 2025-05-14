@@ -67,7 +67,7 @@ struct GMapEntry {
 
 template <>
 struct std::hash<aoc_2022_24::QueueEntry> {
-    constexpr size_t operator()(const aoc_2022_24::QueueEntry &e) const
+    constexpr size_t operator()(const aoc_2022_24::QueueEntry &e) const noexcept
     {
         size_t h = 0;
         hash_combine(h, e.v, e.heuristic, e.time);
@@ -77,7 +77,7 @@ struct std::hash<aoc_2022_24::QueueEntry> {
 
 template <>
 struct std::hash<aoc_2022_24::GMapEntry> {
-    constexpr size_t operator()(const aoc_2022_24::GMapEntry &q) const
+    constexpr size_t operator()(const aoc_2022_24::GMapEntry &q) const noexcept
     {
         size_t h = 0;
         hash_combine(h, q.start, q.time);
