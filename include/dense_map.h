@@ -436,7 +436,11 @@ public:
               const Hash &hash = Hash(),
               const KeyEqual &equal =
                   KeyEqual()) noexcept(std::is_nothrow_copy_constructible_v<value_type>)
-        : dense_map(list.begin(), list.end(), bucket_count, hash, equal)
+        : dense_map(list.begin(),
+                    list.end(),
+                    std::max<size_type>(bucket_count, list.size()),
+                    hash,
+                    equal)
     {
     }
 
