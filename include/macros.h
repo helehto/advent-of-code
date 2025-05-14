@@ -63,8 +63,8 @@
 /// DEBUG_ASSERT and DEBUG_ASSERT_MSG are assertion macros active iff NDEBUG is
 /// not defined, like assert() in <cassert>.
 #ifdef NDEBUG
-#define DEBUG_ASSERT(...)
-#define DEBUG_ASSERT_MSG(...)
+#define DEBUG_ASSERT(x) __attribute__((assume(x)))
+#define DEBUG_ASSERT_MSG(x, format, ...) __attribute__((assume(x)))
 #else
 #define DEBUG_ASSERT(...) ASSERT(__VA_ARGS__)
 #define DEBUG_ASSERT_MSG(...) ASSERT_MSG(__VA_ARGS__)
