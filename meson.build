@@ -98,6 +98,7 @@ cpp_args = [
     '-Winvalid-offsetof',
     '-Winvalid-utf8',
     '-Wliteral-suffix',
+    '-Wlogical-op',
     '-Wmismatched-tags',
     '-Wmissing-format-attribute',
     '-Wmissing-include-dirs',

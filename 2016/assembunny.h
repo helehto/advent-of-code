@@ -163,7 +163,7 @@ static void optimize(std::vector<Instruction> &prog)
             Instruction *dec = &prog[i + 3];
             Instruction *jnz = &prog[i + 4];
 
-            if (cpy1->opcode == OP_CPY_RR && cpy1->opcode == OP_CPY_RR &&
+            if (cpy1->opcode == OP_CPY_RR && cpy2->opcode == OP_CPY_RR &&
                 add->opcode == OP_ADD_RR && dec->opcode == OP_DEC_R &&
                 jnz->opcode == OP_JNZ_RI) {
                 auto outer_factor_reg = cpy1->op2;
