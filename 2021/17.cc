@@ -144,7 +144,7 @@ void run(std::string_view buf)
             const __m256i vyy = _mm256_add_epi16(_mm256_set1_epi16(vy), iota16);
             const size_t n = -y0 - vy + 1;
             const __m256i active_mask =
-                _mm256_loadu_si256((__m256i *)&mask_window[16 - std::min(n, 16zu)]);
+                _mm256_loadu_si256((const __m256i *)&mask_window[16 - std::min(n, 16zu)]);
             ymax = std::max(ymax, simulate16(vxx, vyy, active_mask, x0, x1, y0, y1, s));
         }
     }

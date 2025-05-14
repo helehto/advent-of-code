@@ -28,8 +28,8 @@ struct Deck {
         // Left-rotate by two pairs of overlapping 32-byte loads/stores that
         // are offset by one byte. (Note that this requires the array to be 65
         // bytes long to not read out of bounds.)
-        const __m256i asrc = _mm256_loadu_si256((__m256i *)&cards[1]);
-        const __m256i bsrc = _mm256_loadu_si256((__m256i *)&cards[33]);
+        const __m256i asrc = _mm256_loadu_si256((const __m256i *)&cards[1]);
+        const __m256i bsrc = _mm256_loadu_si256((const __m256i *)&cards[33]);
         _mm256_storeu_si256((__m256i *)&cards[0], asrc);
         _mm256_storeu_si256((__m256i *)&cards[32], bsrc);
         cards[64] = 0;
@@ -40,8 +40,8 @@ struct Deck {
     size_t size() const
     {
         const __m256i zero = _mm256_setzero_si256();
-        const __m256i a = _mm256_loadu_si256((__m256i *)&cards[0]);
-        const __m256i b = _mm256_loadu_si256((__m256i *)&cards[32]);
+        const __m256i a = _mm256_loadu_si256((const __m256i *)&cards[0]);
+        const __m256i b = _mm256_loadu_si256((const __m256i *)&cards[32]);
         const unsigned int cmplo = _mm256_movemask_epi8(_mm256_cmpgt_epi8(a, zero));
         const unsigned int cmphi = _mm256_movemask_epi8(_mm256_cmpgt_epi8(b, zero));
         return std::popcount((uint64_t)cmphi << 32 | cmplo);
@@ -56,10 +56,10 @@ struct Deck {
 
     bool operator==(const Deck &other) const
     {
-        const __m256i a0 = _mm256_loadu_si256((__m256i *)&cards[0]);
-        const __m256i a1 = _mm256_loadu_si256((__m256i *)&other.cards[0]);
-        const __m256i b0 = _mm256_loadu_si256((__m256i *)&cards[32]);
-        const __m256i b1 = _mm256_loadu_si256((__m256i *)&other.cards[32]);
+        const __m256i a0 = _mm256_loadu_si256((const __m256i *)&cards[0]);
+        const __m256i a1 = _mm256_loadu_si256((const __m256i *)&other.cards[0]);
+        const __m256i b0 = _mm256_loadu_si256((const __m256i *)&cards[32]);
+        const __m256i b1 = _mm256_loadu_si256((const __m256i *)&other.cards[32]);
         return (uint32_t)_mm256_movemask_epi8(_mm256_cmpeq_epi8(a0, a1)) == 0xffffffff &&
                (uint32_t)_mm256_movemask_epi8(_mm256_cmpeq_epi8(b0, b1)) == 0xffffffff;
     }

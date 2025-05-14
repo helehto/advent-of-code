@@ -363,7 +363,7 @@ public:
 
     dense_map()
         : buckets_(nullptr)
-        , states_((uint8_t *)detail::empty_map_states.data())
+        , states_(const_cast<uint8_t *>(detail::empty_map_states.data()))
         , capacity_(0)
         , size_(0)
         , size_with_tombs_(0)

@@ -21,14 +21,14 @@ static __m256i step_acre_avx2(const uint8_t *p, const size_t cols)
     const __m256i ky = _mm256_set1_epi8(YARD);
 
     // Load neighbors from above, the current row and below:
-    const __m256i u0 = _mm256_loadu_si256((__m256i *)(p - cols - 1));
-    const __m256i u1 = _mm256_loadu_si256((__m256i *)(p - cols));
-    const __m256i u2 = _mm256_loadu_si256((__m256i *)(p - cols + 1));
-    const __m256i c0 = _mm256_loadu_si256((__m256i *)(p - 1));
-    const __m256i c2 = _mm256_loadu_si256((__m256i *)(p + 1));
-    const __m256i d0 = _mm256_loadu_si256((__m256i *)(p + cols - 1));
-    const __m256i d1 = _mm256_loadu_si256((__m256i *)(p + cols));
-    const __m256i d2 = _mm256_loadu_si256((__m256i *)(p + cols + 1));
+    const __m256i u0 = _mm256_loadu_si256((const __m256i *)(p - cols - 1));
+    const __m256i u1 = _mm256_loadu_si256((const __m256i *)(p - cols));
+    const __m256i u2 = _mm256_loadu_si256((const __m256i *)(p - cols + 1));
+    const __m256i c0 = _mm256_loadu_si256((const __m256i *)(p - 1));
+    const __m256i c2 = _mm256_loadu_si256((const __m256i *)(p + 1));
+    const __m256i d0 = _mm256_loadu_si256((const __m256i *)(p + cols - 1));
+    const __m256i d1 = _mm256_loadu_si256((const __m256i *)(p + cols));
+    const __m256i d2 = _mm256_loadu_si256((const __m256i *)(p + cols + 1));
 
     // Count the number of neighboring trees and lumberyards. As trees are
     // represented as 0x01 and lumberyards as 0x10, the sum of all
@@ -41,7 +41,7 @@ static __m256i step_acre_avx2(const uint8_t *p, const size_t cols)
     const __m256i n_yards = _mm256_and_si256(neighbors, _mm256_set1_epi8(0xf * YARD));
 
     // The input acres and masks corresponding to their current states.
-    const __m256i input = _mm256_loadu_si256((__m256i *)p);
+    const __m256i input = _mm256_loadu_si256((const __m256i *)p);
     const __m256i emask = _mm256_cmpeq_epi8(input, ke);
     const __m256i tmask = _mm256_cmpeq_epi8(input, kt);
     const __m256i ymask = _mm256_cmpeq_epi8(input, ky);

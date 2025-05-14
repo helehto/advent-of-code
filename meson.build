@@ -59,6 +59,7 @@ cpp_args = [
     '-Wattribute-alias',
     '-Wbidi-chars=any',
     '-Wcast-align',
+    '-Wcast-qual',
     '-Wcatch-value=3',
     '-Wchanges-meaning',
     '-Wclass-conversion',

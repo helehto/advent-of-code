@@ -40,12 +40,12 @@ static void step_avx2(const int8_t *__restrict__ row_above,
                       const int8_t *__restrict__ row_below,
                       int8_t *dest)
 {
-    const __m256i a0 = _mm256_loadu_si256((__m256i *)row_above);
-    const __m256i a1 = _mm256_loadu_si256((__m256i *)(row_above + 1));
-    const __m256i b0 = _mm256_loadu_si256((__m256i *)(row_input - 1));
-    const __m256i b1 = _mm256_loadu_si256((__m256i *)(row_input + 1));
-    const __m256i c0 = _mm256_loadu_si256((__m256i *)(row_below - 1));
-    const __m256i c1 = _mm256_loadu_si256((__m256i *)row_below);
+    const __m256i a0 = _mm256_loadu_si256((const __m256i *)row_above);
+    const __m256i a1 = _mm256_loadu_si256((const __m256i *)(row_above + 1));
+    const __m256i b0 = _mm256_loadu_si256((const __m256i *)(row_input - 1));
+    const __m256i b1 = _mm256_loadu_si256((const __m256i *)(row_input + 1));
+    const __m256i c0 = _mm256_loadu_si256((const __m256i *)(row_below - 1));
+    const __m256i c1 = _mm256_loadu_si256((const __m256i *)row_below);
 
     const __m256i va = _mm256_add_epi8(a0, a1);
     const __m256i vb = _mm256_add_epi8(b0, b1);
@@ -56,7 +56,7 @@ static void step_avx2(const int8_t *__restrict__ row_above,
     const __m256i has2 = _mm256_cmpeq_epi8(neighbors, _mm256_set1_epi8(-2));
     const __m256i has1or2 = _mm256_or_si256(has1, has2);
 
-    const __m256i black = _mm256_loadu_si256((__m256i *)row_input);
+    const __m256i black = _mm256_loadu_si256((const __m256i *)row_input);
     const __m256i result = _mm256_blendv_epi8(has2, has1or2, black);
 
     _mm256_storeu_si256((__m256i *)dest, result);
