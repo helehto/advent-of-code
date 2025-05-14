@@ -507,7 +507,7 @@ public:
         return *this;
     }
 
-    ~small_vector() {}
+    constexpr ~small_vector() {}
 };
 
 template <std::equality_comparable T>

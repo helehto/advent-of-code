@@ -22,9 +22,7 @@ struct alignas(8) CacheKey {
 
     constexpr bool operator==(const CacheKey &o) const
     {
-        static_assert(sizeof(*this) == 8 && alignof(*this) == 8);
-        return *reinterpret_cast<const uint64_t *>(this) ==
-               *reinterpret_cast<const uint64_t *>(&o);
+        return std::bit_cast<uint64_t>(*this) == std::bit_cast<uint64_t>(o);
     }
 };
 

@@ -96,6 +96,7 @@ cpp_args = [
     '-Winaccessible-base',
     '-Winherited-variadic-ctor',
     '-Winit-list-lifetime',
+    '-Winvalid-constexpr',
     '-Winvalid-offsetof',
     '-Winvalid-utf8',
     '-Wliteral-suffix',
