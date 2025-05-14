@@ -94,7 +94,7 @@ constexpr std::array<int, 14> solve(const std::array<int, 9> &digits)
     ASSERT(false);
 }
 
-void run(std::string_view buf)
+void run(std::string_view)
 {
     fmt::print("{}\n", fmt::join(solve({9, 8, 7, 6, 5, 4, 3, 2, 1}), ""));
     fmt::print("{}\n", fmt::join(solve({1, 2, 3, 4, 5, 6, 7, 8, 9}), ""));

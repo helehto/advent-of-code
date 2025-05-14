@@ -121,7 +121,7 @@ void run(std::string_view buf)
         bq.emplace(0, init_state);
         dist[init_state] = 0;
 
-        auto expand = [&](const uint32_t d, const State prev, const State state) {
+        auto expand = [&](const uint32_t d, const State state) {
             if (const auto it = dist.emplace(state, UINT32_MAX).first; d < it->second) {
                 it->second = d;
                 bq.emplace(d, state);
@@ -151,8 +151,7 @@ void run(std::string_view buf)
                 if (pos[r] == 0xff) {
                     for (auto &[k, d, doors] : reachable_from_start[r]) {
                         if ((~keys & doors) == 0)
-                            expand(bq.current_priority() + d, *state,
-                                   state->move_robot(r, k));
+                            expand(bq.current_priority() + d, state->move_robot(r, k));
                     }
                 } else {
                     const uint32_t all_keys_mask = (uint32_t(1) << num_keys) - 1;
@@ -160,8 +159,7 @@ void run(std::string_view buf)
                         const uint32_t k = std::countr_zero(km);
                         const auto &[d, doors] = key_info(pos[r], k);
                         if ((~keys & doors) == 0)
-                            expand(bq.current_priority() + d, *state,
-                                   state->move_robot(r, k));
+                            expand(bq.current_priority() + d, state->move_robot(r, k));
                     }
                 }
             }

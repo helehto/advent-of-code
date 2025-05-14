@@ -6,6 +6,7 @@ project(
     'buildtype=release',
     'b_ndebug=if-release',
     'debug=true',
+    'warning_level=3',
   ],
 )
 
