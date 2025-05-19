@@ -1,74 +1,34 @@
 #include "common.h"
 #include "dense_map.h"
-#include <algorithm>
-#include <numeric>
-#include <ranges>
+#include "monotonic_bucket_queue.h"
+#include "small_vector.h"
 
 namespace aoc_2023_25 {
 
+struct Edge {
+    uint16_t to;
+    uint16_t weight;
+};
+
 struct Node {
-    int size = 1;
-    std::vector<uint16_t> edges;
-    std::vector<uint16_t> weights;
-
-    void add_directed_edge(uint16_t v, uint16_t weight)
-    {
-        for (size_t i = 0; i < edges.size(); i++) {
-            if (edges[i] == v) {
-                weights[i] += weight;
-                return;
-            }
-        }
-
-        ASSERT(edges.size() == weights.size());
-        edges.push_back(v);
-        weights.push_back(weight);
-    }
+    small_vector<Edge, 8> edges;
 };
 
 struct Graph {
     std::vector<Node> nodes;
     dense_map<std::string_view, uint16_t> node_map;
     std::vector<uint16_t> indices;
-
-    void add_edge(uint16_t u, uint16_t v, uint16_t weight)
-    {
-        nodes[u].add_directed_edge(v, weight);
-        nodes[v].add_directed_edge(u, weight);
-    }
-
-    void remove_vertex(uint16_t index)
-    {
-        auto it = std::ranges::find(indices, index);
-        ASSERT(it != indices.end());
-        erase_swap(indices, it - indices.begin());
-
-        for (auto other_index : nodes[index].edges) {
-            auto &other = nodes[other_index];
-            for (size_t i = 0; i < other.edges.size(); ++i) {
-                if (other.edges[i] == index) {
-                    erase_swap(other.edges, i);
-                    erase_swap(other.weights, i);
-                }
-            }
-        }
-    }
-
-    void merge_vertices(uint16_t u, uint16_t v)
-    {
-        const auto &t = nodes[v];
-
-        for (size_t i = 0; i < t.edges.size(); i++)
-            if (auto w = t.edges[i]; w != u)
-                add_edge(u, w, t.weights[i]);
-
-        remove_vertex(v);
-    }
 };
 
 static Graph parse_input(std::string_view buf)
 {
+    auto lines = split_lines(buf);
+
     Graph g;
+    g.nodes.reserve(lines.size());
+    g.node_map.reserve(lines.size());
+    g.indices.reserve(lines.size());
+
     auto get_node = [&](std::string_view s) -> uint16_t {
         auto [it, inserted] = g.node_map.try_emplace(s, g.nodes.size());
         if (inserted) {
@@ -79,68 +39,106 @@ static Graph parse_input(std::string_view buf)
     };
 
     std::vector<std::string_view> fields;
-    for (auto &line : split_lines(buf)) {
+    fields.reserve(16);
+    for (auto &line : lines) {
         split(line, fields, ' ');
         auto source = line.substr(0, line.find(':'));
-        for (size_t i = 1; i < fields.size(); ++i)
-            g.add_edge(get_node(source), get_node(fields[i]), 1);
+        for (size_t i = 1; i < fields.size(); ++i) {
+            const uint16_t u = get_node(source);
+            const uint16_t v = get_node(fields[i]);
+            g.nodes[u].edges.push_back(Edge{v});
+            g.nodes[v].edges.push_back(Edge{u});
+        }
     }
 
     return g;
 }
 
-static std::pair<int, int> min_cut_phase(Graph &g, uint16_t a)
+struct crc_hasher {
+    size_t operator()(uint32_t k) const noexcept { return _mm_crc32_u32(0, k); }
+};
+
+static void dijkstra(Graph &g,
+                     uint16_t start,
+                     std::vector<uint16_t> &dist,
+                     MonotonicBucketQueue<uint16_t> &bq)
 {
-    std::vector<int> connected_weights(g.nodes.size(), 0);
-    connected_weights[a] = INT_MIN / 2;
+    bq.clear();
+    bq.emplace(0, start);
 
-    BinaryHeap heap(λab(connected_weights[a] > connected_weights[b]), g.nodes.size());
+    dist.assign(g.nodes.size(), UINT16_MAX - 1);
+    dist[start] = 0;
 
-    auto propagate_weights = [&](Node &v) {
-        for (size_t i = 0; i < v.edges.size(); i++) {
-            connected_weights[v.edges[i]] += v.weights[i];
-            heap.decrease(v.edges[i]);
+    while (auto u = bq.pop()) {
+        if (dist[*u] != bq.current_priority())
+            continue;
+        for (auto &[v, weight] : g.nodes[*u].edges) {
+            if (auto new_dist = dist[*u] + 1; new_dist < dist[v]) {
+                dist[v] = new_dist;
+                bq.emplace(new_dist, v);
+                weight++;
+            }
         }
-    };
-    propagate_weights(g.nodes[a]);
-
-    Node *s = nullptr;
-    Node *t = nullptr;
-    for (size_t i = 1; i < g.indices.size(); i++) {
-        auto index = heap.top();
-        heap.pop();
-        s = std::exchange(t, &g.nodes[index]);
-        propagate_weights(*t);
     }
-    ASSERT(s);
-
-    s->size += t->size;
-    g.merge_vertices(s - g.nodes.data(), t - g.nodes.data());
-
-    auto cost = std::accumulate(begin(s->weights), end(s->weights), 0);
-    return std::pair(s->size, cost);
 }
 
-static int min_cut(Graph g)
+static int flood(Graph &g, uint32_t start)
 {
-    int cut_size = INT_MAX;
-    int min_weight = INT_MAX;
-    while (g.indices.size() > 2) {
-        auto [size, weight] = min_cut_phase(g, g.indices[0]);
-        if (min_weight > weight) {
-            min_weight = weight;
-            cut_size = size;
-        }
+    std::vector<uint8_t> visited(g.nodes.size(), false);
+    std::vector<uint32_t> queue;
+    queue.reserve(g.nodes.size());
+    queue.push_back(start);
+
+    while (!queue.empty()) {
+        auto u = queue.back();
+        queue.pop_back();
+        if (!std::exchange(visited[u], true))
+            for (auto v : g.nodes[u].edges)
+                queue.push_back(v.to);
     }
 
-    return cut_size;
+    return std::ranges::count(visited, true);
 }
 
 void run(std::string_view buf)
 {
     auto g = parse_input(buf);
-    int min_cut_size = min_cut(g);
-    fmt::print("{}\n", min_cut_size * (g.nodes.size() - min_cut_size));
+
+    int total_edges = std::ranges::fold_left(g.nodes, 0, λab(a + b.edges.size()));
+    MonotonicBucketQueue<uint16_t> bq(2);
+
+    // The general idea: run Dijkstra's algorithm for all nodes in the graph;
+    // the edges we are looking for will likely be the most traversed ones, as
+    // they are effectively the "bottlenecks" of getting from one component of
+    // the graph to the other.
+    std::vector<uint16_t> dist;
+    for (size_t i = 0; i < g.nodes.size(); ++i)
+        dijkstra(g, i, dist, bq);
+
+    dense_map<uint32_t, int, crc_hasher> edge_counts;
+    edge_counts.reserve(total_edges);
+    for (size_t u = 0; u < g.nodes.size(); ++u) {
+        for (const auto &[v, weight] : g.nodes[u].edges) {
+            const auto a = std::min<uint32_t>(u, v);
+            const auto b = std::max<uint32_t>(u, v);
+            edge_counts[a << 16 | b] += weight;
+        }
+    }
+
+    std::vector<std::pair<uint32_t, int>> by_weight(edge_counts.begin(),
+                                                    edge_counts.end());
+    std::ranges::sort(by_weight, λab(a.second > b.second));
+
+    uint16_t uu = by_weight[0].first >> 16;
+    for (size_t i = 0; i < 3; ++i) {
+        uint16_t u = by_weight[i].first >> 16;
+        uint16_t v = by_weight[i].first & 0xffff;
+        erase_if(g.nodes[u].edges, λa(a.to == v));
+        erase_if(g.nodes[v].edges, λa(a.to == u));
+    }
+
+    auto nodes = flood(g, uu);
+    fmt::print("{}\n", nodes * (g.nodes.size() - nodes));
 }
 
 }
