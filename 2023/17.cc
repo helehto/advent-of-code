@@ -1,4 +1,6 @@
 #include "common.h"
+#include "inplace_vector.h"
+#include "monotonic_bucket_queue.h"
 
 namespace aoc_2023_17 {
 
@@ -26,14 +28,10 @@ struct Neighbor {
     int cost;
 };
 
-static std::span<Neighbor> get_neighbors(std::array<Neighbor, 16> &result,
-                                         const Matrix<uint8_t> &m,
-                                         uint32_t node,
-                                         int min,
-                                         int max)
+static inplace_vector<Neighbor, 16>
+get_neighbors(const Matrix<uint8_t> &m, Vertex u, int min, int max)
 {
-    size_t count = 0;
-    auto u = Vertex::from_u32(node);
+    inplace_vector<Neighbor, 16> result;
 
     for (int turn = -1; turn <= 1; turn += 2) {
         uint8_t new_direction = (u.direction + turn) & 3;
@@ -53,54 +51,41 @@ static std::span<Neighbor> get_neighbors(std::array<Neighbor, 16> &result,
             if (!m.in_bounds(p))
                 break;
             cost += m(p);
-            result[count++] = {Vertex{p, new_direction}.to_u32(), cost};
+            result.unchecked_push_back(Neighbor{Vertex{p, new_direction}.to_u32(), cost});
         }
     }
 
-    return {result.data(), result.data() + count};
+    return result;
 }
 
 static int dijkstra(const Matrix<uint8_t> &grid,
                     std::initializer_list<uint32_t> start,
-                    std::vector<int> &dist,
+                    std::vector<uint32_t> &dist,
                     const int min_straight,
                     const int max_straight,
                     Vec2u8 goal)
 {
-    using VertexPlusDist = std::pair<uint32_t, int>;
-
-    auto proj = [&](const VertexPlusDist &v) { return v.second; };
-    DHeap<VertexPlusDist, decltype(proj)> heap(proj);
-
-    std::vector<decltype(heap)::Handle> handles(1 << 20);
+    MonotonicBucketQueue<uint32_t> bq(9 * max_straight + 1);
 
     for (uint32_t u : start) {
         dist[u] = 0;
-        handles[u] = heap.push({u, 0});
+        bq.emplace(0, u);
     }
 
-    while (!heap.empty()) {
-        auto [u, u_dist] = heap.top();
-        heap.pop();
+    while (auto u32 = bq.pop()) {
+        auto u = Vertex::from_u32(*u32);
+        if (u.p == goal)
+            return bq.current_priority();
 
-        if (Vertex::from_u32(u).p == goal)
-            return u_dist;
+        if (dist[*u32] != bq.current_priority())
+            continue;
 
-        std::array<Neighbor, 16> n;
-        for (auto [v, cost] : get_neighbors(n, grid, u, min_straight, max_straight)) {
-            const auto new_dist = u_dist + cost;
-
-            if (new_dist >= dist[v])
-                continue;
-
-            const auto old_dist = std::exchange(dist[v], new_dist);
-            if (old_dist == INT_MAX) {
-                handles[v] = heap.push({v, new_dist});
-                continue;
+        for (auto [v, cost] : get_neighbors(grid, u, min_straight, max_straight)) {
+            const auto new_dist = bq.current_priority() + cost;
+            if (new_dist < dist[v]) {
+                bq.emplace(new_dist, v);
+                dist[v] = new_dist;
             }
-
-            heap.get(handles[v]).second = new_dist;
-            heap.decrease_key(handles[v]);
         }
     }
 
@@ -120,7 +105,7 @@ void run(std::string_view buf)
         Vertex{{0, 0}, S}.to_u32(),
         Vertex{{0, 0}, E}.to_u32(),
     };
-    std::vector<int> dist(1 << 20, INT_MAX);
+    std::vector<uint32_t> dist(1 << 20, INT_MAX);
     fmt::print("{}\n", dijkstra(grid, start, dist, 0, 3, goal));
     std::ranges::fill(dist, INT_MAX);
     fmt::print("{}\n", dijkstra(grid, start, dist, 4, 10, goal));
