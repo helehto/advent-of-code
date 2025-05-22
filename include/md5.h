@@ -106,19 +106,36 @@ inline void prepare_final_blocks(Block8x8x64 &__restrict messages,
     }
 }
 
+// Prepare the final messages blocks by inserting the block lengths into the
+// `messages`, assuming that the messages are already padded with zero bits.
+inline void prepare_final_blocks(Block8x8x64 &__restrict messages,
+                                 std::optional<size_t> x80_offset,
+                                 const uint32_t (&__restrict length_bytes)[8])
+{
+    for (int i = 0; i < 8; i++) {
+        if (x80_offset)
+            messages.data[64 * i + *x80_offset] = 0x80;
+
+        // The message is never going to be more than 65536 bits.
+        messages.data[64 * i + 56] = (length_bytes[i] << 3) & 0xff;
+        messages.data[64 * i + 57] = (length_bytes[i] >> 5) & 0xff;
+    }
+}
+
 // Hash eight blocks simultaneously. The return values is an array where index
 // `k` contains the `k`:th 32-bit word of the eight resulting hashes.
-inline Result do_block_avx2(Block8x8x64 &__restrict messages)
+inline Result do_block_avx2(
+    Block8x8x64 &__restrict chunks, __m256i a0, __m256i b0, __m256i c0, __m256i d0)
 {
     // The original input is eight 64-byte blocks laid out one after another.
     // The actual MD5 code below expects memory to contain interleaved 4-byte
     // words from each block, so reshuffle the original input into that format.
-    Block32x16x8 M = permute_input(messages);
+    Block32x16x8 M = permute_input(chunks);
 
-    __m256i A = _mm256_set1_epi32(0x67452301);
-    __m256i B = _mm256_set1_epi32(0xefcdab89);
-    __m256i C = _mm256_set1_epi32(0x98badcfe);
-    __m256i D = _mm256_set1_epi32(0x10325476);
+    __m256i A = a0;
+    __m256i B = b0;
+    __m256i C = c0;
+    __m256i D = d0;
 
 #define F(b, c, d) _mm256_or_si256(_mm256_and_si256(b, c), _mm256_andnot_si256(b, d))
 #define G(b, c, d) _mm256_or_si256(_mm256_and_si256(d, b), _mm256_andnot_si256(d, c))
@@ -187,11 +204,20 @@ inline Result do_block_avx2(Block8x8x64 &__restrict messages)
 #undef QUARTER_ROUND
 
     return Result{
-        .a = _mm256_add_epi32(A, _mm256_set1_epi32(0x67452301)),
-        .b = _mm256_add_epi32(B, _mm256_set1_epi32(0xefcdab89)),
-        .c = _mm256_add_epi32(C, _mm256_set1_epi32(0x98badcfe)),
-        .d = _mm256_add_epi32(D, _mm256_set1_epi32(0x10325476)),
+        .a = _mm256_add_epi32(a0, A),
+        .b = _mm256_add_epi32(b0, B),
+        .c = _mm256_add_epi32(c0, C),
+        .d = _mm256_add_epi32(d0, D),
     };
+}
+
+inline Result do_block_avx2(Block8x8x64 &__restrict chunks)
+{
+    __m256i a0 = _mm256_set1_epi32(0x67452301);
+    __m256i b0 = _mm256_set1_epi32(0xefcdab89);
+    __m256i c0 = _mm256_set1_epi32(0x98badcfe);
+    __m256i d0 = _mm256_set1_epi32(0x10325476);
+    return do_block_avx2(chunks, a0, b0, c0, d0);
 }
 
 constexpr uint64_t ctpow(uint64_t base, int exp)
