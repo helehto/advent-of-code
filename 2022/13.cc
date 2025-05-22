@@ -1,38 +1,42 @@
 #include "common.h"
-#include <algorithm>
+#include "small_vector.h"
 #include <optional>
-#include <variant>
 
 namespace aoc_2022_13 {
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 struct Packet {
-    std::variant<int, std::vector<Packet>> data;
+    // Each element in this element is either an index into the storage (if
+    // positive), or the bitwise NOT of a constant (if negative).
+    small_vector<int16_t, 8> data;
 };
-#pragma GCC diagnostic pop
 
-static std::weak_ordering operator<=>(const Packet &a, const Packet &b)
+static std::weak_ordering compare(std::span<const Packet> storage,
+                                  std::span<const int16_t> a,
+                                  std::span<const int16_t> b);
+
+static std::weak_ordering
+compare(std::span<const Packet> storage, const int16_t a, const int16_t b)
 {
-    auto *ia = std::get_if<int>(&a.data);
-    auto *ib = std::get_if<int>(&b.data);
-    auto *va = std::get_if<std::vector<Packet>>(&a.data);
-    auto *vb = std::get_if<std::vector<Packet>>(&b.data);
-
-    if (ia && ib) {
-        return *ia <=> *ib;
-    } else if (va && vb) {
-        return *va <=> *vb;
-    } else if (ia && vb) {
-        std::vector<Packet> ta{Packet{*ia}};
-        return Packet{ta} <=> b;
+    if (a >= 0 && b >= 0) {
+        return compare(storage, storage[a].data, storage[b].data);
+    } else if (a >= 0 && b < 0) {
+        return compare(storage, storage[a].data, std::span(&b, 1));
+    } else if (a < 0 && b >= 0) {
+        return compare(storage, std::span(&a, 1), storage[b].data);
     } else {
-        std::vector<Packet> tb{Packet{*ib}};
-        return a <=> Packet{tb};
+        return ~a <=> ~b;
     }
 }
 
-static std::optional<Packet> parse_packet(std::string_view &s)
+static std::weak_ordering compare(std::span<const Packet> storage,
+                                  std::span<const int16_t> a,
+                                  std::span<const int16_t> b)
+{
+    return std::lexicographical_compare_three_way(a.begin(), a.end(), b.begin(), b.end(),
+                                                  λxy(compare(storage, x, y)));
+}
+
+static std::optional<int> parse_packet(std::vector<Packet> &storage, std::string_view &s)
 {
     if (s.empty())
         return std::nullopt;
@@ -42,19 +46,20 @@ static std::optional<Packet> parse_packet(std::string_view &s)
         auto r = std::from_chars(begin(s), end(s), v);
         ASSERT(r.ec == std::errc());
         s.remove_prefix(r.ptr - &s[0]);
-        return Packet{v};
+        return ~v;
     }
 
     if (s.front() == '[') {
-        std::vector<Packet> v;
+        const int result = storage.size();
+        storage.emplace_back();
         s.remove_prefix(1);
 
         while (true) {
-            auto p = parse_packet(s);
+            std::optional<int> p = parse_packet(storage, s);
             if (!p)
                 break;
             ASSERT(!s.empty());
-            v.emplace_back(*p);
+            storage[result].data.emplace_back(*p);
             if (s.front() == ']')
                 break;
             ASSERT(s.front() == ',');
@@ -63,15 +68,15 @@ static std::optional<Packet> parse_packet(std::string_view &s)
 
         ASSERT(s.front() == ']');
         s.remove_prefix(1);
-        return Packet{std::move(v)};
+        return result;
     }
 
     return std::nullopt;
 }
 
-static Packet parse_line(std::string_view s)
+static int parse_line(std::vector<Packet> &storage, std::string_view s)
 {
-    auto p = parse_packet(s);
+    std::optional<int> p = parse_packet(storage, s);
     ASSERT(p);
     ASSERT(s.empty());
     return *p;
@@ -79,34 +84,44 @@ static Packet parse_line(std::string_view s)
 
 void run(std::string_view buf)
 {
-    std::vector<Packet> packets;
+    const auto lines = split_lines(buf);
 
-    for (std::string_view s : split_lines(buf)) {
+    std::vector<Packet> storage;
+    storage.reserve(2 * std::ranges::count(buf, '['));
+
+    std::vector<int> packets;
+    packets.reserve(lines.size() + 2);
+
+    for (std::string_view s : lines) {
         if (!s.empty())
-            packets.push_back(parse_line(s));
+            packets.push_back(parse_line(storage, s));
     }
 
-    size_t sum = 0;
-    for (size_t i = 0; i < packets.size(); i += 2) {
-        if (packets[i] < packets[i + 1])
-            sum += i / 2 + 1;
-    }
-    fmt::print("{}\n", sum);
-
-    Packet a = parse_line("[[2]]");
-    Packet b = parse_line("[[6]]");
-    packets.push_back(a);
-    packets.push_back(b);
-    std::sort(begin(packets), end(packets));
-
-    size_t key = 1;
-    for (size_t i = 0; i < packets.size(); i++) {
-        if ((packets[i] <=> a) == std::weak_ordering::equivalent ||
-            (packets[i] <=> b) == std::weak_ordering::equivalent) {
-            key *= i + 1;
+    // Part 1:
+    {
+        size_t sum = 0;
+        for (size_t i = 0; i < packets.size(); i += 2) {
+            if (std::is_lt(compare(storage, packets[i], packets[i + 1])))
+                sum += i / 2 + 1;
         }
+        fmt::print("{}\n", sum);
     }
-    fmt::print("{}\n", key);
+
+    // Part 2:
+    {
+        int a = parse_line(storage, "[[2]]");
+        int b = parse_line(storage, "[[6]]");
+        packets.push_back(a);
+        packets.push_back(b);
+        std::ranges::sort(packets, λxy(std::is_lt(compare(storage, x, y))));
+
+        size_t key = 1;
+        for (size_t i = 0; i < packets.size(); i++) {
+            if (packets[i] == a || packets[i] == b)
+                key *= i + 1;
+        }
+        fmt::print("{}\n", key);
+    }
 }
 
 }
