@@ -1,8 +1,5 @@
 #include "common.h"
-#include <climits>
-#include <numeric>
-#include <unordered_map>
-#include <unordered_set>
+#include "dense_set.h"
 
 template <>
 struct std::hash<std::array<int, 3>> {
@@ -24,7 +21,7 @@ static Cube with_offset(Cube c, int dim, int delta)
     return c;
 }
 
-static int sum_surface_area(const std::unordered_set<Cube> &cubes)
+static int sum_surface_area(const dense_set<Cube> &cubes)
 {
     int sum = 0;
     for (auto &c : cubes) {
@@ -41,7 +38,7 @@ static int sum_surface_area(const std::unordered_set<Cube> &cubes)
     return sum;
 }
 
-static std::unordered_set<Cube> flood(std::unordered_set<Cube> occupied)
+static dense_set<Cube> flood(dense_set<Cube> occupied)
 {
     int min[3] = {INT_MAX, INT_MAX, INT_MAX};
     int max[3] = {INT_MIN, INT_MIN, INT_MIN};
@@ -79,7 +76,8 @@ static std::unordered_set<Cube> flood(std::unordered_set<Cube> occupied)
         }
     }
 
-    std::unordered_set<Cube> unvisited;
+    dense_set<Cube> unvisited;
+    unvisited.reserve(2048);
 
     for (int x = min[0]; x < max[0]; x++) {
         for (int y = min[1]; y < max[1]; y++) {
@@ -96,8 +94,10 @@ static std::unordered_set<Cube> flood(std::unordered_set<Cube> occupied)
 
 void run(std::string_view buf)
 {
-    std::unordered_set<Cube> cubes;
-    for (std::string_view line : split_lines(buf))
+    const auto lines = split_lines(buf);
+    dense_set<Cube> cubes;
+    cubes.reserve(lines.size());
+    for (std::string_view line : lines)
         cubes.insert(find_numbers_n<int, 3>(line));
 
     const auto area = sum_surface_area(cubes);
