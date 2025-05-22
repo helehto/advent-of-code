@@ -131,7 +131,7 @@ public:
     {
         DEBUG_ASSERT(other.n_ <= Capacity);
         for (size_type i = 0; i < n_; ++i)
-            std::construct_at(ptr(i), other.ptr(i));
+            std::construct_at(ptr(i), *other.ptr(i));
     }
 
     constexpr inplace_vector(inplace_vector &&other) noexcept(
@@ -141,7 +141,7 @@ public:
     {
         DEBUG_ASSERT(other.n_ <= Capacity);
         for (size_type i = 0; i < n_; ++i)
-            std::construct_at(ptr(i), static_cast<T &&>(other.ptr(i)));
+            std::construct_at(ptr(i), static_cast<T &&>(*other.ptr(i)));
     }
 
     constexpr ~inplace_vector() noexcept(noexcept(std::is_nothrow_destructible_v<T>))
