@@ -542,7 +542,6 @@ struct Matrix {
     {
         std::ranges::fill(all(), value);
     }
-#pragma GCC diagnostic pop
 
     constexpr Matrix(const Matrix &other)
         : data(new T[other.rows * other.cols])
@@ -551,6 +550,7 @@ struct Matrix {
     {
         std::ranges::copy(other.all(), data.get());
     }
+#pragma GCC diagnostic pop
 
     constexpr Matrix &operator=(const Matrix &other)
     {
