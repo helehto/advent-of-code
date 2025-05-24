@@ -100,7 +100,6 @@ void run(std::string_view buf)
     dense_set<Vec2u16> visited_points;
     dense_set<State, State::Hasher> visited_states;
     walk2(grid, start, visited_states, &visited_points);
-    fmt::print("{}\n", visited_points.size());
 
     int n_loops = 0;
     for (auto p : visited_points) {
