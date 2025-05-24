@@ -45,7 +45,6 @@ void run(std::string_view buf)
         p += d;
         vm.output.clear();
     }
-    fmt::print("{}\n", white_panels.size());
 
     int16_t min_x = INT16_MAX;
     int16_t min_y = INT16_MAX;
