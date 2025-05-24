@@ -80,6 +80,7 @@ static void redirect_stdout(int &memfd, int &original_stdout)
 
     if (memfd >= 0) {
         ASSERT_ERRNO_MSG(lseek(memfd, 0, SEEK_SET) >= 0, "lseek");
+        ASSERT_ERRNO_MSG(ftruncate(memfd, 0) >= 0, "ftruncate");
     } else {
         memfd = memfd_create("output", MFD_CLOEXEC);
         ASSERT_ERRNO_MSG(memfd >= 0, "memfd_create");
