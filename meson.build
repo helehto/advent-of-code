@@ -40,6 +40,26 @@ config_h = configure_file(
   configuration: {'PROBLEMS': xmacro_body}
 )
 
+extra_warning_flags = []
+if get_option('uberpedantic')
+  foreach line : import('fs').read('meson-warning-flags.txt').split('\n')
+    line = line.strip()
+    if line == '' or line.startswith('#')
+      continue
+    endif
+
+    if line.contains(':')
+      fields = line.split(':')
+      if fields[0] != cpp.get_id()
+        continue
+      endif
+      line = fields[1].strip()
+    endif
+
+    extra_warning_flags += line
+  endforeach
+endif
+
 cpp_args = [
   # Try to make use of anything that the CPU supports for optimization.
   '-march=native',
@@ -52,112 +72,14 @@ cpp_args = [
   #'-fno-exceptions',
   #'-fno-rtti',
 
-  get_option('uberpedantic') ? cpp.get_supported_arguments(
-    '-Walloca',
-    '-Warray-bounds=2',
-    '-Warray-parameter=2',
-    '-Wattribute-alias',
-    '-Wbidi-chars=any',
-    '-Wcast-align',
-    '-Wcast-qual',
-    '-Wcatch-value=3',
-    '-Wchanges-meaning',
-    '-Wclass-conversion',
-    '-Wcomma-subscript',
-    '-Wcomments',
-    '-Wconditionally-supported',
-    '-Wconversion-null',
-    '-Wctor-dtor-privacy',
-    '-Wdefaulted-function-deleted',
-    '-Wdelete-incomplete',
-    '-Wdeprecated-copy-dtor',
-    '-Wdeprecated-enum-enum-conversion',
-    '-Wdeprecated-enum-float-conversion',
-    '-Wdeprecated-literal-operator',
-    '-Wdeprecated-variadic-comma-omission',
-    '-Wdisabled-optimization',
-    '-Wdouble-promotion',
-    '-Wduplicated-branches',
-    '-Wduplicated-cond',
-    '-Welaborated-enum-base',
-    '-Wexceptions',
-    '-Wextra-semi',
-    '-Wfloat-equal',
-    '-Wformat',
-    '-Wformat-nonliteral',
-    '-Wformat-overflow=2',
-    '-Wformat-security',
-    '-Wformat-signedness',
-    '-Wformat-truncation=2',
-    '-Wformat-y2k',
-    '-Wformat=2',
-    '-Wglobal-module',
-    '-Wimplicit-fallthrough=5',
-    '-Winaccessible-base',
-    '-Winherited-variadic-ctor',
-    '-Winit-list-lifetime',
-    '-Winvalid-constexpr',
-    '-Winvalid-offsetof',
-    '-Winvalid-utf8',
-    '-Wliteral-suffix',
-    '-Wlogical-op',
-    '-Wmismatched-tags',
-    '-Wmissing-format-attribute',
-    '-Wmissing-include-dirs',
-    '-Wmissing-noreturn',
-    '-Wmissing-requires',
-    '-Wmissing-template-keyword',
-    '-Wmultichar',
-    '-Wnoexcept',
-    '-Wnon-template-friend',
-    '-Wnon-virtual-dtor',
-    '-Wnormalized',
-    '-Wnrvo',
-    '-Woverlength-strings',
-    '-Woverloaded-virtual=2',
-    '-Wpacked',
-    '-Wpacked-bitfield-compat',
-    '-Wplacement-new=2',
-    '-Wpmf-conversions',
-    '-Wpointer-arith',
-    '-Wshift-overflow=2',
-    '-Wsign-promo',
-    '-Wstrict-aliasing=3',
-    '-Wstrict-null-sentinel',
-    '-Wstrict-overflow=1',
-    '-Wsuggest-attribute=cold',
-    '-Wsuggest-attribute=format',
-    '-Wsuggest-attribute=malloc',
-    '-Wsuggest-attribute=noreturn',
-    '-Wsuggest-attribute=returns_nonnull',
-    '-Wsuggest-override',
-    '-Wswitch-enum',
-    '-Wtemplate-id-cdtor',
-    '-Wterminate',
-    '-Wtrampolines',
-    '-Wtrivial-auto-var-init',
-    '-Wunreachable-code',
-    '-Wunsafe-loop-optimizations',
-    '-Wunused-const-variable=2',
-    '-Wunused-macros',
-    '-Wunused-parameter',
-    '-Wuse-after-free=3',
-    '-Wuseless-cast',
-    '-Wvariadic-macros',
-    '-Wvector-operation-performance',
-    '-Wvexing-parse',
-    '-Wvirtual-inheritance',
-    '-Wvirtual-move-assign',
-    '-Wvla',
-    '-Wvolatile',
-    '-Wwrite-strings',
-    '-Wzero-as-null-pointer-constant',
-  ) : [],
-
  cpp.get_supported_arguments(
+   extra_warning_flags,
+
     # Warnings that we don't care about:
     '-Wno-missing-field-initializers',
     '-Wno-pedantic',
+    '-Wno-unknown-pragmas',
+    '-Wno-unknown-warning-option',
 
     # False positives which are hard to squelch:
     '-Wno-stringop-overflow',
