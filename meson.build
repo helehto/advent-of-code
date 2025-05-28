@@ -184,7 +184,10 @@ executable(
   config_h,
   'main.cc',
   cpp_args: cpp_args,
-  dependencies: [dependency('eigen3'), dependency('fmt')],
+  dependencies: [
+    dependency('eigen3', include_type: 'system'),
+    dependency('fmt'),
+  ],
   include_directories: include_directories('include'),
   link_args: link_args,
 )

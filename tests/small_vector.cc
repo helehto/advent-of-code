@@ -5,7 +5,11 @@
 
 #define DOCTEST_CONFIG_SUPER_FAST_ASSERTS
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-W#warnings"
 #include <doctest/doctest.h>
+#pragma clang diagnostic pop
 
 // Check that constructors and noexcept specifications are sane with POD type.
 static_assert(!std::is_default_constructible_v<small_vector_base<int>>);

@@ -16,7 +16,7 @@ hash_search(std::string_view s, int n, int stride, std::atomic_int &limit)
 
     md5::State md5(s);
 
-    for (size_t i = 0; n < limit.load(); i++, n += stride) {
+    for (; n < limit.load(); n += stride) {
         __m256i hashes = md5.run(n).a;
 
         if (uint32_t eqmask5 = md5::leading_zero_mask<5>(hashes))

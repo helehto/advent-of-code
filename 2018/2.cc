@@ -27,7 +27,7 @@ void run(std::string_view buf)
             auto b = lines[j];
 
             int diffs = 0;
-            size_t index;
+            size_t index = 0;
             for (size_t k = 0; k < a.size() && diffs <= 1; k++) {
                 if (a[k] != b[k]) {
                     index = k;

@@ -178,7 +178,7 @@ void run(std::string_view buf)
                 new_items[new_floor].combined |= items_mask;
 
                 if (new_items[old_floor].safe() && new_items[new_floor].safe()) {
-                    const State new_state{new_items, new_floor};
+                    const State new_state{{new_items}, new_floor};
                     if (seen.insert(new_state.canonicalize()).second)
                         queue.emplace_back(new_state, steps + 1);
                 }

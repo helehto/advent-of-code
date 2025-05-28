@@ -32,7 +32,7 @@ void run(std::string_view buf)
         f_score(start) = manhattan(start, end);
 
         while (true) {
-            std::vector<Vec2u16> *bucket;
+            std::vector<Vec2u16> *bucket = nullptr;
             size_t i = 0;
             for (; i < queue.size(); i++, d++)
                 if (bucket = &queue[d & (queue.size() - 1)], !bucket->empty())

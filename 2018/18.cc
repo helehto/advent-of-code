@@ -37,8 +37,10 @@ static __m256i step_acre_avx2(const uint8_t *p, const size_t cols)
     const __m256i neighbors = _mm256_add_epi8(
         _mm256_add_epi8(_mm256_add_epi8(u0, u1), _mm256_add_epi8(u2, c0)),
         _mm256_add_epi8(_mm256_add_epi8(c2, d0), _mm256_add_epi8(d1, d2)));
-    const __m256i n_trees = _mm256_and_si256(neighbors, _mm256_set1_epi8(0xf * TREE));
-    const __m256i n_yards = _mm256_and_si256(neighbors, _mm256_set1_epi8(0xf * YARD));
+    const __m256i n_trees =
+        _mm256_and_si256(neighbors, _mm256_set1_epi8(static_cast<int8_t>(0xf * TREE)));
+    const __m256i n_yards =
+        _mm256_and_si256(neighbors, _mm256_set1_epi8(static_cast<int8_t>(0xf * YARD)));
 
     // The input acres and masks corresponding to their current states.
     const __m256i input = _mm256_loadu_si256((const __m256i *)p);

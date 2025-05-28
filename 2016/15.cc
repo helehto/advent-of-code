@@ -12,7 +12,7 @@ void run(std::string_view buf)
     rhs.reserve(lines.size() + 1);
 
     for (int i = 0; std::string_view line : lines) {
-        auto [_, m, __, pos] = find_numbers_n<int, 4>(line);
+        auto [_1, m, _2, pos] = find_numbers_n<int, 4>(line);
         moduli.push_back(m);
         rhs.push_back(modulo<int>(-pos - i - 1, m));
         i++;

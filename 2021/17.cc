@@ -97,7 +97,6 @@ static int simulate16(__m256i vx,
     _mm256_storeu_si256((__m256i *)&v[8], _mm256_unpackhi_epi16(orig_vx, orig_vy));
 
     const uint32_t reached_mask_u32 = _mm256_movemask_epi8(reached_mask);
-    inplace_vector<Vec2i16, 16> result;
     for (auto m = reached_mask_u32; m; m &= m - 1, m &= m - 1)
         valid_velocities.insert(v[std::countr_zero(m) / 2]);
 

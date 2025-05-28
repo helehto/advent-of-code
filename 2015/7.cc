@@ -48,7 +48,7 @@ static Input parse_input(std::string_view buf)
         result.gate_index.emplace(rhs, i++);
     }
 
-    for (int i = 0; std::string_view line : lines) {
+    for (std::string_view line : lines) {
         auto arrow = line.find(" -> ");
         ASSERT(arrow != std::string_view::npos);
         auto lhs = line.substr(0, arrow);
@@ -103,8 +103,6 @@ static Input parse_input(std::string_view buf)
                 .type = GateType::passthru,
             });
         }
-
-        ++i;
     }
 
     return result;

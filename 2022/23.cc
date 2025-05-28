@@ -80,10 +80,10 @@ void run(std::string_view buf)
     };
 
     std::array<Dir, 4> dirs = {{
-        {gen_mask(0, 1, 2), 0, -1},
-        {gen_mask(5, 6, 7), 0, 1},
-        {gen_mask(0, 3, 5), -1, 0},
-        {gen_mask(2, 4, 7), 1, 0},
+        {gen_mask(0, 1, 2), {0, -1}},
+        {gen_mask(5, 6, 7), {0, 1}},
+        {gen_mask(0, 3, 5), {-1, 0}},
+        {gen_mask(2, 4, 7), {1, 0}},
     }};
 
     Map map;

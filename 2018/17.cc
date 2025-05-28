@@ -59,8 +59,7 @@ void run(std::string_view buf)
     small_vector<Vec2i, 64> sources;
     sources.push_back({500 - xmin + 1, std::max(0, -ymin)});
 
-    size_t i = 0;
-    for (; !sources.empty(); ++i) {
+    while (!sources.empty()) {
         Vec2i p = sources.back();
         sources.pop_back();
 

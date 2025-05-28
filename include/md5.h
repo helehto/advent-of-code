@@ -265,7 +265,7 @@ constexpr uint64_t ctpow(uint64_t base, int exp)
         q[-1] = n + '0';
     }
 
-    return {p + ndigits};
+    return p + ndigits;
 }
 
 namespace detail {
@@ -286,7 +286,7 @@ static_assert(make_leading_zero_mask<6>() == 0xffffff);
 /// Return a 8-bit mask with a bit set for each element in `hashes` that
 /// has at least `N` leading zeroes when written as hexadecimal.
 template <size_t N>
-static uint32_t leading_zero_mask(const __m256i hashes)
+inline uint32_t leading_zero_mask(const __m256i hashes)
 {
     const auto mask = _mm256_set1_epi32(detail::make_leading_zero_mask<N>());
     const auto zero = _mm256_setzero_si256();

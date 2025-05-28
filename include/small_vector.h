@@ -112,7 +112,7 @@ protected:
         return const_cast<small_vector_base &>(*this).inline_buffer();
     }
 
-    constexpr void __grow_uninitialized_exact(const size_type desired_capacity)
+    constexpr void grow_uninitialized_exact_impl(const size_type desired_capacity)
     {
         T *newp = allocate_buffer(desired_capacity);
         std::uninitialized_move(begin(), end(), newp);
@@ -126,7 +126,7 @@ protected:
     grow_uninitialized_exact(const size_type desired_capacity)
     {
         DEBUG_ASSERT(desired_capacity > capacity_);
-        __grow_uninitialized_exact(desired_capacity);
+        grow_uninitialized_exact_impl(desired_capacity);
     }
 
     [[gnu::noinline]] constexpr void
@@ -135,12 +135,12 @@ protected:
         DEBUG_ASSERT(desired_capacity > capacity_);
         const size_t delta = desired_capacity - capacity_;
         const size_t shift = std::countr_zero(std::bit_ceil(delta));
-        __grow_uninitialized_exact(capacity_ << shift);
+        grow_uninitialized_exact_impl(capacity_ << shift);
     }
 
     [[gnu::noinline]] constexpr void grow_uninitialized_one_more()
     {
-        __grow_uninitialized_exact(2 * capacity_);
+        grow_uninitialized_exact_impl(2 * capacity_);
     }
 
     constexpr iterator make_room_for_insertion(const_iterator pos, const size_type count)

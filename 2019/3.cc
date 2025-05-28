@@ -35,7 +35,7 @@ void run(std::string_view buf)
                 steps_maps[i].emplace(p, ++steps);
             }
         }
-    };
+    }
 
     std::vector<Vec2i16> crossings;
     crossings.reserve(visited.size());

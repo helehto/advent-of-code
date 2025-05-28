@@ -698,7 +698,7 @@ constexpr static std::array<Vec2<T>, 4> neighbors4(Vec2<T> p)
 }
 
 template <typename T, typename U>
-static inplace_vector<Vec2<U>, 4> neighbors4(const Matrix<T> &chart, Vec2<U> p)
+inline inplace_vector<Vec2<U>, 4> neighbors4(const Matrix<T> &chart, Vec2<U> p)
 {
     inplace_vector<Vec2<U>, 4> result;
     for (auto n : neighbors4(p))
@@ -724,7 +724,7 @@ constexpr static std::array<Vec2<T>, 8> neighbors8(Vec2<T> p)
 }
 
 template <typename T, typename U>
-static inplace_vector<Vec2<U>, 8> neighbors8(const Matrix<T> &grid, Vec2<U> p)
+inline inplace_vector<Vec2<U>, 8> neighbors8(const Matrix<T> &grid, Vec2<U> p)
 {
     inplace_vector<Vec2<U>, 8> result;
     for (auto n : neighbors8(p))

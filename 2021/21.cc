@@ -97,12 +97,12 @@ part2(dense_map<State, std::pair<int64_t, int64_t>> &cache, const State &state)
 
 void run(std::string_view buf)
 {
-    auto [_, a, __, b] = find_numbers_n<uint8_t, 4>(buf);
+    auto [_1, a, _2, b] = find_numbers_n<uint8_t, 4>(buf);
     fmt::print("{}\n", part1({a, b}));
 
     dense_map<State, std::pair<int64_t, int64_t>> cache;
     cache.reserve(1 << 16);
-    auto [a_universes, b_universes] = part2(cache, State{.p = {a, b}});
+    auto [a_universes, b_universes] = part2(cache, State{.p = {.pos = {a, b}}});
     fmt::print("{}\n", std::max(a_universes, b_universes));
 }
 

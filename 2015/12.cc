@@ -78,7 +78,6 @@ int64_t Parser::parse_array()
 
 Entity Parser::parse_entity()
 {
-    std::string_view key;
     int64_t value;
 
     switch (peek()) {
