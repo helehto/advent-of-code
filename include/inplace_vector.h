@@ -436,8 +436,7 @@ static_assert(std::is_trivially_copy_constructible_v<inplace_vector<int, 2>>);
 static_assert(std::is_trivially_move_constructible_v<inplace_vector<int, 2>>);
 
 template <typename T, size_t N>
-void std::swap(inplace_vector<T, N> &a,
-               inplace_vector<T, N> &b) noexcept(noexcept(a.swap(b)))
+void swap(inplace_vector<T, N> &a, inplace_vector<T, N> &b) noexcept(noexcept(a.swap(b)))
 {
     a.swap(b);
 }
