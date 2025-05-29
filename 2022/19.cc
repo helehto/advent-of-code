@@ -26,23 +26,11 @@ struct alignas(8) CacheKey {
     }
 };
 
-} // namespace aoc_2022_19
-
-template <>
-struct std::hash<aoc_2022_19::CacheKey> {
-    size_t operator()(const aoc_2022_19::CacheKey &k) const noexcept
-    {
-        return _mm_crc32_u64(0, std::bit_cast<uint64_t>(k));
-    }
-};
-
-namespace aoc_2022_19 {
-
 struct SearchParameters {
     Blueprint blueprint;
     int target;
     std::array<uint8_t, 3> max_cost_per_material;
-    dense_map<CacheKey, int> &cache;
+    dense_map<CacheKey, int, CrcHasher> &cache;
     int largest = 0;
 };
 
@@ -152,7 +140,7 @@ void run(std::string_view buf)
 
     int part1 = 0;
     int part2 = 1;
-    dense_map<CacheKey, int> cache;
+    dense_map<CacheKey, int, CrcHasher> cache;
     for (size_t i = 0; i < blueprints.size(); i++) {
         std::array<uint8_t, 3> max_cost_per_material;
         for (size_t j = 0; j < 4; j++) {

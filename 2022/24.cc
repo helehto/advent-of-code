@@ -63,30 +63,6 @@ struct GMapEntry {
     constexpr bool operator==(const GMapEntry &) const = default;
 };
 
-} // namespace aoc_2022_24
-
-template <>
-struct std::hash<aoc_2022_24::QueueEntry> {
-    constexpr size_t operator()(const aoc_2022_24::QueueEntry &e) const noexcept
-    {
-        size_t h = 0;
-        hash_combine(h, e.v, e.heuristic, e.time);
-        return h;
-    }
-};
-
-template <>
-struct std::hash<aoc_2022_24::GMapEntry> {
-    constexpr size_t operator()(const aoc_2022_24::GMapEntry &q) const noexcept
-    {
-        size_t h = 0;
-        hash_combine(h, q.start, q.time);
-        return h;
-    }
-};
-
-namespace aoc_2022_24 {
-
 void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
@@ -109,7 +85,7 @@ void run(std::string_view buf)
         }
     }
 
-    dense_map<GMapEntry, int> g;
+    dense_map<GMapEntry, int, CrcHasher> g;
     auto search = [&](int t, Vec2i start, Vec2i goal) -> std::tuple<int, int> {
         g.clear();
         g.insert({{start, t}, 0});

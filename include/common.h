@@ -24,27 +24,6 @@
 #include <vector>
 #include <x86intrin.h>
 
-template <typename T, typename... Rest>
-constexpr void hash_combine(std::size_t &h, const T &v, const Rest &...rest) noexcept
-{
-    const std::uint64_t m = 0xc6a4a7935bd1e995ULL;
-    std::uint64_t k = std::hash<T>{}(v);
-    const int r = 47;
-
-    k *= m;
-    k ^= k >> r;
-    k *= m;
-
-    h ^= k;
-    h *= m;
-
-    // Completely arbitrary number, to prevent 0's
-    // from hashing to 0.
-    h += 0xe6546b64;
-
-    (hash_combine(h, rest), ...);
-}
-
 template <typename T>
 struct Vec2 {
     T x;
@@ -146,23 +125,19 @@ constexpr T manhattan(const Vec2<T> &a, const Vec2<T> &b)
 
 template <typename T>
 struct std::hash<Vec2<T>> {
-    constexpr size_t operator()(const Vec2<T> &p) const noexcept
+    size_t operator()(const Vec2<T> &p) const noexcept
     {
-        if (!std::is_constant_evaluated()) {
-            if constexpr (sizeof(T) == 1) {
-                return _mm_crc32_u64(0, std::bit_cast<uint16_t>(p));
-            } else if constexpr (sizeof(T) == 2) {
-                return _mm_crc32_u64(0, std::bit_cast<uint32_t>(p));
-            } else if constexpr (sizeof(T) == 4) {
-                return _mm_crc32_u64(0, std::bit_cast<uint64_t>(p));
-            } else if constexpr (sizeof(T) == 8) {
-                return _mm_crc32_u64(_mm_crc32_u64(0, p.x), p.y);
-            }
+        if constexpr (sizeof(T) == 1) {
+            return _mm_crc32_u64(0, std::bit_cast<uint16_t>(p));
+        } else if constexpr (sizeof(T) == 2) {
+            return _mm_crc32_u64(0, std::bit_cast<uint32_t>(p));
+        } else if constexpr (sizeof(T) == 4) {
+            return _mm_crc32_u64(0, std::bit_cast<uint64_t>(p));
+        } else if constexpr (sizeof(T) == 8) {
+            return _mm_crc32_u64(_mm_crc32_u64(0, p.x), p.y);
+        } else {
+            static_assert(false);
         }
-
-        size_t h = 0;
-        hash_combine(h, p.x, p.y);
-        return h;
     }
 };
 
@@ -734,14 +709,63 @@ inline inplace_vector<Vec2<U>, 8> neighbors8(const Matrix<T> &grid, Vec2<U> p)
     return result;
 }
 
-struct TuplelikeHasher {
-    template <typename... Ts>
-    size_t operator()(const std::tuple<Ts...> &tuple) const
+struct CrcHasher {
+    size_t operator()(std::integral auto value) const noexcept
     {
-        size_t h = 0;
-        std::apply([&]<typename... Elems>(
-                       const auto &...elems) mutable { hash_combine(h, elems...); },
-                   tuple);
-        return h;
+        return _mm_crc32_u64(0, static_cast<uint64_t>(value));
+    }
+
+    size_t operator()(const float value) const noexcept
+    {
+        return _mm_crc32_u64(0, std::bit_cast<uint32_t>(value));
+    }
+
+    size_t operator()(const double value) const noexcept
+    {
+        return _mm_crc32_u64(0, std::bit_cast<uint64_t>(value));
+    }
+
+    size_t operator()(std::string_view s) const noexcept
+    {
+        size_t result = 0;
+        size_t n = s.size();
+
+        size_t i = 0;
+        for (; n >= 8; i += 8, n -= 8)
+            result = _mm_crc32_u64(result, *std::bit_cast<uint64_t *>(&s[i]));
+
+        if (n) {
+            alignas(8) std::array<char, 8> tail{};
+            for (size_t j = 0; j < n; ++i, --n)
+                tail[j] = s[i];
+            result = _mm_crc32_u64(result, std::bit_cast<uint64_t>(tail));
+        }
+
+        return result;
+    }
+
+    template <typename T>
+    size_t operator()(const T &value) const noexcept
+        requires(!std::integral<T>)
+    {
+        static_assert(std::has_unique_object_representations_v<T>);
+        std::byte *p = std::bit_cast<std::byte *>(&value);
+
+        size_t result = 0;
+        for (size_t i = 0; i < sizeof(T) / 8; ++i, p += 8)
+            result = _mm_crc32_u64(result, *std::bit_cast<uint64_t *>(p));
+
+        constexpr size_t rest = sizeof(T) % 8;
+        if constexpr (rest > 0) {
+            static_assert(rest == 1 || rest == 2 || rest == 4);
+            if constexpr (rest == 1)
+                result = _mm_crc32_u64(result, *std::bit_cast<uint8_t *>(p));
+            else if constexpr (rest == 2)
+                result = _mm_crc32_u64(result, *std::bit_cast<uint16_t *>(p));
+            else if constexpr (rest == 4)
+                result = _mm_crc32_u64(result, *std::bit_cast<uint32_t *>(p));
+        }
+
+        return result;
     }
 };

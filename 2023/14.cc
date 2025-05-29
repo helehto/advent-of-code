@@ -71,21 +71,16 @@ static void roll_e(Matrix<char> &grid)
     }
 }
 
-} // namespace aoc_2023_14
-
-template <>
-struct std::hash<Matrix<char>> {
-    size_t operator()(Matrix<char> m) const noexcept
+struct MatrixHasher {
+    size_t operator()(const Matrix<char> &m) const noexcept
     {
-        return std::hash<std::string_view>{}({m.data.get(), m.size()});
+        return CrcHasher{}(std::string_view(m.data.get(), m.size()));
     }
 };
 
-namespace aoc_2023_14 {
-
 static Matrix<char> find_cycle(Matrix<char> grid, int which)
 {
-    std::unordered_map<Matrix<char>, int> cache;
+    std::unordered_map<Matrix<char>, int, MatrixHasher> cache;
     std::vector<const Matrix<char> *> seq;
 
     for (int j = 0;; j++) {

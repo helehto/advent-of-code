@@ -45,18 +45,6 @@ struct alignas(8) CacheKey {
     }
 };
 
-} // namespace aoc_2022_17
-
-template <>
-struct std::hash<aoc_2022_17::CacheKey> {
-    size_t operator()(const aoc_2022_17::CacheKey &k) const noexcept
-    {
-        return _mm_crc32_u64(k.rock_idx, k.jet_idx);
-    }
-};
-
-namespace aoc_2022_17 {
-
 struct State {
     int n;
     int height;
@@ -97,7 +85,7 @@ static std::optional<Cycle> detect_cycle(std::span<const State> states)
 
 void run(std::string_view buf)
 {
-    dense_map<CacheKey, small_vector<State, 4>> past_states;
+    dense_map<CacheKey, small_vector<State, 4>, CrcHasher> past_states;
     dense_set<Vec2i> occupied;
     std::vector<int> heights;
     size_t rock_idx = 0;

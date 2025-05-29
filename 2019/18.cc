@@ -22,18 +22,7 @@ struct alignas(8) State {
         return result;
     }
 };
-
-}
-
-template <>
-struct std::hash<aoc_2019_18::State> {
-    size_t operator()(const aoc_2019_18::State &state) const noexcept
-    {
-        return _mm_crc32_u64(std::bit_cast<uint32_t>(state.pos), state.keys);
-    }
-};
-
-namespace aoc_2019_18 {
+static_assert(sizeof(State) == 8);
 
 struct KeyInfo {
     uint32_t d;
@@ -107,7 +96,7 @@ void run(std::string_view buf)
             keys[grid(p) - 'a'] = p;
 
     MonotonicBucketQueue<State> bq;
-    dense_map<State, uint32_t> dist;
+    dense_map<State, uint32_t, CrcHasher> dist;
     dist.reserve(100'000);
 
     auto search = [&](std::span<const Vec2i> start, int num_robots) {

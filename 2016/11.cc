@@ -77,18 +77,6 @@ constexpr CanonicalState State::canonicalize() const
     return result;
 }
 
-}
-
-template <>
-struct std::hash<aoc_2016_11::CanonicalState> {
-    size_t operator()(const aoc_2016_11::CanonicalState &state) const noexcept
-    {
-        return _mm_crc32_u64(state.floor, std::bit_cast<uint64_t>(state.pairs));
-    }
-};
-
-namespace aoc_2016_11 {
-
 static size_t element_index(std::string_view e)
 {
     if (e == "strontium" || e == "hydrogen")
@@ -149,7 +137,7 @@ constexpr size_t next_bit_permutation(size_t v)
 void run(std::string_view buf)
 {
     std::vector<std::tuple<State, int>> queue;
-    dense_set<CanonicalState> seen;
+    dense_set<CanonicalState, CrcHasher> seen;
 
     // TODO: Use A* instead of BFS?
     auto search = [&](const State initial_state) {

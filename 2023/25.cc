@@ -54,7 +54,7 @@ static Graph parse_input(std::string_view buf)
     return g;
 }
 
-struct crc_hasher {
+struct CrcHasher {
     size_t operator()(uint32_t k) const noexcept { return _mm_crc32_u32(0, k); }
 };
 
@@ -115,7 +115,7 @@ void run(std::string_view buf)
     for (size_t i = 0; i < g.nodes.size(); ++i)
         dijkstra(g, i, dist, bq);
 
-    dense_map<uint32_t, int, crc_hasher> edge_counts;
+    dense_map<uint32_t, int, CrcHasher> edge_counts;
     edge_counts.reserve(total_edges);
     for (size_t u = 0; u < g.nodes.size(); ++u) {
         for (const auto &[v, weight] : g.nodes[u].edges) {

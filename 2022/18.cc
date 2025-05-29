@@ -1,16 +1,6 @@
 #include "common.h"
 #include "dense_set.h"
 
-template <>
-struct std::hash<std::array<int, 3>> {
-    size_t operator()(const std::array<int, 3> a) const noexcept
-    {
-        uint64_t u;
-        memcpy(&u, &a, sizeof(u));
-        return _mm_crc32_u64(_mm_crc32_u64(0, u), a[2]);
-    }
-};
-
 namespace aoc_2022_18 {
 
 using Cube = std::array<int, 3>;
@@ -21,7 +11,7 @@ static Cube with_offset(Cube c, int dim, int delta)
     return c;
 }
 
-static int sum_surface_area(const dense_set<Cube> &cubes)
+static int sum_surface_area(const dense_set<Cube, CrcHasher> &cubes)
 {
     int sum = 0;
     for (auto &c : cubes) {
@@ -38,7 +28,7 @@ static int sum_surface_area(const dense_set<Cube> &cubes)
     return sum;
 }
 
-static dense_set<Cube> flood(dense_set<Cube> occupied)
+static dense_set<Cube, CrcHasher> flood(dense_set<Cube, CrcHasher> occupied)
 {
     int min[3] = {INT_MAX, INT_MAX, INT_MAX};
     int max[3] = {INT_MIN, INT_MIN, INT_MIN};
@@ -76,7 +66,7 @@ static dense_set<Cube> flood(dense_set<Cube> occupied)
         }
     }
 
-    dense_set<Cube> unvisited;
+    dense_set<Cube, CrcHasher> unvisited;
     unvisited.reserve(2048);
 
     for (int x = min[0]; x < max[0]; x++) {
@@ -95,7 +85,7 @@ static dense_set<Cube> flood(dense_set<Cube> occupied)
 void run(std::string_view buf)
 {
     const auto lines = split_lines(buf);
-    dense_set<Cube> cubes;
+    dense_set<Cube, CrcHasher> cubes;
     cubes.reserve(lines.size());
     for (std::string_view line : lines)
         cubes.insert(find_numbers_n<int, 3>(line));

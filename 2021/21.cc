@@ -37,32 +37,16 @@ constexpr auto rolls = [] {
 
 struct State {
     std::array<int64_t, 2> score{0, 0};
-    struct X {
-        std::array<uint8_t, 2> pos;
-        uint8_t turn = 0;
-        uint8_t padding = 0;
-        constexpr bool operator==(const X &) const = default;
-    } p;
+    std::array<uint8_t, 2> pos;
+    uint8_t turn = 0;
+    std::array<uint8_t, 5> padding{0, 0, 0, 0, 0};
 
     constexpr bool operator==(const State &) const = default;
 };
 static_assert(sizeof(State) == 24);
 
-}
-
-template <>
-struct std::hash<aoc_2021_21::State> {
-    size_t operator()(const aoc_2021_21::State &state) const noexcept
-    {
-        return _mm_crc32_u64(_mm_crc32_u64(state.score[0], state.score[1]),
-                             std::bit_cast<uint32_t>(state.p));
-    }
-};
-
-namespace aoc_2021_21 {
-
 constexpr std::pair<int64_t, int64_t>
-part2(dense_map<State, std::pair<int64_t, int64_t>> &cache, const State &state)
+part2(dense_map<State, std::pair<int64_t, int64_t>, CrcHasher> &cache, const State &state)
 {
     if (state.score[0] >= 21)
         return {1, 0};
@@ -79,13 +63,13 @@ part2(dense_map<State, std::pair<int64_t, int64_t>> &cache, const State &state)
         if (!freq)
             continue;
 
-        const int turn = state.p.turn;
-        const uint8_t new_pos = (state.p.pos[turn] + sum - 1) % 10 + 1;
+        const int turn = state.turn;
+        const uint8_t new_pos = (state.pos[turn] + sum - 1) % 10 + 1;
 
         State new_state = state;
         new_state.score[turn] += new_pos;
-        new_state.p.pos[turn] = new_pos;
-        new_state.p.turn = !turn;
+        new_state.pos[turn] = new_pos;
+        new_state.turn = !turn;
 
         auto winner = part2(cache, new_state);
         result.first += freq * winner.first;
@@ -100,9 +84,9 @@ void run(std::string_view buf)
     auto [_1, a, _2, b] = find_numbers_n<uint8_t, 4>(buf);
     fmt::print("{}\n", part1({a, b}));
 
-    dense_map<State, std::pair<int64_t, int64_t>> cache;
+    dense_map<State, std::pair<int64_t, int64_t>, CrcHasher> cache;
     cache.reserve(1 << 16);
-    auto [a_universes, b_universes] = part2(cache, State{.p = {.pos = {a, b}}});
+    auto [a_universes, b_universes] = part2(cache, State{.pos = {a, b}});
     fmt::print("{}\n", std::max(a_universes, b_universes));
 }
 

@@ -3,6 +3,8 @@
 
 namespace aoc_2020_22 {
 
+using namespace std::literals;
+
 struct Deck {
     std::array<uint8_t, 65> cards;
 
@@ -73,31 +75,10 @@ struct Deck {
     }
 };
 
-}
-
-template <>
-struct std::hash<std::pair<aoc_2020_22::Deck, aoc_2020_22::Deck>> {
-    size_t
-    operator()(const std::pair<aoc_2020_22::Deck, aoc_2020_22::Deck> &p) const noexcept
-    {
-        size_t h1 = 0;
-        size_t h2 = 0;
-
-        auto *a = reinterpret_cast<const uint64_t *>(p.first.cards.data());
-        auto *b = reinterpret_cast<const uint64_t *>(p.second.cards.data());
-
-        for (size_t i = 0; i < 8; ++i)
-            h1 = _mm_crc32_u64(h1, a[i]);
-        for (size_t i = 0; i < 8; ++i)
-            h2 = _mm_crc32_u64(h2, b[i]);
-
-        return h1 ^ h2;
-    }
+struct Decks {
+    Deck first, second;
+    bool operator==(const Decks &) const noexcept = default;
 };
-
-namespace aoc_2020_22 {
-
-using namespace std::literals;
 
 static int part1(Deck a, Deck b)
 {
@@ -125,7 +106,7 @@ static bool recursive_combat(Deck &&a, Deck &&b, bool is_root_game = true)
     if (max_a > max_b && max_a > a_initial_size + b_initial_size)
         return true;
 
-    dense_set<std::pair<Deck, Deck>> seen;
+    dense_set<Decks, CrcHasher> seen;
     seen.reserve(4 * a_initial_size * b_initial_size);
 
     while (true) {

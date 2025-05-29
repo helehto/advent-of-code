@@ -8,21 +8,6 @@ struct Point4D : public std::array<int, 4> {
     constexpr bool operator!=(const Point4D &other) const = default;
 };
 
-}
-
-template <>
-struct std::hash<aoc_2020_17::Point4D> {
-    constexpr size_t operator()(const aoc_2020_17::Point4D &p) const noexcept
-    {
-        size_t h = 0;
-        for (int c : p)
-            hash_combine(h, c);
-        return h;
-    }
-};
-
-namespace aoc_2020_17 {
-
 static constexpr Point4D neighbors3d[] = {
     {-1, -1, -1, +0}, {-1, -1, +0, +0}, {-1, -1, +1, +0}, {-1, +0, -1, +0},
     {-1, +0, +0, +0}, {-1, +0, +1, +0}, {-1, +1, -1, +0}, {-1, +1, +0, +0},
@@ -57,7 +42,7 @@ static constexpr Point4D neighbors4d[] = {
 };
 
 static std::pair<std::array<int, 4>, std::array<int, 4>>
-grid_active_minmax(const dense_set<Point4D> &active)
+grid_active_minmax(const dense_set<Point4D, CrcHasher> &active)
 {
     std::array<int, 4> min, max;
     min.fill(INT_MAX);
@@ -77,14 +62,16 @@ grid_active_minmax(const dense_set<Point4D> &active)
     return std::pair(min, max);
 }
 
-static bool
-is_active(const dense_set<Point4D> &prev, const Point4D &p, const int active_neighbours)
+static bool is_active(const dense_set<Point4D, CrcHasher> &prev,
+                      const Point4D &p,
+                      const int active_neighbours)
 {
     return prev.count(p) ? active_neighbours == 2 || active_neighbours == 3
                          : active_neighbours == 3;
 }
 
-static void step3d(dense_set<Point4D> &next_active, dense_set<Point4D> &prev_active)
+static void step3d(dense_set<Point4D, CrcHasher> &next_active,
+                   dense_set<Point4D, CrcHasher> &prev_active)
 {
     next_active.clear();
     auto [min, max] = grid_active_minmax(prev_active);
@@ -108,7 +95,8 @@ static void step3d(dense_set<Point4D> &next_active, dense_set<Point4D> &prev_act
     }
 }
 
-static void step4d(dense_set<Point4D> &next_active, dense_set<Point4D> &prev_active)
+static void step4d(dense_set<Point4D, CrcHasher> &next_active,
+                   dense_set<Point4D, CrcHasher> &prev_active)
 {
     next_active.clear();
     auto [min, max] = grid_active_minmax(prev_active);
@@ -138,10 +126,10 @@ void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
-    dense_set<Point4D> tmp;
+    dense_set<Point4D, CrcHasher> tmp;
 
     {
-        dense_set<Point4D> active;
+        dense_set<Point4D, CrcHasher> active;
         for (auto p : grid.ndindex<int>()) {
             if (grid(p) == '#')
                 active.insert(Point4D{{p.x, p.y, 0, 0}});
@@ -155,7 +143,7 @@ void run(std::string_view buf)
     }
 
     {
-        dense_set<Point4D> active;
+        dense_set<Point4D, CrcHasher> active;
         for (auto p : grid.ndindex<int>()) {
             if (grid(p) == '#')
                 active.insert(Point4D{{p.x, p.y, 0, 0}});
