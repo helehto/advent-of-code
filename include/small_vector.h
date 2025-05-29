@@ -5,6 +5,7 @@
 #include <bit>
 #include <cstddef>
 #include <memory>
+#include <utility>
 
 namespace detail {
 
