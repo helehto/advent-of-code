@@ -352,7 +352,7 @@ private:
         initialize_allocate(bucket_count);
     }
 
-    void rehash(size_type count)
+    [[gnu::cold, gnu::noinline]] void rehash(size_type count)
     {
         dense_map new_set(internal_tag{}, count, hash_, equal_);
         for (auto &elem : *this)
