@@ -124,19 +124,10 @@ protected:
     }
 
     [[gnu::noinline]] constexpr void
-    grow_uninitialized_exact(const size_type desired_capacity)
-    {
-        DEBUG_ASSERT(desired_capacity > capacity_);
-        grow_uninitialized_exact_impl(desired_capacity);
-    }
-
-    [[gnu::noinline]] constexpr void
     grow_uninitialized_at_least(const size_type desired_capacity)
     {
         DEBUG_ASSERT(desired_capacity > capacity_);
-        const size_t delta = desired_capacity - capacity_;
-        const size_t shift = std::countr_zero(std::bit_ceil(delta));
-        grow_uninitialized_exact_impl(capacity_ << shift);
+        grow_uninitialized_exact_impl(std::bit_ceil(desired_capacity));
     }
 
     [[gnu::noinline]] constexpr void grow_uninitialized_one_more()
@@ -225,7 +216,7 @@ public:
     {
         DEBUG_ASSERT(count <= this->max_size());
         if (count > capacity_)
-            grow_uninitialized_exact(count);
+            grow_uninitialized_at_least(count);
     }
 
     //-----------------------------------------------------------------------------------

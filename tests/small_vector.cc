@@ -728,6 +728,15 @@ TEST_CASE("elements can be inserted into small_vector using insert()")
     }
 }
 
+TEST_CASE("elements can be append into small_vector using append_range()")
+{
+    constexpr size_t InlineCapacity = 8;
+    small_vector<int, InlineCapacity> a{1, 2, 3, 4, 5, 6};
+    small_vector<int, InlineCapacity> b{7, 8, 9};
+    a.append_range(b);
+    compare_with_std_vector(a, {1, 2, 3, 4, 5, 6, 7, 8, 9});
+}
+
 TEST_CASE("elements can be erased from a small_vector")
 {
     small_vector<int> a{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
