@@ -4,9 +4,9 @@
 
 /// An implementation of a priority queue in terms of a fixed-size bucket queue
 /// (see <https://en.wikipedia.org/wiki/Bucket_queue>).
-template <typename T>
+template <typename T, typename BucketContainer = std::vector<T>>
 class MonotonicBucketQueue {
-    std::vector<std::vector<T>> buckets;
+    std::vector<BucketContainer> buckets;
     uint32_t curr = 0;
     uint32_t mask;
 
@@ -38,7 +38,7 @@ public:
     constexpr std::optional<T> pop()
     {
         for (size_t end = curr + mask + 1; curr < end; ++curr) {
-            if (std::vector<T> &bucket = buckets[curr & mask]; !bucket.empty()) {
+            if (BucketContainer &bucket = buckets[curr & mask]; !bucket.empty()) {
                 T state(std::move(bucket.back()));
                 bucket.pop_back();
                 return state;
@@ -50,7 +50,7 @@ public:
     /// Clear the queue to an empty state.
     constexpr void clear()
     {
-        for (std::vector<T> &bucket : buckets)
+        for (BucketContainer &bucket : buckets)
             bucket.clear();
         curr = 0;
     }
