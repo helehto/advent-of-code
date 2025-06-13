@@ -2,18 +2,6 @@
 
 namespace aoc_2015_25 {
 
-/// Compute a^b mod m.
-constexpr int64_t modexp(int64_t a, int64_t b, const int64_t m)
-{
-    int64_t result = 1;
-    for (; b; b >>= 1) {
-        if (b & 1)
-            result = (a * result) % m;
-        a = (a * a) % m;
-    }
-    return result;
-}
-
 void run(std::string_view buf)
 {
     const auto [row, col] = find_numbers_n<int, 2>(buf);

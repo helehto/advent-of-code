@@ -236,6 +236,18 @@ constexpr int64_t modinv(int64_t a, int64_t m)
     return x1 < 0 ? x1 + m0 : x1;
 }
 
+/// Compute a^b mod m.
+constexpr int64_t modexp(int64_t a, int64_t b, const int64_t m)
+{
+    int64_t result = 1;
+    for (; b; b >>= 1) {
+        if (b & 1)
+            result = (a * result) % m;
+        a = (a * a) % m;
+    }
+    return result;
+}
+
 template <typename T>
 constexpr T modulo(T x, T mod)
 {
