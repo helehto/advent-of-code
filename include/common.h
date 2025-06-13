@@ -721,63 +721,101 @@ inline inplace_vector<Vec2<U>, 8> neighbors8(const Matrix<T> &grid, Vec2<U> p)
     return result;
 }
 
-struct CrcHasher {
-    size_t operator()(std::integral auto value) const noexcept
+class CrcHasher {
+private:
+    template <std::integral T>
+    static void update_crc(const std::byte *&p, uint64_t &crc) noexcept
     {
-        return _mm_crc32_u64(0, static_cast<uint64_t>(value));
+        T u;
+        std::memcpy(&u, p, sizeof(T));
+        crc = _mm_crc32_u64(crc, u);
+        p += sizeof(T);
     }
 
-    size_t operator()(const float value) const noexcept
+    static size_t hash_bytes(const std::byte *p, size_t n) noexcept
     {
-        return _mm_crc32_u64(0, std::bit_cast<uint32_t>(value));
-    }
+        uint64_t result = 0;
 
-    size_t operator()(const double value) const noexcept
-    {
-        return _mm_crc32_u64(0, std::bit_cast<uint64_t>(value));
-    }
-
-    size_t operator()(std::string_view s) const noexcept
-    {
-        size_t result = 0;
-        size_t n = s.size();
-
-        size_t i = 0;
-        for (; n >= 8; i += 8, n -= 8)
-            result = _mm_crc32_u64(result, *std::bit_cast<uint64_t *>(&s[i]));
+        for (; n >= 8; n -= 8)
+            update_crc<uint64_t>(p, result);
 
         if (n) {
-            alignas(8) std::array<char, 8> tail{};
-            for (size_t j = 0; j < n; ++i, --n)
-                tail[j] = s[i];
+            alignas(8) std::array<std::byte, 8> tail{};
+            for (size_t j = 0; n--; ++j)
+                tail[j] = *p++;
             result = _mm_crc32_u64(result, std::bit_cast<uint64_t>(tail));
         }
 
         return result;
     }
 
-    template <typename T>
-    size_t operator()(const T &value) const noexcept
-        requires(!std::integral<T>)
+    template <size_t N>
+    static size_t hash_bytes_fixed(const std::byte *p) noexcept
     {
-        static_assert(std::has_unique_object_representations_v<T>);
-        std::byte *p = std::bit_cast<std::byte *>(&value);
+        uint64_t result = 0;
+        for (size_t i = 0; i < N / 8; ++i)
+            update_crc<uint64_t>(p, result);
 
-        size_t result = 0;
-        for (size_t i = 0; i < sizeof(T) / 8; ++i, p += 8)
-            result = _mm_crc32_u64(result, *std::bit_cast<uint64_t *>(p));
-
-        constexpr size_t rest = sizeof(T) % 8;
-        if constexpr (rest > 0) {
-            static_assert(rest == 1 || rest == 2 || rest == 4);
-            if constexpr (rest == 1)
-                result = _mm_crc32_u64(result, *std::bit_cast<uint8_t *>(p));
-            else if constexpr (rest == 2)
-                result = _mm_crc32_u64(result, *std::bit_cast<uint16_t *>(p));
-            else if constexpr (rest == 4)
-                result = _mm_crc32_u64(result, *std::bit_cast<uint32_t *>(p));
-        }
+        constexpr size_t rest = N % 8;
+        if constexpr (rest & 4)
+            update_crc<uint32_t>(p, result);
+        if constexpr (rest & 2)
+            update_crc<uint16_t>(p, result);
+        if constexpr (rest & 1)
+            update_crc<uint8_t>(p, result);
 
         return result;
+    }
+
+public:
+    static size_t operator()(std::integral auto value) noexcept
+    {
+        static_assert(sizeof(value) <= 8);
+        return _mm_crc32_u64(0, static_cast<uint64_t>(value));
+    }
+
+    static size_t operator()(const float value) noexcept
+    {
+        return _mm_crc32_u64(0, std::bit_cast<uint32_t>(value));
+    }
+
+    static size_t operator()(const double value) noexcept
+    {
+        return _mm_crc32_u64(0, std::bit_cast<uint64_t>(value));
+    }
+
+    template <typename T, size_t Extent>
+    static size_t operator()(std::span<T, Extent> s) noexcept
+    {
+        static_assert(std::has_unique_object_representations_v<T>,
+                      "Cannot hash type: it has non-unique object representations "
+                      "(possibly padding?)");
+
+        auto bytes = std::as_bytes(s);
+        if constexpr (decltype(bytes)::extent == std::dynamic_extent) {
+            return hash_bytes(bytes.data(), bytes.size());
+        } else {
+            return hash_bytes_fixed<decltype(bytes)::extent>(bytes.data());
+        }
+    }
+
+    static size_t operator()(std::string_view s) noexcept
+    {
+        return hash_bytes(std::bit_cast<std::byte *>(s.data()), s.size());
+    }
+
+    static size_t operator()(const std::string &s) noexcept
+    {
+        return hash_bytes(std::bit_cast<std::byte *>(s.data()), s.size());
+    }
+
+    template <typename T>
+    static size_t operator()(const T &value) noexcept
+    {
+        static_assert(std::has_unique_object_representations_v<T>,
+                      "Cannot hash type: it has non-unique object representations "
+                      "(possibly padding?)");
+
+        return hash_bytes_fixed<sizeof(T)>(std::bit_cast<std::byte *>(&value));
     }
 };
