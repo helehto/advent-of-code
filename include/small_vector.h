@@ -87,14 +87,23 @@ protected:
 
     static constexpr T *allocate_buffer(const size_t n)
     {
-        void *p = operator new[](n * sizeof(T), std::align_val_t(alignof(T)));
+        void *p;
+        if constexpr (alignof(T) <= __STDCPP_DEFAULT_NEW_ALIGNMENT__)
+            p = operator new[](n * sizeof(T));
+        else
+            p = operator new[](n * sizeof(T), std::align_val_t(alignof(T)));
+
         return static_cast<T *>(p);
     }
 
     constexpr void delete_buffer(void *p)
     {
-        if (p != inline_buffer())
-            operator delete[](p, std::align_val_t(alignof(T)));
+        if (p != inline_buffer()) {
+            if constexpr (alignof(T) <= __STDCPP_DEFAULT_NEW_ALIGNMENT__)
+                operator delete[](p);
+            else
+                operator delete[](p, std::align_val_t(alignof(T)));
+        }
     }
 
     constexpr T *inline_buffer()
