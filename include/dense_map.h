@@ -449,14 +449,15 @@ public:
     {
     }
 
+    ~dense_map() = default;
+
     ~dense_map() noexcept(noexcept(std::is_nothrow_destructible_v<value_type>))
+        requires(!std::is_trivially_destructible_v<value_type>)
     {
         // TODO: Better way to iterate all occupied buckets?
-        if constexpr (!std::is_trivially_destructible_v<value_type>) {
-            for (size_t i = 0; i < capacity_; ++i) {
-                if (state_of(i) == bucket_state::occupied)
-                    buckets_[i].data().~value_type();
-            }
+        for (size_t i = 0; i < capacity_; ++i) {
+            if (state_of(i) == bucket_state::occupied)
+                buckets_[i].data().~value_type();
         }
     }
 
