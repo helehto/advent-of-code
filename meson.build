@@ -21,7 +21,7 @@ solutions = {
     '2021': '1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25',
     '2022': '1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25',
     '2023': '1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25',
-    '2024': '1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 22 25',
+    '2024': '1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 22 23 25',
 }
 
 cpp = meson.get_compiler('cpp')
@@ -77,6 +77,7 @@ cpp_args = [
         # Warnings that we don't care about:
         '-Wno-missing-field-initializers',
         '-Wno-pedantic',
+        '-Wno-psabi',
         '-Wno-unknown-pragmas',
         '-Wno-unknown-warning-option',
 
