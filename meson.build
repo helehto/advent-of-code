@@ -70,8 +70,8 @@ cpp_args = [
   '-fno-omit-frame-pointer',
 
   # We don't use exceptions or RTTI.
-  #'-fno-exceptions',
-  #'-fno-rtti',
+  '-fno-exceptions',
+  '-fno-rtti',
 
  cpp.get_supported_arguments(
    extra_warning_flags,
