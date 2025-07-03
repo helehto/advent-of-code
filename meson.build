@@ -8,6 +8,7 @@ project(
     'debug=true',
     'warning_level=3',
   ],
+  meson_version: '>=1.0.1',
 )
 
 solutions = {
