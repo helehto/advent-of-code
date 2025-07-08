@@ -2,65 +2,43 @@
 
 namespace aoc_2015_17 {
 
-static int
-part1(const std::vector<int> &containers, uint64_t used_mask, int left, size_t start)
+static void search(const small_vector_base<int> &containers,
+                   small_vector_base<int> &result,
+                   size_t used = 0,
+                   int left = 150,
+                   size_t i = 0)
 {
-    if (left == 0)
-        return 1;
-
-    int n = 0;
-
-    for (size_t i = start; i < containers.size(); i++) {
-        const uint64_t mask = (UINT64_C(1) << i);
-        if (left >= containers[i] && (used_mask & mask) == 0)
-            n += part1(containers, used_mask | mask, left - containers[i], i + 1);
+    if (left == 0) [[unlikely]] {
+        result[used]++;
+        return;
     }
+    if (i < containers.size()) {
+        // Take this one if it wouldn't make us exceed 150 liters, and proceed
+        // to the next container:
+        if (left >= containers[i])
+            search(containers, result, used + 1, left - containers[i], i + 1);
 
-    return n;
-}
-
-static inline size_t next_bit_permutation(size_t v) noexcept
-{
-    const auto t = v | (v - 1);
-    return (t + 1) | (((~t & -~t) - 1) >> (std::countr_zero(v) + 1));
-}
-
-static int capacity(const std::vector<int> &containers, uint64_t mask)
-{
-    int capacity = 0;
-
-    for (; mask; mask &= mask - 1) {
-        const auto bit = std::countr_zero(mask);
-        capacity += containers[bit];
+        // Don't take this one; proceed to the next container:
+        search(containers, result, used, left, i + 1);
     }
-
-    return capacity;
-}
-
-static int part2(const std::vector<int> &containers, int target)
-{
-    const uint64_t limit = UINT64_C(1) << containers.size();
-
-    for (size_t i = 1; i <= containers.size(); i++) {
-        int count = 0;
-        for (uint64_t mask = (UINT64_C(1) << i) - 1; mask < limit;
-             mask = next_bit_permutation(mask)) {
-            count += (capacity(containers, mask) == target);
-        }
-        if (count != 0)
-            return count;
-    }
-
-    return -1;
 }
 
 void run(std::string_view buf)
 {
-    auto containers = find_numbers<int>(buf);
+    small_vector<int> containers;
+    find_numbers<int>(buf, containers);
     ASSERT(containers.size() < 64);
 
-    fmt::print("{}\n", part1(containers, 0, 150, 0));
-    fmt::print("{}\n", part2(containers, 150));
+    // Sort the containers by decreasing capacity to be able to prune unviable
+    // branches in search() quicker -- greedily taking larger containers first
+    // will reach or exceed 150 liters of eggnog faster, after which there is
+    // no point in looking any deeper.
+    std::ranges::sort(containers, λab(a > b));
+
+    small_vector<int> result(containers.size());
+    search(containers, result);
+    fmt::print("{}\n", std::ranges::fold_left(result, 0, λab(a + b)));
+    fmt::print("{}\n", *std::ranges::find_if(result, λa(a != 0)));
 }
 
 }
