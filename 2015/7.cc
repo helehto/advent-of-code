@@ -55,7 +55,7 @@ static Input parse_input(std::string_view buf)
         int v;
 
         auto parse_op = [&](std::string_view s) {
-            int32_t n;
+            int32_t n = 0;
             auto r = std::from_chars(s.data(), s.data() + s.size(), n);
             return (r.ec == std::errc() && r.ptr != s.data()) ? n
                                                               : ~result.gate_index.at(s);
