@@ -1,0 +1,27 @@
+#!/bin/sh
+set -eu
+ninja
+./aoc --json -i 1 '*' |
+	jq -r '
+		sort_by(.[2][0]) |
+		map("\(.[0])\t\(.[1])\t\(.[2][0])") |
+		.[]
+	' | awk '
+		BEGIN {
+			OFS = "\t"
+		}
+
+		{
+			total_all += $3
+			if ($3 > 4000000) {
+				total_slow += $3
+				$3 = sprintf("%10.2f", $3 * 1e-6)
+				print
+			}
+		}
+
+		END {
+			printf "total\t(all)\t%10.2f\n", total_all * 1e-6
+			printf "total\t(slow)\t%10.2f\n", total_slow * 1e-6
+		}
+	'
