@@ -16,18 +16,20 @@ inline __m256i mm256_not(const __m256i v)
     return _mm256_xor_si256(v, _mm256_set1_epi32(-1));
 }
 
-static char *format_hex(char *p, uint32_t h)
+inline __m256i mm256_swapnibbles(const __m256i v)
 {
-    constexpr char hex[] = "0123456789abcdef";
-    p[0] = hex[(h >> 4) & 0xf];
-    p[1] = hex[(h >> 0) & 0xf];
-    p[2] = hex[(h >> 12) & 0xf];
-    p[3] = hex[(h >> 8) & 0xf];
-    p[4] = hex[(h >> 20) & 0xf];
-    p[5] = hex[(h >> 16) & 0xf];
-    p[6] = hex[(h >> 28) & 0xf];
-    p[7] = hex[(h >> 24) & 0xf];
-    return p + 8;
+    const __m256i mask_hi = _mm256_set1_epi32(0xf0f0f0f0);
+    const __m256i mask_lo = _mm256_set1_epi32(0x0f0f0f0f);
+    const __m256i result_lo = _mm256_srli_epi32(_mm256_and_si256(v, mask_hi), 4);
+    const __m256i result_hi = _mm256_slli_epi32(_mm256_and_si256(v, mask_lo), 4);
+    return _mm256_or_si256(result_lo, result_hi);
+}
+
+inline std::array<uint32_t, 8> mm256_u32x8(const __m256i v)
+{
+    std::array<uint32_t, 8> result;
+    _mm256_storeu_si256((__m256i *)&result, v);
+    return result;
 }
 
 struct alignas(32) Result {
@@ -38,26 +40,43 @@ struct alignas(32) Result {
 
     std::array<std::array<uint32_t, 8>, 4> to_arrays() const
     {
-        std::array<uint32_t, 8> a, b, c, d;
-        _mm256_storeu_si256(reinterpret_cast<__m256i *>(&a), this->a);
-        _mm256_storeu_si256(reinterpret_cast<__m256i *>(&b), this->b);
-        _mm256_storeu_si256(reinterpret_cast<__m256i *>(&c), this->c);
-        _mm256_storeu_si256(reinterpret_cast<__m256i *>(&d), this->d);
-
-        return {a, b, c, d};
+        return {mm256_u32x8(a), mm256_u32x8(b), mm256_u32x8(c), mm256_u32x8(d)};
     }
 
     std::array<std::array<char, 32>, 8> to_hex() const
     {
-        const auto [a, b, c, d] = to_arrays();
-        std::array<std::array<char, 32>, 8> result;
+        const __m128i hex_chars = _mm_setr_epi8('0', '1', '2', '3', '4', '5', '6', '7',
+                                                '8', '9', 'a', 'b', 'c', 'd', 'e', 'f');
 
+        auto output_u32 = [&](char *p, const uint32_t h) {
+            // Expand each nibble to a full byte in the range 0x00-0x0f so that
+            // it can be used as a lookup index in _mm_shuffle_epi8() below.
+            const uint64_t bytes = _pdep_u64(h, 0x0f0f0f0f0f0f0f0f);
+            const __m128i vbytes = _mm_cvtsi64x_si128(bytes);
+
+            // Map each byte to its corresponding hex character.
+            const __m128i output = _mm_shuffle_epi8(hex_chars, vbytes);
+
+            uint64_t out64 = _mm_cvtsi128_si64(output);
+            memcpy(p, &out64, sizeof(out64));
+        };
+
+        // First, swap the nibbles in all bytes. (To see why, note that
+        // endianness affects the byte order, *not* the order of nibbles within
+        // each byte; e.g. for 0x4d we want to output '4' followed by 'd', i.e.
+        // the *second* nibble first.)
+        const std::array<uint32_t, 8> aa = mm256_u32x8(mm256_swapnibbles(a));
+        const std::array<uint32_t, 8> bb = mm256_u32x8(mm256_swapnibbles(b));
+        const std::array<uint32_t, 8> cc = mm256_u32x8(mm256_swapnibbles(c));
+        const std::array<uint32_t, 8> dd = mm256_u32x8(mm256_swapnibbles(d));
+
+        std::array<std::array<char, 32>, 8> result;
         for (size_t i = 0; i < 8; i++) {
             char *p = result[i].data();
-            p = format_hex(p, a[i]);
-            p = format_hex(p, b[i]);
-            p = format_hex(p, c[i]);
-            p = format_hex(p, d[i]);
+            output_u32(p, aa[i]);
+            output_u32(p + 8, bb[i]);
+            output_u32(p + 16, cc[i]);
+            output_u32(p + 24, dd[i]);
         }
 
         return result;
