@@ -1,5 +1,6 @@
 #include "common.h"
 #include "md5.h"
+#include <future>
 
 namespace aoc_2016_14 {
 
@@ -81,36 +82,48 @@ md5_hex_stretch1(const std::array<std::array<char, 32>, 8> &hex)
 
 static int solve2(std::string_view prefix)
 {
-    md5::State md5(prefix);
-    std::vector<InterestingHash> ih;
-    uint32_t n = 0;
+    const unsigned num_threads = std::thread::hardware_concurrency();
 
-    auto expand1 = [&] {
-        auto hex = md5.run(n).to_hex();
-        for (int i = 0; i < 2016; ++i)
-            hex = md5_hex_stretch1(hex);
+    auto producer = [prefix, num_threads](size_t thread_id) {
+        md5::State md5(prefix);
+        std::vector<InterestingHash> result;
 
-        for (int i = 0; i < 8; ++i, ++n)
-            if (auto x3 = check_x3(hex[i]), x5 = check_x5(hex[i]); x3 || x5)
-                ih.emplace_back(n, x3, x5);
+        // TODO: Hard-coded limit :(
+        for (uint32_t n = 8 * thread_id; n < 30'000; n += 8 * num_threads) {
+            auto hex = md5.run(n).to_hex();
+            for (int i = 0; i < 2016; ++i)
+                hex = md5_hex_stretch1(hex);
+
+            for (int i = 0; i < 8; ++i)
+                if (char x3 = check_x3(hex[i]), x5 = check_x5(hex[i]); x3 || x5)
+                    result.emplace_back(n + i, x3, x5);
+        }
+
+        return result;
     };
 
-    while (ih.empty())
-        expand1();
+    std::vector<std::future<std::vector<InterestingHash>>> producer_hashes(num_threads);
+    for (size_t i = 0; i < producer_hashes.size(); ++i)
+        producer_hashes[i] = std::async(std::launch::async, producer, i);
+
+    std::vector<InterestingHash> hashes;
+    for (auto &fut : producer_hashes)
+        hashes.append_range(fut.get());
+
+    std::ranges::sort(hashes, {}, λa(a.index));
 
     size_t keys_found = 0;
-    for (size_t i = 0;; i++) {
-        while (ih.size() <= i || ih.back().index <= ih[i].index + 1000)
-            expand1();
-
-        InterestingHash &a = ih[i];
-        for (const InterestingHash &b : std::span(ih).subspan(i + 1)) {
+    for (size_t i = 0; i < hashes.size(); ++i) {
+        const InterestingHash &a = hashes[i];
+        for (const InterestingHash &b : std::span(hashes).subspan(i + 1)) {
             if (b.index > a.index + 1000)
                 break;
             if (a.x3 == b.x5 && ++keys_found == 64)
                 return a.index;
         }
     }
+
+    ASSERT_MSG(false, "No solution found!?");
 }
 
 void run(std::string_view buf)
