@@ -76,9 +76,17 @@ static void solve1(std::string_view prefix)
 static std::array<std::array<char, 32>, 8>
 md5_hex_stretch1(const std::array<std::array<char, 32>, 8> &hex)
 {
-    md5::Block8x8x64 messages{};
-    for (int i = 0; i < 8; i++)
-        memcpy(messages.data + i * 64, hex[i].data(), hex[i].size());
+    md5::Block32x16x8 messages{};
+
+    char *p = reinterpret_cast<char *>(messages.data);
+    for (size_t w = 0; w < 8; ++w) {
+        for (size_t i = 0; i < 8; ++i) {
+            *p++ = hex[i][4 * w + 0];
+            *p++ = hex[i][4 * w + 1];
+            *p++ = hex[i][4 * w + 2];
+            *p++ = hex[i][4 * w + 3];
+        }
+    }
 
     static constexpr uint32_t lengths[8] = {32, 32, 32, 32, 32, 32, 32, 32};
     md5::prepare_final_blocks(messages, lengths);

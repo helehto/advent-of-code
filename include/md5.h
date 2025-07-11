@@ -89,6 +89,15 @@ struct alignas(32) Block8x8x64 {
 
 struct alignas(32) Block32x16x8 {
     uint32_t data[16 * 8];
+
+    // Returns a reference to the `i`:th character of the `m`:th message in
+    // this block.
+    char &at(size_t m, size_t i)
+    {
+        DEBUG_ASSERT(m < 8);
+        DEBUG_ASSERT(i < 64);
+        return reinterpret_cast<char *>(data)[32 * (i / 4) + 4 * m + i % 4];
+    }
 };
 
 // Reshuffles `input` which contains eight 64-byte blocks laid out one after
@@ -127,6 +136,23 @@ inline void prepare_final_blocks(Block8x8x64 &__restrict messages,
 
 // Prepare the final messages blocks by inserting the block lengths into the
 // `messages`, assuming that the messages are already padded with zero bits.
+inline void prepare_final_blocks(Block32x16x8 &__restrict messages,
+                                 const uint32_t (&__restrict length_bytes)[8])
+{
+    for (int m = 0; m < 8; m++) {
+        // The buffer is assumed to be padded and the length of each message is
+        // non-decreasing, so all we need to do is to insert the 1 bit (0x80)
+        // and add the length in bits.
+        messages.at(m, length_bytes[m]) = 0x80;
+
+        // The message is never going to be more than 65536 bits.
+        messages.at(m, 56) = (length_bytes[m] << 3) & 0xff;
+        messages.at(m, 57) = (length_bytes[m] >> 5) & 0xff;
+    }
+}
+
+// Prepare the final messages blocks by inserting the block lengths into the
+// `messages`, assuming that the messages are already padded with zero bits.
 inline void prepare_final_blocks(Block8x8x64 &__restrict messages,
                                  std::optional<size_t> x80_offset,
                                  const uint32_t (&__restrict length_bytes)[8])
@@ -144,13 +170,8 @@ inline void prepare_final_blocks(Block8x8x64 &__restrict messages,
 // Hash eight blocks simultaneously. The return values is an array where index
 // `k` contains the `k`:th 32-bit word of the eight resulting hashes.
 inline Result do_block_avx2(
-    Block8x8x64 &__restrict chunks, __m256i a0, __m256i b0, __m256i c0, __m256i d0)
+    const Block32x16x8 &__restrict M, __m256i a0, __m256i b0, __m256i c0, __m256i d0)
 {
-    // The original input is eight 64-byte blocks laid out one after another.
-    // The actual MD5 code below expects memory to contain interleaved 4-byte
-    // words from each block, so reshuffle the original input into that format.
-    Block32x16x8 M = permute_input(chunks);
-
     __m256i A = a0;
     __m256i B = b0;
     __m256i C = c0;
@@ -230,7 +251,27 @@ inline Result do_block_avx2(
     };
 }
 
-inline Result do_block_avx2(Block8x8x64 &__restrict chunks)
+inline Result do_block_avx2(const Block32x16x8 &__restrict M)
+{
+    __m256i a0 = _mm256_set1_epi32(0x67452301);
+    __m256i b0 = _mm256_set1_epi32(0xefcdab89);
+    __m256i c0 = _mm256_set1_epi32(0x98badcfe);
+    __m256i d0 = _mm256_set1_epi32(0x10325476);
+    return do_block_avx2(M, a0, b0, c0, d0);
+}
+
+inline Result do_block_avx2(
+    const Block8x8x64 &__restrict chunks, __m256i a0, __m256i b0, __m256i c0, __m256i d0)
+{
+    // The input in `chunks` is eight 64-byte blocks laid out one after
+    // another. The MD5 core loop expects memory to contain interleaved 4-byte
+    // words from each block, so reshuffle the original input into that format.
+    Block32x16x8 M = permute_input(chunks);
+
+    return do_block_avx2(M, a0, b0, c0, d0);
+}
+
+inline Result do_block_avx2(const Block8x8x64 &__restrict chunks)
 {
     __m256i a0 = _mm256_set1_epi32(0x67452301);
     __m256i b0 = _mm256_set1_epi32(0xefcdab89);
