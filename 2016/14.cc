@@ -1,34 +1,33 @@
 #include "common.h"
 #include "md5.h"
-#include <tuple>
-#include <vector>
 
 namespace aoc_2016_14 {
 
 struct InterestingHash {
     uint32_t index;
-    std::optional<char> x3;
-    std::optional<char> x5;
-    std::string hash;
+    char x3;
+    char x5;
 };
 
-static std::optional<char> check_x3(const char *h)
+/// Check for consecutive triples in a 32-character hash.
+static char check_x3(std::span<const char, 32> h)
 {
     for (size_t j = 2; j < 32; ++j)
         if (h[j - 2] == h[j] && h[j - 1] == h[j])
             return h[j];
-    return std::nullopt;
+    return '\0';
 }
 
-static std::optional<char> check_x5(const char *h)
+/// Check for consecutive quintuples in a 32-character hash.
+static char check_x5(std::span<const char, 32> h)
 {
     for (size_t j = 4; j < 32; ++j)
         if (h[j - 4] == h[j] && h[j - 3] == h[j] && h[j - 2] == h[j] && h[j - 1] == h[j])
             return h[j];
-    return std::nullopt;
+    return '\0';
 }
 
-static void solve1(std::string_view prefix)
+static int solve1(std::string_view prefix)
 {
     md5::State md5(prefix);
     std::vector<InterestingHash> ih;
@@ -36,21 +35,9 @@ static void solve1(std::string_view prefix)
     uint32_t n = 0;
     auto expand1 = [&] {
         auto hex = md5.run(n).to_hex();
-
-        for (int i = 0; i < 8; ++i, ++n) {
-            char *h = hex[i].data();
-            auto tc = check_x3(h);
-            auto qc = check_x5(h);
-
-            if (tc || qc) {
-                ih.push_back(InterestingHash{
-                    .index = n,
-                    .x3 = tc,
-                    .x5 = qc,
-                    .hash = std::string(std::string_view(h, 32)),
-                });
-            }
-        }
+        for (int i = 0; i < 8; ++i, ++n)
+            if (auto x3 = check_x3(hex[i]), x5 = check_x5(hex[i]); x3 || x5)
+                ih.emplace_back(n, x3, x5);
     };
 
     while (ih.empty())
@@ -61,14 +48,12 @@ static void solve1(std::string_view prefix)
         while (ih.size() <= i || ih.back().index <= ih[i].index + 1000)
             expand1();
 
-        for (size_t j = i + 1; j < ih.size() && ih[j].index <= ih[i].index + 1000; j++) {
-            if (ih[j].x5 && *ih[i].x3 == *ih[j].x5) {
-                keys_found++;
-                if (keys_found == 64) {
-                    fmt::print("{}\n", ih[i].index);
-                    return;
-                }
-            }
+        InterestingHash &a = ih[i];
+        for (const InterestingHash &b : std::span(ih).subspan(i + 1)) {
+            if (b.index > a.index + 1000)
+                break;
+            if (a.x3 == b.x5 && ++keys_found == 64)
+                return a.index;
         }
     }
 }
@@ -94,7 +79,7 @@ md5_hex_stretch1(const std::array<std::array<char, 32>, 8> &hex)
     return md5::do_block_avx2(messages).to_hex();
 }
 
-static void solve2(std::string_view prefix)
+static int solve2(std::string_view prefix)
 {
     md5::State md5(prefix);
     std::vector<InterestingHash> ih;
@@ -105,20 +90,9 @@ static void solve2(std::string_view prefix)
         for (int i = 0; i < 2016; ++i)
             hex = md5_hex_stretch1(hex);
 
-        for (int i = 0; i < 8; ++i, ++n) {
-            const char *h = hex[i].data();
-            auto tc = check_x3(h);
-            auto qc = check_x5(h);
-
-            if (tc || qc) {
-                ih.push_back(InterestingHash{
-                    .index = n,
-                    .x3 = tc,
-                    .x5 = qc,
-                    .hash = std::string(std::string_view(h, 32)),
-                });
-            }
-        }
+        for (int i = 0; i < 8; ++i, ++n)
+            if (auto x3 = check_x3(hex[i]), x5 = check_x5(hex[i]); x3 || x5)
+                ih.emplace_back(n, x3, x5);
     };
 
     while (ih.empty())
@@ -129,22 +103,20 @@ static void solve2(std::string_view prefix)
         while (ih.size() <= i || ih.back().index <= ih[i].index + 1000)
             expand1();
 
-        for (size_t j = i + 1; j < ih.size() && ih[j].index <= ih[i].index + 1000; j++) {
-            if (ih[j].x5 && *ih[i].x3 == *ih[j].x5) {
-                keys_found++;
-                if (keys_found == 64) {
-                    fmt::print("{}\n", ih[i].index);
-                    return;
-                }
-            }
+        InterestingHash &a = ih[i];
+        for (const InterestingHash &b : std::span(ih).subspan(i + 1)) {
+            if (b.index > a.index + 1000)
+                break;
+            if (a.x3 == b.x5 && ++keys_found == 64)
+                return a.index;
         }
     }
 }
 
 void run(std::string_view buf)
 {
-    solve1(buf);
-    solve2(buf);
+    fmt::print("{}\n", solve1(buf));
+    fmt::print("{}\n", solve2(buf));
 }
 
 }
