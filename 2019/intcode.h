@@ -237,14 +237,12 @@ struct IntcodeVM {
 
             switch (instr.opcode) {
             case OP_ADD:
-            case OP_MUL: {
+            case OP_MUL:
                 op1 = read_op(instr, 1);
                 op2 = read_op(instr, 2);
-                const value_type sum = op1 + op2;
-                const value_type product = op1 * op2;
-                write_op(instr, 3, (instr.opcode & 1) ? sum : product);
+                write_op(instr, 3, (instr.opcode & 1) ? op1 + op2 : op1 * op2);
                 pc += 4;
-            } break;
+                break;
 
             case OP_IN:
                 if (input.empty())
