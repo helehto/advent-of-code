@@ -86,7 +86,7 @@ constexpr uint8_t step_acre(const uint8_t *p, size_t cols)
 static void step(Matrix<uint8_t> &grid, Matrix<uint8_t> &tmp)
 {
     uint8_t *p = &grid(1, 1);
-    uint8_t *q = p + (grid.rows - 1) * (grid.cols - 1);
+    uint8_t *q = &grid(grid.rows - 2, grid.cols - 1);
     uint8_t *out = &tmp(1, 1);
 
     // Process the entire input matrix in a single contiguous pass. (This
