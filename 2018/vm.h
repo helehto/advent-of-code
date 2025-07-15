@@ -54,10 +54,10 @@ inline void execute(std::span<int> regs, const std::array<int, 4> &instr)
         ri(λab(a | b));
         break;
     case instr_setr:
-        rr(λab(a));
+        regs[instr[3]] = regs[instr[1]];
         break;
     case instr_seti:
-        ir(λab(a));
+        regs[instr[3]] = instr[1];
         break;
     case instr_gtir:
         ir(λab(a > b));
