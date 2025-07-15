@@ -8,7 +8,7 @@ void run(std::string_view buf)
 
     size_t cols = 0;
     for (std::string_view line : lines) {
-        while (line.back() == ' ')
+        while (!line.empty() && line.back() == ' ')
             line.remove_suffix(1);
         cols = std::max(cols, line.size());
     }
