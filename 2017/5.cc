@@ -11,11 +11,13 @@ static int part1(std::vector<uint64_t> nums)
     return steps;
 }
 
-static int part2(std::vector<uint64_t> nums)
+[[gnu::noinline]] static int part2(std::vector<uint64_t> nums)
 {
     size_t steps = 0;
-    for (uint64_t i = 0; i < nums.size(); steps++) {
-        // The loop-carried dependency due to the offset `i` is the bottleneck
+    uint64_t *p = &nums[0];
+    uint64_t *end = p + nums.size();
+    while (true) {
+        // The loop-carried dependency due to the pointer `p` is the bottleneck
         // here, and it appears to be more or less impossible to get rid of
         // without starting to assume things about the input. The only way to
         // optimize this is to minimize the latency for each loop iteration.
@@ -26,9 +28,21 @@ static int part2(std::vector<uint64_t> nums)
         // not involve a branch or a conditional move. 64-bit integers are used
         // to avoid needing to zero-extend the index in each iteration (cache
         // misses are a non-factor since the vector is only 8 KiB or so).
-        auto instr = nums[i];
-        nums[i] = instr - ((static_cast<int64_t>(instr - 3) >> 63) | 1);
-        i += instr;
+        //
+        // Despite the dependency on `p`, the core loop somehow is ~5% faster
+        // by having the compiler unroll it by 4x. It reduces the CPU counters
+        // ex_no_retire.load_not_complete and ex_no_retire.load_not_complete
+        // reported by 'perf stat' by >50% compared to no unrolling at all, but
+        // I have no idea why; each iteration, unrolled or not, has more or
+        // less the same structure with regard to memory loads.
+        for (size_t i = 0; i < 4; ++i) {
+            const uint64_t instr = *p;
+            *p = instr - ((static_cast<int64_t>(instr - 3) >> 63) | 1);
+            p += instr;
+            steps++;
+            if (p >= end) [[unlikely]]
+                return steps;
+        }
     }
     return steps;
 }
