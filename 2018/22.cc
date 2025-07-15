@@ -9,7 +9,7 @@ constexpr Matrix<int> build_grid(const int depth, const Vec2i target)
     Matrix<int> result(3 * target.y + 1, 3 * target.x + 1);
 
     result(0, 0) = 0;
-    for (size_t x = 1; x < result.rows; ++x)
+    for (size_t x = 1; x < result.cols; ++x)
         result(0, x) = (16807 * x + depth) % 20183;
     for (size_t y = 1; y < result.rows; ++y)
         result(y, 0) = (48271 * y + depth) % 20183;
