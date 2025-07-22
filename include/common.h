@@ -649,6 +649,22 @@ struct Matrix {
         using Unsigned = std::make_unsigned_t<U>;
         return static_cast<Unsigned>(p.x) < cols && static_cast<Unsigned>(p.y) < rows;
     }
+
+    constexpr Matrix<T>
+    padded(const size_t pad_rows, const size_t pad_cols, const T &pad_value)
+    {
+        Matrix<T> result(rows + 2 * pad_rows, cols + 2 * pad_cols, pad_value);
+
+        for (size_t i = 0; i < rows; ++i)
+            std::ranges::copy(row(i), result.row(i + pad_cols).begin() + pad_rows);
+
+        return result;
+    }
+
+    constexpr Matrix<T> padded(const size_t pad, const T &pad_value)
+    {
+        return padded(pad, pad, pad_value);
+    }
 };
 
 template <typename T>

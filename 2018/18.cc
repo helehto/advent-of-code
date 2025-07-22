@@ -169,12 +169,7 @@ static uint8_t parse_char(char c)
 void run(std::string_view buf)
 {
     auto grid = Matrix<uint8_t>::from_lines(split_lines(buf), parse_char);
-    Matrix<uint8_t> padded(grid.rows + 2, grid.cols + 2, EMPTY);
-
-    for (size_t i = 0; i < grid.rows; ++i)
-        for (size_t j = 0; j < grid.rows; ++j)
-            padded(i + 1, j + 1) = grid(i, j);
-
+    auto padded = grid.padded(1, EMPTY);
     fmt::print("{}\n", part1(padded));
     fmt::print("{}\n", part2(std::move(padded)));
 }
