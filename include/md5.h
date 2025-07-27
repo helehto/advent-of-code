@@ -281,14 +281,6 @@ inline Result do_block_avx2(const Block8x8x64 &__restrict chunks)
     return do_block_avx2(chunks, a0, b0, c0, d0);
 }
 
-constexpr uint64_t ctpow(uint64_t base, int exp)
-{
-    uint64_t result = 1;
-    for (int i = 0; i < exp; i++)
-        result *= base;
-    return result;
-}
-
 [[gnu::noinline]] inline char *to_chars(char *p, int n)
 {
     // 00-99 packed into a single string.
