@@ -827,6 +827,7 @@ public:
 
     template <typename T>
     static size_t operator()(const T &value) noexcept
+        requires(!std::integral<T>)
     {
         static_assert(std::has_unique_object_representations_v<T>,
                       "Cannot hash type: it has non-unique object representations "
