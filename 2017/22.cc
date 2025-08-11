@@ -4,7 +4,45 @@
 
 namespace aoc_2017_22 {
 
-enum { CLEAN = '.', WEAKENED = 'W', INFECTED = '#', FLAGGED = 'F' };
+// NOTE: The specific order of the enumerators in both types below matters.
+enum { CLEAN, WEAKENED, INFECTED, FLAGGED };
+enum { N, E, S, W };
+
+struct Grid {
+    static constexpr int dense_size = 500;
+    Matrix<int64_t> dense_grid{dense_size + 1, dense_size + 1, CLEAN};
+    dense_map<Vec2i16, int64_t> sparse_grid;
+
+    [[gnu::noinline, gnu::cold]] int64_t &lookup_sparse(const Vec2i pos) noexcept
+    {
+        return sparse_grid.emplace(pos.cast<int16_t>(), CLEAN).first->second;
+    }
+
+    [[gnu::noinline, gnu::cold]] int64_t &lookup_sparse(const Vec2z pos) noexcept
+    {
+        return sparse_grid.emplace(pos.cast<int16_t>(), CLEAN).first->second;
+    }
+
+    int64_t &operator[](const Vec2z pos, int64_t *k) noexcept
+    {
+        const size_t x = static_cast<size_t>(pos.x) + dense_size / 2;
+        const size_t y = static_cast<size_t>(pos.y) + dense_size / 2;
+        if (x < dense_grid.cols && y < dense_grid.rows) [[likely]]
+            return *k;
+        else
+            return lookup_sparse(pos);
+    }
+
+    int64_t &operator[](const Vec2i pos) noexcept
+    {
+        const size_t x = static_cast<size_t>(pos.x) + dense_size / 2;
+        const size_t y = static_cast<size_t>(pos.y) + dense_size / 2;
+        if (x < dense_grid.cols && y < dense_grid.rows) [[likely]]
+            return dense_grid(y, x);
+        else
+            return lookup_sparse(pos);
+    }
+};
 
 static std::pair<dense_set<Vec2i>, Vec2i> parse_input(std::string_view buf)
 {
@@ -13,14 +51,19 @@ static std::pair<dense_set<Vec2i>, Vec2i> parse_input(std::string_view buf)
 
     dense_set<Vec2i> cells;
     cells.reserve(grid.rows * grid.cols);
-    for (auto p : grid.ndindex<int>())
-        if (grid(p) == INFECTED)
+    for (auto p : grid.ndindex<int>()) {
+        if (grid(p) == '#') {
+            grid(p) = INFECTED;
             cells.insert(p);
+        } else {
+            grid(p) = CLEAN;
+        }
+    }
 
     return {cells, Vec2i(grid.rows / 2, grid.cols / 2)};
 }
 
-static int part1(dense_set<Vec2i> cells, const Vec2i start)
+[[gnu::noinline]] static int part1(dense_set<Vec2i> cells, const Vec2i start)
 {
     Vec2i p = start;
     Vec2i d(0, -1);
@@ -42,42 +85,46 @@ static int part1(dense_set<Vec2i> cells, const Vec2i start)
     return infections;
 }
 
-static int part2(dense_set<Vec2i> cellsx, const Vec2i start)
+constexpr auto dir2dxdy = [] consteval {
+    std::array<Vec2z, 4> result{};
+    result[N] = {0, static_cast<size_t>(-1)};
+    result[E] = {+1, 0};
+    result[S] = {0, +1};
+    result[W] = {static_cast<size_t>(-1), 0};
+    return result;
+}();
+
+constexpr auto dir2linear = [] consteval {
+    std::array<ptrdiff_t, 4> result{};
+    result[N] = -Grid::dense_size - 1;
+    result[E] = +1;
+    result[S] = Grid::dense_size + 1;
+    result[W] = -1;
+    return result;
+}();
+
+[[gnu::noinline]] static int part2(const dense_set<Vec2i> &cells, const Vec2i start)
 {
-    Vec2i p = start;
-    Vec2i d(0, -1);
+    size_t dir = N;
+    std::array<int, 4> n_states{};
 
-    dense_map<Vec2i, char> cells;
-    cells.reserve(cellsx.size());
-    for (auto &p : cellsx)
-        cells[p] = INFECTED;
+    Grid grid;
+    for (const Vec2i &p : cells)
+        grid[p] = INFECTED;
 
-    int infections = 0;
+    Vec2z pos = start.cast<size_t>();
+    int64_t *p = &grid[start];
+
     for (int i = 0; i < 10'000'000; ++i) {
-        auto &state = cells.emplace(p, CLEAN).first->second;
-
-        if (state == CLEAN)
-            d = d.ccw();
-        else if (state == INFECTED)
-            d = d.cw();
-        else if (state == FLAGGED)
-            d = -d;
-
-        if (state == CLEAN) {
-            state = WEAKENED;
-        } else if (state == WEAKENED) {
-            state = INFECTED;
-            infections++;
-        } else if (state == INFECTED) {
-            state = FLAGGED;
-        } else {
-            state = CLEAN;
-        }
-
-        p += d;
+        auto &state = grid[pos, p];
+        dir += state - 1;
+        n_states[state]++;
+        state = (state + 1) & 3;
+        pos += dir2dxdy[dir & 3];
+        p += dir2linear[dir & 3];
     }
 
-    return infections;
+    return n_states[WEAKENED];
 }
 
 void run(std::string_view buf)
