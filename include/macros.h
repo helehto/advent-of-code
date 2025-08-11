@@ -94,9 +94,13 @@
 /// passed to it to stdout, along with the line number. Intended as a quick and
 /// short-term debugging utility.
 #define DV(var, ...)                                                                     \
-    fmt::print(                                                                          \
-        "\x1b[1;30;43m {:>4d} \x1b[m " DV_FORMAT(var __VA_OPT__(, ) __VA_ARGS__) "\n",   \
-        __LINE__, var __VA_OPT__(, ) __VA_ARGS__)
+    do {                                                                                 \
+        if !consteval {                                                                  \
+            fmt::print("\x1b[1;30;43m {:>4d} \x1b[m " DV_FORMAT(var __VA_OPT__(, )       \
+                                                                    __VA_ARGS__) "\n",   \
+                       __LINE__, var __VA_OPT__(, ) __VA_ARGS__);                        \
+        }                                                                                \
+    } while (0)
 
 // Implementation details of the λ() macro below.
 #define λ_1(a, body) [&]() noexcept { return body; }
