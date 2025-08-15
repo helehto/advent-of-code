@@ -260,24 +260,42 @@ constexpr T modulo(T x, T mod)
 static inline std::vector<std::string_view> &
 split(std::string_view s, std::vector<std::string_view> &out, char c);
 
-template <typename T, typename Fn>
-constexpr void find_numbers_impl(std::string_view s, Fn &&sink)
+template <typename T>
+constexpr void find_numbers_impl(std::string_view s, auto &&sink)
 {
-    while (true) {
-        while (!s.empty() && s.front() != '-' && !(s.front() >= '0' && s.front() <= '9'))
-            s.remove_prefix(1);
-        if (s.empty())
-            return;
+    const char *p = s.data();
+    const char *end = p + s.size();
 
-        T value;
-        auto r = std::from_chars(s.data(), s.data() + s.size(), value);
-        assert(r.ec != std::errc::result_out_of_range);
-        if (r.ec == std::errc()) {
-            sink(static_cast<T &&>(value));
-            s.remove_prefix(r.ptr - s.data());
-        } else {
-            s.remove_prefix(1);
+    while (true) {
+        [[maybe_unused]] int mul_overflow, add_overflow;
+
+        while (true) {
+            if (p == end) [[unlikely]]
+                return;
+            if (*p >= '0' && *p <= '9')
+                break;
+            p++;
         }
+
+        const char *first = p;
+
+        T value{};
+        do {
+            mul_overflow = __builtin_mul_overflow(value, 10, &value);
+            DEBUG_ASSERT_MSG(!mul_overflow, "Overflow: {} * {}", value, 10);
+            add_overflow = __builtin_add_overflow(value, *p - '0', &value);
+            DEBUG_ASSERT_MSG(!add_overflow, "Overflow: {} + {}", value, *p - '0');
+            p++;
+        } while (p != end && *p >= '0' && *p <= '9');
+
+        if constexpr (std::is_signed_v<T>) {
+            if (first != s.data() && first[-1] == '-') {
+                DEBUG_ASSERT(!__builtin_sub_overflow_p(0, value, T{}));
+                value = -value;
+            }
+        }
+
+        sink(value);
     }
 }
 
