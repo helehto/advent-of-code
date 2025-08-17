@@ -8,37 +8,41 @@ namespace aoc_2019_20 {
 struct alignas(4) State {
     Vec2i8 p;
     int16_t level;
-
-    bool operator==(const State &state) const
-    {
-        return std::bit_cast<uint32_t>(*this) == std::bit_cast<uint32_t>(state);
-    }
+    constexpr bool operator==(const State &state) const = default;
 };
-static_assert(sizeof(State) == 4);
+
+constexpr bool xisalpha(const char c)
+{
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
 
 void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
     auto g = Matrix<char>::from_lines(lines);
+    const auto n_letters = std::ranges::count_if(buf, λa(xisalpha(a)));
 
     struct Portal {
         Vec2i8 destination;
-        bool inwards;
+        int16_t level_delta;
     };
 
     Matrix<Portal> portals(g.rows, g.cols);
-    dense_map<std::string, Vec2i8> portals_tmp;
+    dense_map<std::array<char, 2>, Vec2i8, CrcHasher> portals_tmp;
+    dense_map<Vec2i8, Portal> portals_map;
+    portals_tmp.reserve(n_letters / 2);
+    portals_map.reserve(n_letters / 2);
 
     for (Vec2i8 p : g.ndindex<int8_t>()) {
-        if (!isalpha(g(p)))
+        if (!xisalpha(g(p)))
             continue;
 
-        if (auto q = p + Vec2i8{-1, 0}; g.in_bounds(q) && isalpha(g(q)))
+        if (auto q = p + Vec2i8{-1, 0}; g.in_bounds(q) && xisalpha(g(q)))
             continue;
-        if (auto q = p + Vec2i8{0, -1}; g.in_bounds(q) && isalpha(g(q)))
+        if (auto q = p + Vec2i8{0, -1}; g.in_bounds(q) && xisalpha(g(q)))
             continue;
 
-        char b[3] = {g(p)};
+        std::array<char, 2> b{g(p)};
         Vec2i8 to;
         if (auto q = p + Vec2i8{0, 2}; g.in_bounds(q) && g(q) == '.') {
             b[1] = g(p + Vec2i8{0, 1});
@@ -59,67 +63,81 @@ void run(std::string_view buf)
         const bool inwards = to.x > 3 && to.x < static_cast<int>(g.cols - 3) &&
                              to.y > 3 && to.y < static_cast<int>(g.rows - 3);
         if (auto [it, inserted] = portals_tmp.emplace(b, to); !inserted) {
-            portals(to) = Portal{it->second, inwards};
-            portals(it->second) = Portal{to, !inwards};
+            const auto delta = inwards ? +1 : -1;
+            portals_map.try_emplace(to, it->second, delta);
+            portals_map.try_emplace(it->second, to, -delta);
+            portals(to) = Portal(it->second, delta);
+            portals(it->second) = Portal(to, -delta);
         }
     }
-    const Vec2i8 start = portals_tmp.at("AA");
-    const Vec2i8 end = portals_tmp.at("ZZ");
+    const Vec2i8 start = portals_tmp.at({'A', 'A'});
+    const Vec2i8 end = portals_tmp.at({'Z', 'Z'});
 
+    portals_map[start] = {};
+
+    auto reachable = [&] {
+        dense_map<Vec2i8, small_vector<std::pair<Vec2i8, int>>> result;
+        result.reserve(portals.size());
+        Matrix<bool> visited(g.rows, g.cols);
+        MonotonicBucketQueue<Vec2i8> queue(2);
+
+        for (auto &[pos, _] : portals_map) {
+            std::ranges::fill(visited.all(), false);
+            queue.clear();
+            queue.emplace(0, pos);
+            auto &reach = result[pos];
+
+            while (auto u = queue.pop()) {
+                visited(*u) = true;
+
+                if (pos != *u && (portals_map.count(*u) || *u == end))
+                    reach.emplace_back(*u, queue.current_priority());
+
+                for (auto v : neighbors4(g, *u))
+                    if (g(v) == '.' && !visited(v))
+                        queue.emplace(queue.current_priority() + 1, v);
+            }
+        }
+
+        return result;
+    }();
+
+    int max_distance = 0;
+    for (const auto &[_, v] : reachable)
+        for (auto &[_, d] : v)
+            max_distance = std::max(max_distance, d);
+
+    MonotonicBucketQueue<State, small_vector<State>> queue(max_distance);
     dense_set<State, CrcHasher> visited;
-    visited.reserve(1'000'000);
+    visited.reserve(10'000);
 
-    {
-        std::vector<State> queue{{start, 0}};
+    auto solve = [&](const bool allow_recursion) {
+        queue.clear();
         visited.clear();
-        for (size_t i = 0; i < queue.size(); ++i) {
-            auto [u, d] = queue[i];
-            visited.insert({u});
-
-            if (u == end) {
-                fmt::print("{}\n", d);
-                break;
-            }
-
-            for (auto v : neighbors4(g, u)) {
-                if (g(v) == '.' && !visited.count({v}))
-                    queue.emplace_back(v, d + 1);
-            }
-
-            if (auto [v, inwards] = portals(u); v != Vec2i8{}) {
-                if (!visited.count({v}))
-                    queue.emplace_back(v, d + 1);
-            }
-        }
-    }
-
-    {
-        MonotonicBucketQueue<std::tuple<Vec2i8, int16_t>> queue(2);
         queue.emplace(0, start, 0);
-        visited.clear();
+
         while (auto uu = queue.pop()) {
             const auto [u, level] = *uu;
-            visited.insert(State(u, level));
 
-            if (level == 0 && u == end) {
-                fmt::print("{}\n", queue.current_priority());
-                break;
-            }
+            if (level == 0 && u == end)
+                return queue.current_priority();
 
-            for (auto v : neighbors4(g, u)) {
-                if (g(v) == '.' && !visited.count(State(v, level)))
-                    queue.emplace(queue.current_priority() + 1, v, level);
-            }
+            for (auto &[v, d] : reachable[u])
+                if (visited.emplace(v, level).second)
+                    queue.emplace(queue.current_priority() + d, v, level);
 
-            if (auto [v, inwards] = portals(u); v != Vec2i8{}) {
-                if (level > 0 || inwards) {
-                    auto new_level = inwards ? level + 1 : level - 1;
-                    if (!visited.count(State(v, new_level)))
-                        queue.emplace(queue.current_priority() + 1, v, new_level);
-                }
+            if (auto [v, level_delta] = portals(u); v != Vec2i8{}) {
+                auto new_level = allow_recursion ? level + level_delta : level;
+                if (new_level >= 0 && visited.emplace(v, new_level).second)
+                    queue.emplace(queue.current_priority() + 1, v, new_level);
             }
         }
-    }
+
+        ASSERT_MSG(false, "No solution found!?");
+    };
+
+    fmt::print("{}\n", solve(false));
+    fmt::print("{}\n", solve(true));
 }
 
 }
