@@ -5,33 +5,41 @@ namespace aoc_2017_24 {
 void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
-    std::vector<std::array<int, 2>> components;
-    components.reserve(lines.size());
+    ASSERT(lines.size() < 64);
 
+    inplace_vector<std::array<uint8_t, 2>, 64> components;
     for (std::string_view line : lines)
-        components.push_back(find_numbers_n<int, 2>(line));
-    ASSERT(components.size() <= 64);
+        components.unchecked_push_back(find_numbers_n<uint8_t, 2>(line));
 
-    std::vector<std::tuple<uint64_t, int, int, int>> queue;
-    queue.reserve(10'000);
-    queue.emplace_back(~uint64_t(0) >> (64 - components.size()), 0, 0, 0);
+    std::array<inplace_vector<std::pair<uint8_t, uint8_t>, 64>, 64> compatible;
+    for (size_t i = 0; i < 64; ++i) {
+        for (size_t j = 0; j < components.size(); ++j) {
+            auto [a, b] = components[j];
+            if (i == a)
+                compatible[i].unchecked_emplace_back(j, b);
+            if (i == b)
+                compatible[i].unchecked_emplace_back(j, a);
+        }
+    }
+
+    small_vector<std::tuple<uint64_t, int, int, int>, 64> queue;
+    queue.emplace_back(UINT64_MAX >> (64 - components.size()), 0, 0, 0);
 
     int part1 = INT_MIN;
     std::pair<int, int> part2{INT_MIN, INT_MIN};
     while (!queue.empty()) {
-        auto [remaining_mask, curr, depth, weight] = queue.back();
+        auto [remaining, curr, depth, weight] = queue.back();
         queue.pop_back();
+
+        weight += curr;
 
         part1 = std::max(part1, weight);
         part2 = std::max(part2, std::pair(depth, weight));
 
-        for (auto mask = remaining_mask; mask; mask &= mask - 1) {
-            const auto [a, b] = components[std::countr_zero(mask)];
-            const auto new_mask = remaining_mask & ~(mask & -mask);
-            if (a == curr)
-                queue.emplace_back(new_mask, b, depth + 1, weight + a + b);
-            else if (b == curr)
-                queue.emplace_back(new_mask, a, depth + 1, weight + a + b);
+        for (const auto &[idx, other] : compatible[curr]) {
+            const uint64_t bit = UINT64_C(1) << idx;
+            if (remaining & bit)
+                queue.emplace_back(remaining & ~bit, other, depth + 1, weight + curr);
         }
     }
 
