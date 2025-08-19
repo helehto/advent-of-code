@@ -146,31 +146,77 @@ static size_t step_compress(__m256i *n_4x64,
 static int part2(uint32_t a, uint32_t b)
 {
     constexpr size_t limit = 5'000'000;
+    const size_t n_threads = std::thread::hardware_concurrency();
+    ASSERT(limit % n_threads == 0);
 
-    auto a_values = std::make_unique_for_overwrite<uint64_t[]>(limit + 3);
-    auto b_values = std::make_unique_for_overwrite<uint64_t[]>(limit + 3);
+    // +20% to handle extra elements
+    const int thread_buffer_size = ((limit * 12 / 10) / n_threads + 7) & ~8;
 
-    auto search = [](uint64_t init, uint64_t k, uint64_t mask,
-                     uint64_t *buffer) noexcept {
-        const uint32_t skip = modexp_2p31m1_bounded(1, k, 4);
+    const auto buffer_size = (thread_buffer_size + 3) * n_threads;
+    auto a_buffer = std::make_unique_for_overwrite<uint64_t[]>(buffer_size);
+    auto b_buffer = std::make_unique_for_overwrite<uint64_t[]>(buffer_size);
 
-        __m256i state_4x64 = _mm256_setr_epi64x(
-            modexp_2p31m1_bounded(init, k, 0), modexp_2p31m1_bounded(init, k, 1),
-            modexp_2p31m1_bounded(init, k, 2), modexp_2p31m1_bounded(init, k, 3));
+    std::vector<std::span<uint64_t>> a_spans(n_threads);
+    for (size_t i = 0; i < n_threads; ++i)
+        a_spans[i] = std::span(a_buffer.get() + i * (thread_buffer_size + 3),
+                               thread_buffer_size + 3);
 
-        for (size_t n = 0; n < limit;)
-            n += step_compress(&state_4x64, &buffer[n], skip, mask);
+    std::vector<std::span<uint64_t>> b_spans(n_threads);
+    for (size_t i = 0; i < n_threads; ++i)
+        b_spans[i] = std::span(b_buffer.get() + i * (thread_buffer_size + 3),
+                               thread_buffer_size + 3);
+
+    auto search = [&](std::span<uint64_t> &buffer, uint64_t init, uint64_t k,
+                      uint64_t mask, uint64_t begin, uint64_t steps) noexcept {
+        ASSERT(steps % 4 == 0);
+
+        const uint64_t skip = modexp_2p31m1_bounded(1, k, 4);
+
+        __m256i state_4x64 =
+            _mm256_setr_epi64x(modexp_2p31m1_bounded(init, k, begin + 0),
+                               modexp_2p31m1_bounded(init, k, begin + 1),
+                               modexp_2p31m1_bounded(init, k, begin + 2),
+                               modexp_2p31m1_bounded(init, k, begin + 3));
+
+        size_t n = 0;
+        for (size_t i = 0; i < steps; i += 4)
+            n += step_compress(&state_4x64, buffer.data() + n, skip, mask);
+
+        buffer = buffer.first(n);
     };
 
-    // Compute the admissible values from the two generators in parallel.
     {
-        std::jthread t1(search, a, 16807, 3, a_values.get());
-        std::jthread t2(search, b, 48271, 7, b_values.get());
+        small_vector<std::jthread, 32> threads;
+        for (size_t i = 0; i < n_threads; ++i) {
+            threads.emplace_back([=, &a_spans, &b_spans]() noexcept {
+                const auto chunk_size_4 = 4 * limit / n_threads * 102 / 100;
+                const auto chunk_size_8 = 8 * limit / n_threads * 102 / 100;
+                search(a_spans[i], a, 16807, 3, i * chunk_size_4, chunk_size_4);
+                search(b_spans[i], b, 48271, 7, i * chunk_size_8, chunk_size_8);
+            });
+        }
     }
 
+    size_t counted = 0;
     int result = 0;
-    for (size_t i = 0; i < limit; ++i)
-        result += (a_values[i] & 0xffff) == (b_values[i] & 0xffff);
+    for (size_t ai = 0, bi = 0; ai < a_spans.size() && bi < b_spans.size();) {
+        std::span<uint64_t> &a = a_spans[ai];
+        std::span<uint64_t> &b = b_spans[bi];
+
+        auto n = std::min({a.size(), b.size(), limit - counted});
+        for (size_t i = 0; i < n; ++i)
+            result += (a[i] & 0xffff) == (b[i] & 0xffff);
+        counted += n;
+        if (counted == limit)
+            break;
+
+        a = a.subspan(n);
+        b = b.subspan(n);
+        if (a.empty())
+            ++ai;
+        if (b.empty())
+            ++bi;
+    }
 
     return result;
 }
