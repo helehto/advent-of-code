@@ -58,7 +58,7 @@ static int part1(uint32_t a, uint32_t b)
     const auto stride = limit / n_threads;
     ASSERT(stride % 4 == 0);
 
-    int result = 0;
+    std::atomic<int> result = 0;
 
     // Constant factors for skipping ahead in the output stream by 4 iterations
     // at a time for the two generators.
@@ -91,7 +91,7 @@ static int part1(uint32_t a, uint32_t b)
 
         std::array<uint64_t, 4> count;
         _mm256_storeu_si256(reinterpret_cast<__m256i *>(&count), count_4x64);
-        result += count[0] + count[1] + count[2] + count[3];
+        result.fetch_add(count[0] + count[1] + count[2] + count[3]);
     };
 
     {
@@ -100,7 +100,7 @@ static int part1(uint32_t a, uint32_t b)
             threads.unchecked_emplace_back(search, i * stride);
     }
 
-    return result;
+    return result.load();
 }
 
 /// Store the states in `n_4x64` for which the bits in `mask` are zero into an
