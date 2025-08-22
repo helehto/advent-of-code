@@ -2,40 +2,53 @@
 
 namespace aoc_2016_22 {
 
-void run(std::string_view buf)
+constexpr int part1(std::span<const uint16_t> nums)
 {
-    auto lines = split_lines(buf);
+    const auto n_nodes = nums.size() / 6;
 
-    int max_x = INT_MIN;
-    int max_y = INT_MIN;
+    std::vector<uint16_t> used(n_nodes);
+    for (size_t i = 0; i < n_nodes; ++i)
+        used[i] = nums[6 * i + 3];
+    std::ranges::sort(used);
+
+    std::vector<uint16_t> avail(n_nodes);
+    for (size_t i = 0; i < n_nodes; ++i)
+        avail[i] = nums[6 * i + 4];
+    std::ranges::sort(avail);
+
+    ASSERT(used[0] == 0);
+    ASSERT(used[1] != 0);
     int viable_pairs = 0;
-    for (size_t i = 2; i < lines.size(); ++i) {
-        const auto [x_a, y_a, size_a, used_a, avail_a, usepct_a] =
-            find_numbers_n<int, 6>(lines[i]);
-
-        for (size_t j = 2; j < lines.size(); ++j) {
-            if (i == j)
-                continue;
-
-            const auto [x_b, y_b, size_b, used_b, avail_b, usepct_b] =
-                find_numbers_n<int, 6>(lines[j]);
-
-            if (used_a != 0 && used_a <= avail_b)
-                viable_pairs++;
-        }
-
-        max_x = std::max(max_x, x_a);
-        max_y = std::max(max_y, y_a);
+    for (size_t i = 1, j = 0; i < used.size(); ++i) {
+        while (j < avail.size() && avail[j] < used[i])
+            ++j;
+        viable_pairs += avail.size() - j;
     }
-    fmt::print("{}\n", viable_pairs);
+
+    return viable_pairs;
+}
+
+constexpr int part2(std::span<const uint16_t> nums)
+{
+    const auto n_nodes = nums.size() / 6;
+
+    uint16_t max_x = 0;
+    for (size_t i = 0; i < n_nodes; ++i)
+        max_x = std::max<uint16_t>(max_x, nums[6 * i + 0]);
+
+    uint16_t max_y = 0;
+    for (size_t i = 0; i < n_nodes; ++i)
+        max_y = std::max<uint16_t>(max_y, nums[6 * i + 1]);
 
     Matrix<char> grid(max_y + 1, max_x + 1);
     Vec2i empty_node{};
-    for (size_t i = 2; i < lines.size(); ++i) {
-        const auto [x, y, size, used, avail, usepct] = find_numbers_n<int, 6>(lines[i]);
-        if (usepct > 95) {
+    for (size_t i = 0; i < n_nodes; ++i) {
+        const auto x = nums[6 * i + 0];
+        const auto y = nums[6 * i + 1];
+
+        if (nums[6 * i + 5] > 95) {
             grid(y, x) = '#';
-        } else if (used == 0) {
+        } else if (nums[6 * i + 3] == 0) {
             grid(y, x) = '@';
             empty_node = {x, y};
         } else {
@@ -81,7 +94,18 @@ void run(std::string_view buf)
         move({0, -1});
     }
 
-    fmt::print("{}\n", steps);
+    return steps;
+}
+
+void run(std::string_view buf)
+{
+    std::vector<uint16_t> nums;
+    nums.reserve(2 + buf.size() / 48);
+    find_numbers(buf, nums);
+    ASSERT(nums.size() % 6 == 0);
+
+    fmt::print("{}\n", part1(nums));
+    fmt::print("{}\n", part2(nums));
 }
 
 }
