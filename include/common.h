@@ -530,30 +530,118 @@ struct StridedRange : std::ranges::view_interface<StridedRange<T>> {
 };
 static_assert(std::ranges::random_access_range<StridedRange<int>>);
 
+/// Base class for shared functionality between Matrix and MatrixView. Assumes
+/// that data is stored in row-major order and that each row is contiguous in
+/// memory (i.e. no padding between rows).
+template <typename Derived>
+struct MatrixBase {
+    constexpr bool operator==(this auto &&self, const Derived &other) noexcept
+    {
+        return std::ranges::equal(self.all(), other.all());
+    }
+    constexpr bool operator!=(this auto &&self, const Derived &other) noexcept
+    {
+        return !self.operator==(other);
+    }
+
+    constexpr size_t size(this auto &&self) noexcept { return self.rows * self.cols; }
+    constexpr size_t rows(this auto &&self) noexcept { return self.rows; }
+    constexpr size_t cols(this auto &&self) noexcept { return self.cols; }
+
+    constexpr auto all(this auto &&self) noexcept
+    {
+        return std::span(self.data(), self.data() + self.rows * self.cols);
+    }
+    constexpr auto col(this auto &&self, size_t i) noexcept
+    {
+        DEBUG_ASSERT_MSG(i < self.cols, "{} is not a valid column", i);
+        return StridedRange({}, self.data() + i, self.rows, self.cols);
+    }
+    constexpr auto row(this auto &&self, size_t i) noexcept
+    {
+        DEBUG_ASSERT_MSG(i < self.rows, "{} is not a valid row", i);
+        return std::span(self.data() + i * self.cols, self.data() + (i + 1) * self.cols);
+    }
+
+    constexpr auto &&operator()(this auto &&self, size_t i, size_t j) noexcept
+    {
+        DEBUG_ASSERT_MSG(i < self.rows && j < self.cols,
+                         "({}, {}) is not a valid matrix entry (x<{}, y<{})", j, i,
+                         self.rows, self.cols);
+        return self.data()[i * self.cols + j];
+    }
+
+    template <typename U>
+    constexpr auto &&operator()(this auto &&self, Vec2<U> p) noexcept
+    {
+        DEBUG_ASSERT_MSG(self.in_bounds(p), "{} is not a valid matrix entry (x<{}, y<{})",
+                         p, self.cols, self.rows);
+        return self.data()[p.y * self.cols + p.x];
+    }
+
+    template <typename IndexTy = size_t>
+    constexpr Ndindex2DRange<IndexTy> ndindex(this auto &&self) noexcept
+    {
+        return {self.rows, self.cols};
+    }
+
+    template <typename IndexTy>
+    constexpr bool in_bounds(this auto &&self, Vec2<IndexTy> p) noexcept
+    {
+        using Unsigned = std::make_unsigned_t<IndexTy>;
+        return static_cast<Unsigned>(p.x) < self.cols &&
+               static_cast<Unsigned>(p.y) < self.rows;
+    }
+};
+
+/// Non-owning view of a 2D matrix.
 template <typename T>
-struct Matrix {
-    std::unique_ptr<T[]> data;
+struct MatrixView : MatrixBase<MatrixView<T>> {
+    T *data_;
     size_t rows;
     size_t cols;
+
+    using value_type = T;
+
+    constexpr MatrixView() noexcept = default;
+
+    constexpr MatrixView(T *data, size_t rows, size_t cols) noexcept
+        : data_(data)
+        , rows(rows)
+        , cols(cols)
+    {
+    }
+
+    T *data() const noexcept { return data_; }
+};
+
+/// Owning container for a 2D matrix.
+template <typename T>
+struct Matrix : MatrixBase<Matrix<T>> {
+    std::unique_ptr<T[]> data_;
+    size_t rows;
+    size_t cols;
+
+    using value_type = T;
 
     constexpr Matrix() = default;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Walloc-size-larger-than="
     constexpr Matrix(size_t rows_, size_t cols_, T value = T())
-        : data(new T[rows_ * cols_])
+        : data_(std::make_unique_for_overwrite<T[]>(rows_ * cols_))
         , rows(rows_)
         , cols(cols_)
     {
-        std::ranges::fill(all(), value);
+        std::ranges::fill(this->all(), value);
     }
 
     constexpr Matrix(const Matrix &other)
-        : data(new T[other.rows * other.cols])
+        : data_(std::make_unique_for_overwrite<T[]>(other.rows * other.cols))
         , rows(other.rows)
         , cols(other.cols)
     {
-        std::ranges::copy(other.all(), data.get());
+        std::ranges::copy(other.all(), data());
     }
 #pragma GCC diagnostic pop
 
@@ -564,108 +652,27 @@ struct Matrix {
         return *this;
     }
 
-    constexpr Matrix(Matrix &&) = default;
-    constexpr Matrix &operator=(Matrix &&) = default;
+    constexpr Matrix(Matrix &&) noexcept = default;
+    constexpr Matrix &operator=(Matrix &&) noexcept = default;
+
+    // Allow implicit conversion to MatrixView, akin to how std::vector<T> is
+    // implicitly convertible to std::span<T>.
+    operator MatrixView<T>() noexcept { return MatrixView<T>(data_.get(), rows, cols); }
+    operator MatrixView<const T>() const noexcept
+    {
+        return MatrixView<const T>(data_.get(), rows, cols);
+    }
 
     template <typename Proj = std::identity>
     static Matrix from_lines(std::span<const std::string_view> lines, Proj proj = {})
     {
         Matrix m(lines.size(), lines[0].size());
-        T *p = m.data.get();
+        T *p = m.data();
         for (size_t i = 0; i < lines.size(); i++) {
             for (size_t j = 0; j < lines[0].size(); j++)
                 *p++ = proj(lines[i][j]);
         }
         return m;
-    }
-
-    constexpr bool operator==(const Matrix &other) const noexcept
-    {
-        return std::ranges::equal(all(), other.all());
-    }
-    constexpr bool operator!=(const Matrix &other) const noexcept
-    {
-        return !(*this == other);
-    }
-
-    constexpr T &operator()(size_t i, size_t j) noexcept
-    {
-        DEBUG_ASSERT_MSG(i < rows && j < cols,
-                         "({}, {}) is not a valid matrix entry (x<{}, y<{})", j, i, rows,
-                         cols);
-        return data[i * cols + j];
-    }
-
-    constexpr const T &operator()(size_t i, size_t j) const noexcept
-    {
-        DEBUG_ASSERT_MSG(i < rows && j < cols,
-                         "({}, {}) is not a valid matrix entry (x<{}, y<{})", j, i, rows,
-                         cols);
-        return data[i * cols + j];
-    }
-
-    template <typename U>
-    constexpr T &operator()(Vec2<U> p) noexcept
-    {
-        DEBUG_ASSERT_MSG(in_bounds(p), "{} is not a valid matrix entry (x<{}, y<{})", p,
-                         cols, rows);
-        return data[p.y * cols + p.x];
-    }
-
-    template <typename U>
-    constexpr const T &operator()(Vec2<U> p) const noexcept
-    {
-        DEBUG_ASSERT_MSG(in_bounds(p), "{} is not a valid matrix entry (x<{}, y<{})", p,
-                         cols, rows);
-        return data[p.y * cols + p.x];
-    }
-
-    constexpr size_t size() const noexcept { return rows * cols; }
-
-    constexpr std::span<T> all() noexcept
-    {
-        return {data.get(), data.get() + rows * cols};
-    }
-    constexpr std::span<const T> all() const noexcept
-    {
-        return {data.get(), data.get() + rows * cols};
-    }
-
-    constexpr StridedRange<T> col(size_t i) noexcept
-    {
-        DEBUG_ASSERT_MSG(i < cols, "{} is not a valid column", i);
-        return {{}, data.get() + i, rows, cols};
-    }
-
-    constexpr StridedRange<const T> col(size_t i) const noexcept
-    {
-        DEBUG_ASSERT_MSG(i < cols, "{} is not a valid column", i);
-        return {{}, data.get() + i, rows, cols};
-    }
-
-    constexpr std::span<T> row(size_t i) noexcept
-    {
-        DEBUG_ASSERT_MSG(i < rows, "{} is not a valid row", i);
-        return {data.get() + i * cols, data.get() + (i + 1) * cols};
-    }
-
-    constexpr std::span<const T> row(size_t i) const noexcept
-    {
-        DEBUG_ASSERT_MSG(i < rows, "{} is not a valid row", i);
-        return {data.get() + i * cols, data.get() + (i + 1) * cols};
-    }
-
-    template <typename U = size_t>
-    constexpr Ndindex2DRange<U> ndindex() const noexcept
-    {
-        return {rows, cols};
-    }
-
-    template <typename U>
-    constexpr bool in_bounds(Vec2<U> p) const noexcept
-    {
-        using Unsigned = std::make_unsigned_t<U>;
-        return static_cast<Unsigned>(p.x) < cols && static_cast<Unsigned>(p.y) < rows;
     }
 
     constexpr Matrix<T>
@@ -674,7 +681,7 @@ struct Matrix {
         Matrix<T> result(rows + 2 * pad_rows, cols + 2 * pad_cols, pad_value);
 
         for (size_t i = 0; i < rows; ++i)
-            std::ranges::copy(row(i), result.row(i + pad_cols).begin() + pad_rows);
+            std::ranges::copy(this->row(i), result.row(i + pad_cols).begin() + pad_rows);
 
         return result;
     }
@@ -683,16 +690,25 @@ struct Matrix {
     {
         return padded(pad, pad, pad_value);
     }
+
+    T *data() noexcept { return data_.get(); }
+    const T *data() const noexcept { return data_.get(); }
 };
 
-template <typename T>
-struct fmt::formatter<Matrix<T>> : fmt::formatter<T> {
-    template <typename FormatContext>
-    auto format(const Matrix<T> &m, FormatContext &ctx) const
+/// Concept that matches any kind of matrix (either an owning Matrix or a
+/// non-owning MatrixView), regardless of the element type.
+template <typename M>
+concept MatrixConcept = std::derived_from<M, MatrixBase<M>>;
+static_assert(MatrixConcept<Matrix<int>>);
+static_assert(MatrixConcept<MatrixView<int>>);
+
+template <MatrixConcept M>
+struct fmt::formatter<M> : fmt::formatter<typename M::value_type> {
+    auto format(const M &m, auto &ctx) const
     {
         for (size_t i = 0; i < m.rows; i++) {
             for (size_t j = 0; j < m.cols; j++)
-                fmt::formatter<T>::format(m(i, j), ctx);
+                fmt::formatter<typename M::value_type>::format(m(i, j), ctx);
             fmt::format_to(ctx.out(), "\n");
         }
 
@@ -718,8 +734,8 @@ constexpr static std::array<Vec2<T>, 4> neighbors4(Vec2<T> p)
     }};
 }
 
-template <typename T, typename U>
-inline inplace_vector<Vec2<U>, 4> neighbors4(const Matrix<T> &chart, Vec2<U> p)
+template <typename U>
+inline inplace_vector<Vec2<U>, 4> neighbors4(const MatrixConcept auto &chart, Vec2<U> p)
 {
     inplace_vector<Vec2<U>, 4> result;
     for (auto n : neighbors4(p))
@@ -744,8 +760,8 @@ constexpr static std::array<Vec2<T>, 8> neighbors8(Vec2<T> p)
     }};
 }
 
-template <typename T, typename U>
-inline inplace_vector<Vec2<U>, 8> neighbors8(const Matrix<T> &grid, Vec2<U> p)
+template <typename U>
+inline inplace_vector<Vec2<U>, 8> neighbors8(const MatrixConcept auto &grid, Vec2<U> p)
 {
     inplace_vector<Vec2<U>, 8> result;
     for (auto n : neighbors8(p))

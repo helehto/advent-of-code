@@ -12,7 +12,7 @@ constexpr auto move_to_dir = [] {
     return result;
 }();
 
-static Vec2i step1(Matrix<char> &grid, const Vec2i from, const char c)
+static Vec2i step1(MatrixView<char> grid, const Vec2i from, const char c)
 {
     const auto d = move_to_dir[c];
     const auto p = from + d;
@@ -44,7 +44,7 @@ static Vec2i step1(Matrix<char> &grid, const Vec2i from, const char c)
 
 static int part1(const Matrix<char> &original_grid, std::string_view moves)
 {
-    auto grid = original_grid;
+    Matrix<char> grid = original_grid;
 
     Vec2i robot{};
     for (auto p : grid.ndindex<int>()) {
@@ -67,7 +67,7 @@ static int part1(const Matrix<char> &original_grid, std::string_view moves)
 
 static Vec2i step2(const Vec2i robot,
                    Matrix<bool> &boxes,
-                   const Matrix<bool> &walls,
+                   MatrixView<const bool> walls,
                    const char c,
                    inplace_vector<Vec2i, 64> &to_move)
 {
@@ -121,7 +121,7 @@ static Vec2i step2(const Vec2i robot,
     return target;
 }
 
-static int part2(const Matrix<char> &grid, std::string_view moves)
+static int part2(MatrixView<const char> grid, std::string_view moves)
 {
     Vec2i robot{};
     Matrix<bool> boxes(grid.rows, 2 * grid.cols, false);

@@ -33,7 +33,7 @@ static Matrix<int> get_distance_matrix(std::string_view buf)
     return dist;
 }
 
-static int evaluate_route(const Matrix<int> &dist, std::span<int> perm)
+static int evaluate_route(MatrixView<const int> dist, std::span<int> perm)
 {
     int cost = 0;
 
@@ -44,7 +44,7 @@ static int evaluate_route(const Matrix<int> &dist, std::span<int> perm)
 }
 
 template <typename Compare>
-static int solve(const Matrix<int> &dist, Compare comp)
+static int solve(MatrixView<const int> dist, Compare comp)
 {
     std::vector<int> perm;
     perm.resize(dist.rows);

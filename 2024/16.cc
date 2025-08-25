@@ -19,9 +19,9 @@ void run(std::string_view buf)
 
     int16_t start = -1, end = -1;
     for (size_t i = 0; i < grid.size(); i++) {
-        if (grid.data[i] == 'S')
+        if (grid.data()[i] == 'S')
             start = i;
-        if (grid.data[i] == 'E')
+        if (grid.data()[i] == 'E')
             end = i;
     }
     ASSERT(start > 0);
@@ -130,7 +130,7 @@ void run(std::string_view buf)
         };
 
         // Explore straight head:
-        if (int16_t q = u.index + direction_offset[u.dir]; grid.data[q] != '#')
+        if (int16_t q = u.index + direction_offset[u.dir]; grid.data()[q] != '#')
             explore(State{q, u.dir}, d + 1, d_max);
 
         // Explore by turning left:

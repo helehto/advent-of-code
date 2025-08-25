@@ -3,13 +3,16 @@
 
 namespace aoc_2021_15 {
 
-constexpr int solve(const Matrix<uint8_t> &grid)
+constexpr int solve(MatrixView<const uint8_t> grid,
+                    MatrixView<uint16_t> dist,
+                    MonotonicBucketQueue<Vec2i, small_vector<Vec2i>> &q)
 {
     constexpr Vec2i start{0, 0};
     const Vec2i end(grid.cols - 1, grid.rows - 1);
-    Matrix<uint16_t> dist(grid.rows, grid.cols, UINT16_MAX);
 
-    MonotonicBucketQueue<Vec2i> q(10);
+    std::ranges::fill(dist.all(), UINT16_MAX);
+
+    q.clear();
     q.emplace(0, start);
     dist(start) = 0;
 
@@ -28,7 +31,7 @@ constexpr int solve(const Matrix<uint8_t> &grid)
     ASSERT_MSG(false, "Path not found!?");
 }
 
-constexpr Matrix<uint8_t> expand(const Matrix<uint8_t> &grid)
+constexpr Matrix<uint8_t> expand(MatrixView<const uint8_t> grid)
 {
     Matrix<uint8_t> result(5 * grid.rows, 5 * grid.cols);
 
@@ -52,8 +55,14 @@ void run(std::string_view buf)
     auto lines = split_lines(buf);
     auto grid = Matrix<uint8_t>::from_lines(lines, λx(x - '0'));
 
-    fmt::print("{}\n", solve(grid));
-    fmt::print("{}\n", solve(expand(grid)));
+    auto dist_storage =
+        std::make_unique_for_overwrite<uint16_t[]>(5 * grid.rows * 5 * grid.cols);
+    MonotonicBucketQueue<Vec2i, small_vector<Vec2i>> q(10);
+    fmt::print("{}\n",
+               solve(grid, MatrixView(dist_storage.get(), grid.rows, grid.cols), q));
+    fmt::print("{}\n",
+               solve(expand(grid),
+                     MatrixView(dist_storage.get(), 5 * grid.rows, 5 * grid.cols), q));
 }
 
 }

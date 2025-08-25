@@ -29,7 +29,7 @@ constexpr Matrix<int> build_grid(const int depth, const Vec2i target)
     return result;
 }
 
-constexpr int part1(const Matrix<int> &grid, const Vec2i target)
+constexpr int part1(MatrixView<const int> grid, const Vec2i target)
 {
     int total_risk = 0;
 
@@ -40,7 +40,7 @@ constexpr int part1(const Matrix<int> &grid, const Vec2i target)
     return total_risk;
 }
 
-constexpr int part2(const Matrix<int> &grid, const Vec2i target)
+constexpr int part2(MatrixView<const int> grid, const Vec2i target)
 {
     enum class Gear : uint32_t { none, climbing_gear, torch };
 

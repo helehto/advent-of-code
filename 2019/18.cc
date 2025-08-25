@@ -30,7 +30,7 @@ struct KeyInfo {
 };
 
 template <typename Sink>
-static void flood(const Matrix<char> &grid,
+static void flood(MatrixView<const char> grid,
                   const Vec2i start,
                   MonotonicBucketQueue<std::tuple<Vec2i, uint32_t>> &queue,
                   Matrix<bool> &visited,
@@ -59,7 +59,7 @@ static void flood(const Matrix<char> &grid,
 /// Precompute the shortest path between all keys and which doors that are
 /// between them.
 static std::pair<Matrix<KeyInfo>, size_t>
-precompute_key_distance_matrix(const Matrix<char> &grid, std::span<const Vec2i> keys)
+precompute_key_distance_matrix(MatrixView<const char> grid, std::span<const Vec2i> keys)
 {
     size_t max_key_distance = 0;
     Matrix<KeyInfo> result(keys.size(), keys.size(), KeyInfo{UINT32_MAX, UINT32_MAX});

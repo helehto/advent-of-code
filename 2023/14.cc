@@ -72,9 +72,9 @@ static void roll_e(Matrix<char> &grid)
 }
 
 struct MatrixHasher {
-    size_t operator()(const Matrix<char> &m) const noexcept
+    size_t operator()(MatrixView<const char> m) const noexcept
     {
-        return CrcHasher{}(std::string_view(m.data.get(), m.size()));
+        return CrcHasher{}(std::string_view(m.data(), m.size()));
     }
 };
 
@@ -100,7 +100,7 @@ static Matrix<char> find_cycle(Matrix<char> grid, int which)
     }
 }
 
-static int total_load(const Matrix<char> &grid)
+static int total_load(MatrixView<const char> grid)
 {
     int sum = 0;
     for (auto p : grid.ndindex())

@@ -2,7 +2,7 @@
 
 namespace aoc_2024_4 {
 
-constexpr bool scan(const Matrix<char> &grid, Vec2i start, Vec2i d, int len, char *out)
+constexpr bool scan(MatrixView<const char> grid, Vec2i start, Vec2i d, int len, char *out)
 {
     for (int n = 0; n < len; ++n) {
         auto p = start + n * d;
@@ -21,7 +21,7 @@ match_word(const std::array<char, 4> &word, char c1, char c2, char c3, char c4)
            std::bit_cast<uint32_t>(std::array<char, 4>{c1, c2, c3, c4});
 }
 
-constexpr int part1(const Matrix<char> &grid)
+constexpr int part1(MatrixView<const char> grid)
 {
     alignas(4) std::array<char, 4> word;
     int result = 0;
@@ -35,7 +35,7 @@ constexpr int part1(const Matrix<char> &grid)
     return result;
 }
 
-constexpr int part2(const Matrix<char> &grid)
+constexpr int part2(MatrixView<const char> grid)
 {
     alignas(4) std::array<char, 4> word;
     int result = 0;

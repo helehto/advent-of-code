@@ -29,7 +29,7 @@ struct Neighbor {
 };
 
 static inplace_vector<Neighbor, 16>
-get_neighbors(const Matrix<uint8_t> &m, Vertex u, int min, int max)
+get_neighbors(MatrixView<const uint8_t> m, Vertex u, int min, int max)
 {
     inplace_vector<Neighbor, 16> result;
 
@@ -58,7 +58,7 @@ get_neighbors(const Matrix<uint8_t> &m, Vertex u, int min, int max)
     return result;
 }
 
-static int dijkstra(const Matrix<uint8_t> &grid,
+static int dijkstra(MatrixView<const uint8_t> grid,
                     std::initializer_list<uint32_t> start,
                     std::vector<uint32_t> &dist,
                     const int min_straight,

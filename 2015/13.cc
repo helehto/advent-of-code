@@ -36,7 +36,7 @@ static Matrix<int> get_happiness_matrix(std::string_view buf)
     return matrix;
 }
 
-static int total_happiness(const Matrix<int> &matrix, std::span<int> perm)
+static int total_happiness(MatrixView<const int> matrix, std::span<int> perm)
 {
     int result = 0;
 
@@ -51,7 +51,7 @@ static int total_happiness(const Matrix<int> &matrix, std::span<int> perm)
     return result;
 }
 
-static int max_happiness(const Matrix<int> &matrix)
+static int max_happiness(MatrixView<const int> matrix)
 {
     std::vector<int> perm(matrix.rows);
     for (size_t i = 0; i < perm.size(); i++)

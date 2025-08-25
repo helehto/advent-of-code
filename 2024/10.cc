@@ -3,7 +3,7 @@
 namespace aoc_2024_10 {
 
 template <bool AllowRevisit>
-static int64_t trailhead_score(const Matrix<char> &grid,
+static int64_t trailhead_score(MatrixView<const char> grid,
                                Vec2i p,
                                std::vector<Vec2i> &queue,
                                Matrix<bool> &visited)

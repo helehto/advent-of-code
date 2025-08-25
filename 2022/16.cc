@@ -78,29 +78,28 @@ static Valves parse_valves(std::string_view buf)
     return result;
 }
 
-// Construct a matrix (represented as a vector) with the least distances from
-// each node to every other node. The distance from 'u' to 'v' is stored in the
-// element with index (u * n + v).
-static std::vector<int> floyd_warshall(const std::vector<Valve> &valves)
+// Construct a matrix with the least distances from each node to every other
+// node.
+static Matrix<int> floyd_warshall(const std::vector<Valve> &valves)
 {
     const auto n = valves.size();
-    std::vector<int> d(n * n, INT_MAX / 3);
+    Matrix<int> d(n, n, INT_MAX / 3);
 
     for (size_t u = 0; u < n; u++) {
         for (size_t i = valves[u].neighbor_mask; i; i &= i - 1) {
             const auto v = std::countr_zero(i);
-            d[u * n + v] = 1;
+            d(u, v) = 1;
         }
     }
 
     for (size_t i = 0; i < n; i++)
-        d[i * n + i] = 0;
+        d(i, i) = 0;
 
     for (size_t k = 0; k < n; k++) {
         for (size_t i = 0; i < n; i++) {
             for (size_t j = 0; j < n; j++) {
-                if (d[i * n + j] > d[i + n * k] + d[k * n + j])
-                    d[i * n + j] = d[i + n * k] + d[k * n + j];
+                if (d(i, j) > d(i, k) + d(k, j))
+                    d(i, j) = d(i, k) + d(k, j);
             }
         }
     }
@@ -114,7 +113,7 @@ struct u64_crc_hash {
 
 struct SearchParameters {
     const Valves &input;
-    const std::vector<int> &costs;
+    MatrixView<const int> costs;
     dense_map<uint64_t, int, u64_crc_hash> &path_scores;
     uint64_t nonzero_mask;
 };
@@ -150,8 +149,7 @@ static void search(const SearchParameters &p, State s)
         // Step through the available mask bit by bit and recurse.
         for (; vmask; vmask &= vmask - 1) {
             const size_t v = std::countr_zero(vmask);
-            const auto new_remaining =
-                s.remaining - p.costs[s.u * p.input.valves.size() + v] - 1;
+            const auto new_remaining = s.remaining - p.costs(s.u, v) - 1;
             if (new_remaining <= 0)
                 continue;
 

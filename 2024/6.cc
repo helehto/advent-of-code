@@ -14,7 +14,7 @@ struct State {
     constexpr bool operator==(const State &) const = default;
 };
 
-static std::pair<std::vector<State>, size_t> walk1(const Matrix<char> &grid, Vec2u16 p)
+static std::pair<std::vector<State>, size_t> walk1(MatrixView<const char> grid, Vec2u16 p)
 {
     uint16_t dir = N;
     std::vector<State> visited{State(p.x, p.y, dir)};
@@ -38,7 +38,7 @@ static std::pair<std::vector<State>, size_t> walk1(const Matrix<char> &grid, Vec
     return std::pair(visited, unique.size());
 }
 
-static bool walk2(const Matrix<char> &grid,
+static bool walk2(MatrixView<const char> grid,
                   Vec2u16 p,
                   std::array<Matrix<bool>, 4> &visited,
                   dense_set<Vec2u16> *out = nullptr)

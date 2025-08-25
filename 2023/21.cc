@@ -8,7 +8,7 @@
 
 namespace aoc_2023_21 {
 
-static dense_map<Vec2i, int> walk(const Matrix<char> &grid, Vec2i start, int max_steps)
+static dense_map<Vec2i, int> walk(MatrixView<const char> grid, Vec2i start, int max_steps)
 {
     dense_map<Vec2i, int> dist{{start, 0}};
     std::queue<std::pair<Vec2i, int>> queue;

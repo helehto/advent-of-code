@@ -3,7 +3,7 @@
 
 namespace aoc_2023_3 {
 
-static inplace_vector<Vec2z, 8> surrounding_part_numbers(const Matrix<char> &grid,
+static inplace_vector<Vec2z, 8> surrounding_part_numbers(MatrixView<const char> grid,
                                                          Vec2z p)
 {
     inplace_vector<Vec2z, 8> result;
@@ -21,7 +21,7 @@ static inplace_vector<Vec2z, 8> surrounding_part_numbers(const Matrix<char> &gri
     return result;
 }
 
-static int read_number(const Matrix<char> &grid, Vec2z p)
+static int read_number(MatrixView<const char> grid, Vec2z p)
 {
     int n = 0;
     for (auto [x, y] = p; x < grid.cols && isdigit(grid(y, x)); x++)

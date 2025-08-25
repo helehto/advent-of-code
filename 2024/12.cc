@@ -3,7 +3,7 @@
 
 namespace aoc_2024_12 {
 
-static std::vector<small_vector<Vec2i>> regions(const Matrix<char> &g,
+static std::vector<small_vector<Vec2i>> regions(MatrixView<const char> g,
                                                 const std::vector<Vec2i> &seeds)
 {
     Matrix<bool> visited(g.rows, g.cols, false);
@@ -32,7 +32,7 @@ static std::vector<small_vector<Vec2i>> regions(const Matrix<char> &g,
     return result;
 }
 
-static int region_perimeter(const Matrix<char> &g, std::span<const Vec2i> points)
+static int region_perimeter(MatrixView<const char> g, std::span<const Vec2i> points)
 {
     int result = 0;
     for (auto u : points)
@@ -41,7 +41,7 @@ static int region_perimeter(const Matrix<char> &g, std::span<const Vec2i> points
     return result;
 }
 
-static int region_sides(const Matrix<char> &g, std::span<const Vec2i> points)
+static int region_sides(MatrixView<const char> g, std::span<const Vec2i> points)
 {
     constexpr Vec2i d[] = {{-1, 0}, {+1, 0}, {0, -1}, {0, +1}};
     Matrix<char> mask(g.rows, g.cols);

@@ -7,7 +7,7 @@ namespace aoc_2023_13 {
 using namespace std::ranges;
 using namespace std::views;
 
-static size_t count_col_mismatches(const Matrix<uint8_t> &m, size_t i, size_t j)
+static size_t count_col_mismatches(MatrixView<const uint8_t> m, size_t i, size_t j)
 {
     size_t n = 0;
 
@@ -18,7 +18,7 @@ static size_t count_col_mismatches(const Matrix<uint8_t> &m, size_t i, size_t j)
     return n;
 }
 
-static size_t count_row_mismatches(const Matrix<uint8_t> &m, size_t i, size_t j)
+static size_t count_row_mismatches(MatrixView<const uint8_t> m, size_t i, size_t j)
 {
     size_t n = 0;
 
@@ -37,7 +37,7 @@ struct ScanResult {
     size_t mismatches;
 };
 
-static ScanResult scanh(const Matrix<uint8_t> &m, size_t i, size_t j)
+static ScanResult scanh(MatrixView<const uint8_t> m, size_t i, size_t j)
 {
     for (size_t d = 0; i >= d && d + j < m.rows; d++) {
         for (size_t k = 0; k < m.cols; k++) {
@@ -49,7 +49,7 @@ static ScanResult scanh(const Matrix<uint8_t> &m, size_t i, size_t j)
     return {0, 0, 0, 0};
 }
 
-static ScanResult scanv(const Matrix<uint8_t> &m, size_t i, size_t j)
+static ScanResult scanv(MatrixView<const uint8_t> m, size_t i, size_t j)
 {
     for (size_t d = 0; i >= d && d + j < m.cols; d++) {
         for (size_t k = 0; k < m.rows; k++) {

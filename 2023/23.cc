@@ -201,7 +201,7 @@ static void search(size_t thread_id,
     }
 }
 
-static Graph build_graph(const Matrix<char> &grid, const Vec2z start, const Vec2z goal)
+static Graph build_graph(MatrixView<const char> grid, const Vec2z start, const Vec2z goal)
 {
     Graph graph;
 

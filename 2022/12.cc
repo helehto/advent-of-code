@@ -3,12 +3,12 @@
 
 namespace aoc_2022_12 {
 
-static int dijkstra(const Matrix<char> &m, size_t target, std::vector<uint32_t> &dist)
+static int dijkstra(MatrixView<const char> m, size_t target, std::vector<uint32_t> &dist)
 {
     MonotonicBucketQueue<uint32_t> bq(2);
 
     for (size_t i = 0; i < m.size(); ++i)
-        if (m.data[i] == 'a')
+        if (m.data()[i] == 'a')
             bq.emplace(0, i);
 
     while (std::optional<uint32_t> u = bq.pop()) {
@@ -16,7 +16,7 @@ static int dijkstra(const Matrix<char> &m, size_t target, std::vector<uint32_t> 
             continue;
 
         auto expand = [&](size_t v) {
-            if (m.data[v] <= m.data[*u] + 1) {
+            if (m.data()[v] <= m.data()[*u] + 1) {
                 if (auto new_dist = dist[*u] + 1; new_dist < dist[v]) {
                     dist[v] = new_dist;
                     bq.emplace(new_dist, v);
@@ -46,8 +46,8 @@ void run(std::string_view buf)
     // isn't at the top left as in the example).
     size_t start_index = std::ranges::find(m.all(), 'S') - m.all().begin();
     size_t end_index = std::ranges::find(m.all(), 'E') - m.all().begin();
-    m.data[start_index] = 'a';
-    m.data[end_index] = 'z';
+    m.data()[start_index] = 'a';
+    m.data()[end_index] = 'z';
 
     std::vector<uint32_t> dist(m.size(), 100000);
 
@@ -63,7 +63,7 @@ void run(std::string_view buf)
         // Dijkstra's algorithm to consider them all as starting points
         // simultaneously.
         for (size_t i = 0; i < m.size(); i++) {
-            if (m.data[i] == 'a')
+            if (m.data()[i] == 'a')
                 dist[i] = 0;
         }
 

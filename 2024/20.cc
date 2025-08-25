@@ -22,7 +22,7 @@ namespace aoc_2024_20 {
 /// icache (e.g. Zen 4).
 template <int N>
 [[gnu::noinline, gnu::flatten]] constexpr int
-count_cheats_from_square(const Matrix<int32_t> &dist, const Vec2i p)
+count_cheats_from_square(MatrixView<const int32_t> dist, const Vec2i p)
 {
     const int32_t dist_p = dist(p);
 

@@ -75,7 +75,7 @@ static std::vector<uint16_t> merge3_unique(std::span<const uint16_t> a,
 // Look at commit 0becb0a2f5fad6cfb4bc3f955e2af852ad92e908 for the last sane
 // (recursive) version of this function.
 static size_t fire_laser(dense_map<uint16_t, std::vector<uint16_t>> &cache,
-                         const Matrix<char> &grid,
+                         MatrixView<const char> grid,
                          Vec2u8 p,
                          uint8_t dir)
 {

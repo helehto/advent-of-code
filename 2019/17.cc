@@ -70,7 +70,7 @@ static bool search(std::span<const Move> curr,
     return false;
 }
 
-static std::vector<Move> walk_scaffold(const Matrix<char> &g)
+static std::vector<Move> walk_scaffold(MatrixView<const char> g)
 {
     // Find our starting location.
     Vec2i p{};
@@ -148,7 +148,7 @@ construct_input(std::string_view main_routine,
     return result;
 }
 
-static int part1(const Matrix<char> &g)
+static int part1(MatrixView<const char> g)
 {
     int alignment_sum = 0;
     for (auto p : g.ndindex()) {
@@ -163,7 +163,7 @@ static int part1(const Matrix<char> &g)
     return alignment_sum;
 }
 
-static int part2(const Matrix<char> &g, VM &vm, std::span<const int64_t> prog)
+static int part2(MatrixView<const char> g, VM &vm, std::span<const int64_t> prog)
 {
     // Generate the full sequence of moves needed to visit the entire scaffold.
     std::vector<Move> move_list = walk_scaffold(g);
