@@ -2,10 +2,12 @@
 
 namespace aoc_2015_11 {
 
-static void increment(std::string &s)
+static void increment(std::span<char> s)
 {
     for (size_t i = s.size(); i--;) {
         s[i]++;
+        if (s[i] == 'i' || s[i] == 'o' || s[i] == 'l')
+            s[i]++;
         if (s[i] <= 'z')
             return;
         s[i] = 'a';
@@ -14,12 +16,12 @@ static void increment(std::string &s)
 
 static bool has_increasing_triple(std::string_view s)
 {
-    for (size_t i = 2; i < s.size(); i++) {
-        if (s[i - 2] + 1 == s[i - 1] && s[i - 1] + 1 == s[i])
-            return true;
-    }
-
-    return false;
+    return (s[0] + 1 == s[1] && s[1] + 1 == s[2]) ||
+           (s[1] + 1 == s[2] && s[2] + 1 == s[3]) ||
+           (s[2] + 1 == s[3] && s[3] + 1 == s[4]) ||
+           (s[3] + 1 == s[4] && s[4] + 1 == s[5]) ||
+           (s[4] + 1 == s[5] && s[5] + 1 == s[6]) ||
+           (s[5] + 1 == s[6] && s[6] + 1 == s[7]);
 }
 
 static bool has_nonoverlapping_pairs(std::string_view s)
@@ -34,22 +36,15 @@ static bool has_nonoverlapping_pairs(std::string_view s)
     return std::popcount(mask) >= 2;
 }
 
-static bool is_valid(std::string_view s)
-{
-    if (std::any_of(s.begin(), s.end(), λx(x == 'i' || x == 'o' || x == 'l')))
-        return false;
-
-    return has_increasing_triple(s) && has_nonoverlapping_pairs(s);
-}
-
 void run(std::string_view buf)
 {
+    ASSERT(buf.size() == 8);
     std::string s(buf);
 
     for (int i = 0; i < 2; i++) {
         do {
             increment(s);
-        } while (!is_valid(s));
+        } while (!has_increasing_triple(s) || !has_nonoverlapping_pairs(s));
         fmt::print("{}\n", s);
     }
 }
