@@ -15,6 +15,8 @@ constexpr bool solve(int64_t goal, const int64_t *operands, size_t n, int64_t ac
 {
     if (n == 0)
         return accum == goal;
+    if (accum > goal)
+        return false;
 
     auto a = operands[0];
     return solve<Part>(goal, operands + 1, n - 1, accum + a) ||
