@@ -1,5 +1,6 @@
 #include "common.h"
 #include "config.h"
+#include "thread_pool.h"
 #include <cassert>
 #include <chrono>
 #include <cstdio>
@@ -240,6 +241,8 @@ int main(int argc, char **argv)
     }
     if (opts.problems_to_run.empty())
         die("no problems specified");
+
+    ThreadPool::get().start();
 
     std::vector<ProblemData> timings;
     for (const auto *p : opts.problems_to_run) {

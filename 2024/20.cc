@@ -1,5 +1,6 @@
 #include "common.h"
-#include <thread>
+#include "thread_pool.h"
+#include <atomic>
 
 namespace aoc_2024_20 {
 
@@ -80,10 +81,10 @@ void run(std::string_view buf)
                 queue.emplace_back(d + 1, v);
     }
 
-    auto solve = [&]<int N>(size_t begin, size_t end) {
+    auto solve = [&]<int N>(std::span<std::pair<int, Vec2i>> s) {
         int cheats = 0;
-        for (size_t i = begin; i < end; ++i)
-            cheats += count_cheats_from_square<N>(dist, queue[i].second);
+        for (auto &[_, pos] : s)
+            cheats += count_cheats_from_square<N>(dist, pos);
         return cheats;
     };
 
@@ -93,21 +94,13 @@ void run(std::string_view buf)
     // best here.
     std::atomic<int> part1{0};
     std::atomic<int> part2{0};
-    {
-        std::array<std::jthread, 4> threads;
-        const size_t slice_size = (queue.size() / threads.size()) + 1;
-
-        for (size_t i = 0; i < threads.size(); ++i) {
-            threads[i] = std::jthread([&, i] noexcept {
-                const size_t begin = i * slice_size;
-                const size_t end = std::min((i + 1) * slice_size, queue.size());
-                part1.fetch_add(solve.operator()<2>(begin, end));
-                part2.fetch_add(solve.operator()<N>(begin, end));
-            });
-        }
-    }
+    ThreadPool::get().for_each(queue, [&](auto span) {
+        part1.fetch_add(solve.operator()<2>(span));
+        part2.fetch_add(solve.operator()<N>(span));
+    });
 
     fmt::print("{}\n", part1.load());
     fmt::print("{}\n", part2.load());
 }
+
 }

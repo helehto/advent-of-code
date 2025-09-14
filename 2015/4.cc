@@ -1,10 +1,7 @@
 #include "common.h"
 #include "md5.h"
-#include <csignal>
+#include "thread_pool.h"
 #include <cstring>
-#include <future>
-#include <thread>
-#include <x86intrin.h>
 
 namespace aoc_2015_4 {
 
@@ -33,29 +30,29 @@ hash_search(std::string_view s, int n, int stride, std::atomic_int &limit)
     return {part1, part2};
 }
 
+template <typename T>
+static void atomic_store_min(std::atomic<T> &a, const T &b)
+{
+    auto value = a.load(std::memory_order_relaxed);
+    while (b < value && !a.compare_exchange_weak(value, b))
+        ;
+}
+
 void run(std::string_view buf)
 {
-    const auto num_threads = std::thread::hardware_concurrency();
-    std::vector<std::future<std::pair<int, int>>> futures;
-
+    ThreadPool &pool = ThreadPool::get();
+    std::atomic_int part1 = INT_MAX;
+    std::atomic_int part2 = INT_MAX;
     std::atomic_int limit = INT_MAX;
-    for (size_t i = 0; i < num_threads; i++)
-        futures.push_back(std::async(std::launch::async, hash_search, buf, 8 * i,
-                                     8 * num_threads, std::ref(limit)));
 
-    std::vector<std::pair<int, int>> results;
-    for (auto &f : futures)
-        results.push_back(f.get());
+    pool.for_each_thread([&](size_t i) {
+        auto [a, b] = hash_search(buf, 8 * i, 8 * pool.num_threads(), limit);
+        atomic_store_min(part1, a);
+        atomic_store_min(part2, b);
+    });
 
-    int part1 = INT_MAX;
-    int part2 = INT_MAX;
-    for (auto &[p1, p2] : results) {
-        part1 = std::min(part1, p1);
-        part2 = std::min(part2, p2);
-    }
-
-    fmt::print("{}\n", part1);
-    fmt::print("{}\n", part2);
+    fmt::print("{}\n", part1.load());
+    fmt::print("{}\n", part2.load());
 }
 
 }

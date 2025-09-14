@@ -1,5 +1,6 @@
 #include "common.h"
 #include "inplace_vector.h"
+#include "thread_pool.h"
 #include <future>
 #include <thread>
 
@@ -65,7 +66,10 @@ static int part1(uint32_t a, uint32_t b)
     constexpr uint32_t a_skip4 = modexp_2p31m1_bounded(1, 16807, 4);
     constexpr uint32_t b_skip4 = modexp_2p31m1_bounded(1, 48271, 4);
 
-    auto search = [=, &result](const uint32_t start) noexcept {
+    ThreadPool::get().for_each_thread([=, &result](size_t thread_id) noexcept {
+        // TODO: Compute `stride` and `start` above instead and pass them in.
+
+        const uint32_t start = thread_id * stride;
         std::array<uint64_t, 4> a_init, b_init;
         for (size_t i = 0; i < 4; ++i) {
             a_init[i] = modexp_2p31m1_bounded(a, 16807, start + i);
@@ -92,13 +96,7 @@ static int part1(uint32_t a, uint32_t b)
         std::array<uint64_t, 4> count;
         _mm256_storeu_si256(reinterpret_cast<__m256i *>(&count), count_4x64);
         result.fetch_add(count[0] + count[1] + count[2] + count[3]);
-    };
-
-    {
-        inplace_vector<std::jthread, max_threads> threads;
-        for (size_t i = 0; i < n_threads; ++i)
-            threads.unchecked_emplace_back(search, i * stride);
-    }
+    });
 
     return result.load();
 }
@@ -145,8 +143,9 @@ static size_t step_compress(__m256i *n_4x64,
 
 static int part2(uint32_t a, uint32_t b)
 {
+    ThreadPool &pool = ThreadPool::get();
     constexpr size_t limit = 5'000'000;
-    const size_t n_threads = std::thread::hardware_concurrency();
+    const size_t n_threads = pool.num_threads();
     ASSERT(limit % n_threads == 0);
 
     // +20% to handle extra elements
@@ -185,17 +184,12 @@ static int part2(uint32_t a, uint32_t b)
         buffer = buffer.first(n);
     };
 
-    {
-        small_vector<std::jthread, 32> threads;
-        for (size_t i = 0; i < n_threads; ++i) {
-            threads.emplace_back([=, &a_spans, &b_spans]() noexcept {
-                const auto chunk_size_4 = 4 * limit / n_threads * 102 / 100;
-                const auto chunk_size_8 = 8 * limit / n_threads * 102 / 100;
-                search(a_spans[i], a, 16807, 3, i * chunk_size_4, chunk_size_4);
-                search(b_spans[i], b, 48271, 7, i * chunk_size_8, chunk_size_8);
-            });
-        }
-    }
+    pool.for_each_thread([=, &a_spans, &b_spans](size_t thread_id) noexcept {
+        const auto chunk_size_4 = 4 * limit / n_threads * 102 / 100;
+        const auto chunk_size_8 = 8 * limit / n_threads * 102 / 100;
+        search(a_spans[thread_id], a, 16807, 3, thread_id * chunk_size_4, chunk_size_4);
+        search(b_spans[thread_id], b, 48271, 7, thread_id * chunk_size_8, chunk_size_8);
+    });
 
     size_t counted = 0;
     int result = 0;

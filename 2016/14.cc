@@ -1,6 +1,7 @@
 #include "common.h"
 #include "md5.h"
-#include <future>
+#include "small_vector.h"
+#include "thread_pool.h"
 
 namespace aoc_2016_14 {
 
@@ -82,34 +83,30 @@ md5_hex_stretch1(const std::array<std::array<char, 32>, 8> &hex)
 
 static int solve2(std::string_view prefix)
 {
-    const unsigned num_threads = std::thread::hardware_concurrency();
+    ThreadPool &pool = ThreadPool::get();
+    std::vector<InterestingHash> hashes;
+    std::mutex hashes_mutex;
 
-    auto producer = [prefix, num_threads](size_t thread_id) {
+    pool.for_each_thread([&](size_t thread_id) {
         md5::State md5(prefix);
-        std::vector<InterestingHash> result;
+        small_vector<InterestingHash, 128> local_hashes;
 
         // TODO: Hard-coded limit :(
-        for (uint32_t n = 8 * thread_id; n < 30'000; n += 8 * num_threads) {
+        for (uint32_t n = 8 * thread_id; n < 30'000; n += 8 * pool.num_threads()) {
             auto hex = md5.run(n).to_hex();
             for (int i = 0; i < 2016; ++i)
                 hex = md5_hex_stretch1(hex);
 
             for (int i = 0; i < 8; ++i)
                 if (char x3 = check_x3(hex[i]), x5 = check_x5(hex[i]); x3 || x5)
-                    result.emplace_back(n + i, x3, x5);
+                    local_hashes.emplace_back(n + i, x3, x5);
         }
 
-        return result;
-    };
+        std::unique_lock lock(hashes_mutex);
+        hashes.append_range(local_hashes);
+    });
 
-    std::vector<std::future<std::vector<InterestingHash>>> producer_hashes(num_threads);
-    for (size_t i = 0; i < producer_hashes.size(); ++i)
-        producer_hashes[i] = std::async(std::launch::async, producer, i);
-
-    std::vector<InterestingHash> hashes;
-    for (auto &fut : producer_hashes)
-        hashes.append_range(fut.get());
-
+    std::unique_lock lock(hashes_mutex);
     std::ranges::sort(hashes, {}, λa(a.index));
 
     size_t keys_found = 0;

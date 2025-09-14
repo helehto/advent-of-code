@@ -1,7 +1,8 @@
 #include "common.h"
 #include "dense_map.h"
+#include "thread_pool.h"
+#include <atomic>
 #include <random>
-#include <thread>
 
 namespace aoc_2023_23 {
 
@@ -126,14 +127,6 @@ struct WorkQueue {
     }
 };
 
-template <typename T>
-static void atomic_store_max(std::atomic<T> &a, size_t b)
-{
-    auto value = a.load(std::memory_order_relaxed);
-    while (b > value && !a.compare_exchange_weak(value, b))
-        ;
-}
-
 static void search(size_t thread_id,
                    size_t n_threads,
                    const Graph &graph,
@@ -159,7 +152,7 @@ static void search(size_t thread_id,
         auto [visited_mask, node_index, total_weight, ignore_slopes] = u;
         if (node_index == graph.goal_index) {
             auto &sol = ignore_slopes ? solutions[1] : solutions[0];
-            atomic_store_max(sol, total_weight);
+            atomic_store_max(sol, static_cast<size_t>(total_weight));
             continue;
         }
 
@@ -293,8 +286,8 @@ void run(std::string_view buf)
     auto graph = build_graph(grid, start, goal);
 
     {
-        const int n_threads = std::thread::hardware_concurrency();
-        std::vector<WorkQueue> queues(n_threads);
+        ThreadPool &pool = ThreadPool::get();
+        std::vector<WorkQueue> queues(pool.num_threads());
 
         // Push root tasks for part 1 and part 2.
         auto &q = queues[0];
@@ -303,14 +296,10 @@ void run(std::string_view buf)
 
         std::atomic<size_t> n_thieves = 0;
         std::array<std::atomic<size_t>, 2> solutions{};
-        {
-            std::vector<std::jthread> threads(n_threads);
-            for (size_t i = 0; i < threads.size(); ++i) {
-                threads[i] =
-                    std::jthread(search, i, n_threads, std::cref(graph),
-                                 std::ref(n_thieves), solutions.data(), queues.data());
-            }
-        }
+        pool.for_each_thread([&](size_t thread_id) noexcept {
+            search(thread_id, pool.num_threads(), graph, n_thieves, solutions.data(),
+                   queues.data());
+        });
 
         fmt::print("{}\n{}\n", solutions[0].load() - 1, solutions[1].load() - 1);
     }

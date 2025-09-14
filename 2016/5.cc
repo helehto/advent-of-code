@@ -1,7 +1,7 @@
 #include "common.h"
 #include "md5.h"
+#include "thread_pool.h"
 #include <mutex>
-#include <thread>
 
 namespace aoc_2016_5 {
 
@@ -108,12 +108,9 @@ void run(std::string_view buf)
 {
     State state;
 
-    {
-        const size_t n_threads = std::thread::hardware_concurrency();
-        std::vector<std::jthread> thread(n_threads);
-        for (size_t i = 0; i < n_threads; ++i)
-            thread[i] = std::jthread(search, std::ref(state), buf, i, n_threads);
-    }
+    ThreadPool::get().for_each_thread([&state, buf](size_t thread_id) noexcept {
+        search(state, buf, thread_id, ThreadPool::get().num_threads());
+    });
 
     for (size_t i = 0; i < 8; ++i)
         putc(state.password1[i].character, stdout);
