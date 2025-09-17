@@ -34,7 +34,7 @@ void run(std::string_view buf)
         seen.reset();
 
         std::array<int, N + 1> delta;
-        for (size_t k = 0; k < delta.size(); ++k)
+        for (size_t k = 0; k < delta.size() - 1; ++k)
             delta[k] = s[k] % 10 - s[k + 1] % 10 + 9;
 
         std::array<int, N + 1> keys;
