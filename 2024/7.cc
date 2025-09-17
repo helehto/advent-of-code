@@ -1,5 +1,6 @@
 #include "common.h"
-#include "dense_set.h"
+#include "thread_pool.h"
+#include <atomic>
 
 namespace aoc_2024_7 {
 
@@ -26,18 +27,24 @@ constexpr bool solve(int64_t goal, const int64_t *operands, size_t n, int64_t ac
 
 void run(std::string_view buf)
 {
-    small_vector<int64_t, 16> nums;
+    ThreadPool &pool = ThreadPool::get();
+    auto lines = split_lines(buf);
 
-    int64_t s1 = 0;
-    int64_t s2 = 0;
-    for (std::string_view line : split_lines(buf)) {
-        find_numbers(line, nums);
-        s1 += solve<1>(nums[0], &nums[1], nums.size() - 1) ? nums[0] : 0;
-        s2 += solve<2>(nums[0], &nums[1], nums.size() - 1) ? nums[0] : 0;
-    }
+    std::atomic_int64_t s1 = 0;
+    std::atomic_int64_t s2 = 0;
+    pool.for_each_index(0, lines.size(), [&](size_t begin, size_t end) {
+        small_vector<int64_t, 16> nums;
+        for (size_t i = begin; i < end; ++i) {
+            find_numbers(lines[i], nums);
+            s1.fetch_add(solve<1>(nums[0], &nums[1], nums.size() - 1) ? nums[0] : 0,
+                         std::memory_order_relaxed);
+            s2.fetch_add(solve<2>(nums[0], &nums[1], nums.size() - 1) ? nums[0] : 0,
+                         std::memory_order_relaxed);
+        }
+    });
 
-    fmt::print("{}\n", s1);
-    fmt::print("{}\n", s2);
+    std::atomic_thread_fence(std::memory_order_seq_cst);
+    fmt::print("{}\n{}\n", s1.load(), s2.load());
 }
 
 }
