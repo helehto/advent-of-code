@@ -1,5 +1,8 @@
 #include "common.h"
 #include "md5.h"
+#include "thread_pool.h"
+#include <mutex>
+#include <random>
 
 namespace aoc_2016_17 {
 
@@ -10,9 +13,9 @@ enum {
     DOOR_R_OPEN = 1 << 3,
 };
 
-constexpr int doors_from_hash(uint32_t u)
+constexpr uint32_t doors_from_hash(uint32_t u)
 {
-    int result = 0;
+    uint32_t result = 0;
 
     if ((u & 0x00f0) >= 0x00b0)
         result |= DOOR_U_OPEN;
@@ -76,44 +79,116 @@ static md5::Result md5_full(std::string_view s)
     return md5::do_block_avx2(m, r.a, r.b, r.c, r.d);
 }
 
-static inplace_vector<std::tuple<Vec2i, std::string, uint32_t>, 4>
-get_neighbors(Vec2i p, std::string str, uint32_t door_mask)
+struct State {
+    int dist;
+    Vec2i p;
+    uint32_t door_mask;
+    std::string str;
+};
+
+struct WorkQueue {
+    std::mutex mutex;
+    small_vector<State, 64> buffer;
+
+    bool pop(State &result)
+    {
+        std::unique_lock lock(mutex);
+        if (buffer.empty())
+            return false;
+        result = std::move(buffer.back());
+        buffer.pop_back();
+        return true;
+    }
+
+    void push(const State &state)
+    {
+        std::unique_lock lock(mutex);
+        buffer.push_back(state);
+    }
+};
+
+static inplace_vector<State, 4>
+get_neighbors(int d, Vec2i p, const std::string &str, uint32_t door_mask)
 {
     auto h = md5_full(str).to_arrays()[0];
-    inplace_vector<std::tuple<Vec2i, std::string, uint32_t>, 4> result;
+    inplace_vector<State, 4> result;
 
     if ((door_mask & DOOR_U_OPEN) && p.y > 0)
-        result.emplace_back(p + Vec2i{0, -1}, str + 'U', doors_from_hash(h[0]));
+        result.emplace_back(d + 1, p + Vec2i{0, -1}, doors_from_hash(h[0]), str + 'U');
     if ((door_mask & DOOR_D_OPEN) && p.y < 3)
-        result.emplace_back(p + Vec2i{0, +1}, str + 'D', doors_from_hash(h[1]));
+        result.emplace_back(d + 1, p + Vec2i{0, +1}, doors_from_hash(h[1]), str + 'D');
     if ((door_mask & DOOR_L_OPEN) && p.x > 0)
-        result.emplace_back(p + Vec2i{-1, 0}, str + 'L', doors_from_hash(h[2]));
+        result.emplace_back(d + 1, p + Vec2i{-1, 0}, doors_from_hash(h[2]), str + 'L');
     if ((door_mask & DOOR_R_OPEN) && p.x < 3)
-        result.emplace_back(p + Vec2i{+1, 0}, str + 'R', doors_from_hash(h[3]));
+        result.emplace_back(d + 1, p + Vec2i{+1, 0}, doors_from_hash(h[3]), str + 'R');
 
     return result;
 }
 
 void run(std::string_view buf)
 {
-    std::vector<std::tuple<int, Vec2i, std::string, int>> queue;
-    queue.emplace_back(0, Vec2i{}, std::string(buf),
-                       doors_from_hash(md5_full(buf).to_arrays()[0][0]));
+    ThreadPool &pool = ThreadPool::get();
 
+    std::vector<WorkQueue> all_queues(pool.num_threads());
+
+    // Push the initial state as the root task.
+    all_queues[0].push(State{
+        .dist = 0,
+        .p = Vec2i{0, 0},
+        .door_mask = doors_from_hash(md5_full(buf).to_arrays()[0][0]),
+        .str = std::string(buf),
+    });
+
+    std::atomic_size_t n_thieves = 0;
+    std::mutex solution_mutex;
     std::optional<std::string> shortest;
     size_t longest = 0;
 
-    for (size_t i = 0; i < queue.size(); ++i) {
-        auto [d, p, str, mask] = queue[i];
-        if (p == Vec2i{3, 3}) {
-            if (!shortest)
-                shortest = str;
-            longest = std::max<size_t>(longest, str.size() - buf.size());
-            continue;
+    pool.for_each_thread([&](size_t thread_id) noexcept {
+        WorkQueue &queue = all_queues[thread_id];
+        State state;
+
+        small_vector<size_t, 32> victim_order;
+        for (size_t i = 0; i < pool.num_threads(); ++i)
+            if (i != thread_id)
+                victim_order.push_back(i);
+
+        // Randomize the order in which each thief tries to steal work from the
+        // other threads, to avoid a "convoy" of thieves hammering the queues of a
+        // sequence of threads in a deterministic way.
+        std::ranges::shuffle(victim_order, std::minstd_rand(thread_id));
+
+        while (queue.pop(state)) {
+        restart_with_new_work:
+            const auto &[d, p, mask, str] = state;
+            if (p == Vec2i{3, 3}) {
+                std::unique_lock lock(solution_mutex);
+                longest = std::max(longest, str.size() - buf.size());
+                if (!shortest || str.size() < shortest->size())
+                    shortest = std::move(str);
+                continue;
+            }
+
+            if (auto neighbors = get_neighbors(d, p, str, mask); !neighbors.empty()) {
+                state = std::move(neighbors[0]);
+                for (size_t i = 1; i < neighbors.size(); ++i)
+                    queue.push(std::move(neighbors[i]));
+                goto restart_with_new_work;
+            }
         }
-        for (auto [q, next_str, next_mask] : get_neighbors(p, str, mask))
-            queue.emplace_back(d + 1, q, std::move(next_str), next_mask);
-    }
+
+        // Out of items. If there are only thieves left, we are done; otherwise,
+        // try to steal something from a worker thread.
+        n_thieves.fetch_add(1, std::memory_order_relaxed);
+        while (n_thieves.load(std::memory_order_relaxed) != pool.num_threads()) {
+            for (const size_t i : victim_order) {
+                if (all_queues[i].pop(state)) {
+                    n_thieves.fetch_sub(1, std::memory_order_relaxed);
+                    goto restart_with_new_work;
+                }
+            }
+        }
+    });
 
     ASSERT_MSG(shortest.has_value(), "No path found!?");
     fmt::print("{}\n{}\n", shortest->substr(buf.size()), longest);
