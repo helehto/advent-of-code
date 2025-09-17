@@ -2,6 +2,8 @@
 #include "dense_map.h"
 #include "monotonic_bucket_queue.h"
 #include "small_vector.h"
+#include "thread_pool.h"
+#include <atomic>
 
 namespace aoc_2023_25 {
 
@@ -58,15 +60,13 @@ struct CrcHasher {
     size_t operator()(uint32_t k) const noexcept { return _mm_crc32_u32(0, k); }
 };
 
-static void dijkstra(Graph &g,
-                     uint16_t start,
-                     std::vector<uint16_t> &dist,
-                     MonotonicBucketQueue<uint16_t> &bq)
+static void
+dijkstra(Graph &g, uint16_t start, uint16_t *dist, MonotonicBucketQueue<uint16_t> &bq)
 {
     bq.clear();
     bq.emplace(0, start);
 
-    dist.assign(g.nodes.size(), UINT16_MAX - 1);
+    std::fill_n(dist, g.nodes.size(), UINT16_MAX - 1);
     dist[start] = 0;
 
     while (auto u = bq.pop()) {
@@ -76,7 +76,7 @@ static void dijkstra(Graph &g,
             if (auto new_dist = dist[*u] + 1; new_dist < dist[v]) {
                 dist[v] = new_dist;
                 bq.emplace(new_dist, v);
-                weight++;
+                std::atomic_ref(weight).fetch_add(1, std::memory_order_relaxed);
             }
         }
     }
@@ -102,18 +102,23 @@ static int flood(Graph &g, uint32_t start)
 
 void run(std::string_view buf)
 {
+    ThreadPool &pool = ThreadPool::get();
     auto g = parse_input(buf);
 
     int total_edges = std::ranges::fold_left(g.nodes, 0, λab(a + b.edges.size()));
-    MonotonicBucketQueue<uint16_t> bq(2);
 
     // The general idea: run Dijkstra's algorithm for all nodes in the graph;
     // the edges we are looking for will likely be the most traversed ones, as
     // they are effectively the "bottlenecks" of getting from one component of
     // the graph to the other.
-    std::vector<uint16_t> dist;
-    for (size_t i = 0; i < g.nodes.size(); ++i)
-        dijkstra(g, i, dist, bq);
+    pool.for_each_thread([&](size_t thread_id) {
+        MonotonicBucketQueue<uint16_t> bq(2);
+        auto dist = std::make_unique_for_overwrite<uint16_t[]>(g.nodes.size());
+        for (size_t i = thread_id; i < g.nodes.size(); i += pool.num_threads())
+            dijkstra(g, i, dist.get(), bq);
+    });
+
+    std::atomic_thread_fence(std::memory_order_seq_cst);
 
     dense_map<uint32_t, int, CrcHasher> edge_counts;
     edge_counts.reserve(total_edges);
@@ -121,7 +126,8 @@ void run(std::string_view buf)
         for (const auto &[v, weight] : g.nodes[u].edges) {
             const auto a = std::min<uint32_t>(u, v);
             const auto b = std::max<uint32_t>(u, v);
-            edge_counts[a << 16 | b] += weight;
+            edge_counts[a << 16 | b] +=
+                std::atomic_ref(weight).load(std::memory_order_relaxed);
         }
     }
 
