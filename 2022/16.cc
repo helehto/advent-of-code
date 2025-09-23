@@ -107,14 +107,10 @@ static Matrix<int> floyd_warshall(const std::vector<Valve> &valves)
     return d;
 }
 
-struct u64_crc_hash {
-    size_t operator()(uint64_t v) const { return _mm_crc32_u64(0, v); }
-};
-
 struct SearchParameters {
     const Valves &input;
     MatrixView<const int> costs;
-    dense_map<uint64_t, int, u64_crc_hash> &path_scores;
+    dense_map<uint64_t, int, CrcHasher> &path_scores;
     uint64_t nonzero_mask;
 };
 
@@ -176,7 +172,7 @@ void run(std::string_view buf)
             nonzero_mask |= bit(i);
     }
 
-    dense_map<uint64_t, int, u64_crc_hash> path_scores;
+    dense_map<uint64_t, int, CrcHasher> path_scores;
     path_scores.reserve(10'000);
 
     // Part 1:
