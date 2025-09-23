@@ -1,5 +1,5 @@
 #include "common.h"
-#include <list>
+#include "thread_pool.h"
 
 namespace aoc_2021_18 {
 
@@ -100,16 +100,21 @@ constexpr int part1(std::span<const small_vector<int8_t>> lines)
 
 constexpr int part2(std::span<const small_vector<int8_t>> lines)
 {
-    int max_mag = INT_MIN;
-    for (size_t i = 0; i < lines.size(); ++i) {
-        for (size_t j = 0; j < lines.size(); ++j) {
-            auto sum = lines[i];
-            add(sum, lines[j]);
-            max_mag = std::max(max_mag, magnitude(sum.begin()).first);
-        }
-    }
+    ThreadPool &pool = ThreadPool::get();
+    std::atomic_int max_mag = INT_MIN;
 
-    return max_mag;
+    pool.for_each_index(0, lines.size(), [&](size_t begin, size_t end) {
+        for (size_t i = begin; i < end; ++i) {
+            for (size_t j = 0; j < lines.size(); ++j) {
+                auto sum = lines[i];
+                add(sum, lines[j]);
+                atomic_store_max(max_mag, magnitude(sum.begin()).first);
+            }
+        }
+    });
+
+    std::atomic_thread_fence(std::memory_order_seq_cst);
+    return max_mag.load(std::memory_order_relaxed);
 }
 
 void run(std::string_view buf)
