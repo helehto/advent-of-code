@@ -121,10 +121,8 @@ run_problem(const Problem &p, std::string input_path, const Options &opts)
     std::string input;
     {
         FILE *f = fopen(input_path.c_str(), "r");
-        if (!f) {
-            fprintf(stderr, "%s: %s", input_path.c_str(), strerror(errno));
-            exit(1);
-        }
+        if (!f)
+            die("%s: %s", input_path.c_str(), strerror(errno));
         input = slurp(f);
 
         while (input.back() == '\n')
