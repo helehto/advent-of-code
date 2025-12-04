@@ -9,18 +9,26 @@ void run(std::string_view buf)
 
     Matrix<int8_t> num_neighbors(grid.rows, grid.cols);
     for (size_t i = 1; i < grid.rows - 1; ++i) {
+        // GCC autovectorizes this. Color me impressed.
         for (size_t j = 1; j < grid.cols - 1; ++j) {
-            const Vec2z p{i, j};
-            if (grid(p) == '@')
-                for (const auto q : neighbors8(p))
-                    num_neighbors(q)++;
+            int n = 0;
+            n += (grid(i - 1, j - 1) == '@');
+            n += (grid(i - 1, j + 0) == '@');
+            n += (grid(i - 1, j + 1) == '@');
+            n += (grid(i + 0, j - 1) == '@');
+            n += (grid(i + 0, j + 1) == '@');
+            n += (grid(i + 1, j - 1) == '@');
+            n += (grid(i + 1, j + 0) == '@');
+            n += (grid(i + 1, j + 1) == '@');
+            num_neighbors(i, j) = n;
         }
     }
 
+    // TODO: Use SIMD to pack cell positions into a fixed-size buffer instead.
     small_vector<Vec2z> queue;
     for (const auto p : grid.ndindex<size_t>())
         if (grid(p) == '@' && num_neighbors(p) < 4)
-            queue.push_back(p);
+            queue.emplace_back(p.x, p.y);
     fmt::print("{}\n", queue.size());
 
     int part2 = 0;
