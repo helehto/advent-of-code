@@ -98,7 +98,7 @@ constexpr int part1(std::span<const small_vector<int8_t>> lines)
     return magnitude(sum.begin()).first;
 }
 
-constexpr int part2(std::span<const small_vector<int8_t>> lines)
+static int part2(std::span<const small_vector<int8_t>> lines)
 {
     ThreadPool &pool = ThreadPool::get();
     std::atomic_int max_mag = INT_MIN;
