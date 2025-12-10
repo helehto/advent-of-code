@@ -18,15 +18,6 @@ constexpr uint64_t subset_product(std::span<const uint8_t> nums, uint64_t mask)
     return result;
 }
 
-/// Compute the next lexicographic permutation of the bits in `v`.
-///
-/// Taken from <https://graphics.stanford.edu/~seander/bithacks.html>.
-constexpr size_t next_bit_permutation(size_t v)
-{
-    const auto t = v | (v - 1);
-    return (t + 1) | (((~t & -~t) - 1) >> (std::countr_zero(v) + 1));
-}
-
 constexpr uint64_t solve(std::span<const uint8_t> nums, uint64_t target)
 {
     size_t n = 0;
