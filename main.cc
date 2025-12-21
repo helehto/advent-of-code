@@ -41,6 +41,7 @@ struct Problem {
 struct Options {
     const char *input_file = nullptr;
     int iterations = 1;
+    int num_threads = 0;
     double target_time = -1;
     bool json = false;
     std::vector<const Problem *> problems_to_run;
@@ -202,12 +203,13 @@ int main(int argc, char **argv)
         static struct option long_options[] = {
             {"input-file", required_argument, nullptr, 'f'},
             {"iterations", required_argument, nullptr, 'i'},
+            {"jobs", no_argument, nullptr, 'j'},
             {"json", no_argument, nullptr, 'J'},
             {"target-time", required_argument, nullptr, 't'},
         };
 
         int option_index;
-        int c = getopt_long(argc, argv, "f:i:Jt:", long_options, &option_index);
+        int c = getopt_long(argc, argv, "f:i:j:Jt:", long_options, &option_index);
         if (c == -1)
             break;
 
@@ -218,6 +220,10 @@ int main(int argc, char **argv)
         case 'i':
             opts.iterations = atoi(optarg);
             assert(opts.iterations > 0);
+            break;
+        case 'j':
+            opts.num_threads = atoi(optarg);
+            assert(opts.num_threads >= 0);
             break;
         case 'J':
             opts.json = true;
@@ -240,7 +246,8 @@ int main(int argc, char **argv)
     if (opts.problems_to_run.empty())
         die("no problems specified");
 
-    ThreadPool::get().start();
+    ThreadPool::get().start(opts.num_threads > 0 ? opts.num_threads
+                                                 : std::thread::hardware_concurrency());
 
     std::vector<ProblemData> timings;
     for (const auto *p : opts.problems_to_run) {
