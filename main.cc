@@ -202,12 +202,12 @@ int main(int argc, char **argv)
         static struct option long_options[] = {
             {"input-file", required_argument, nullptr, 'f'},
             {"iterations", required_argument, nullptr, 'i'},
-            {"json", no_argument, nullptr, 'j'},
+            {"json", no_argument, nullptr, 'J'},
             {"target-time", required_argument, nullptr, 't'},
         };
 
         int option_index;
-        int c = getopt_long(argc, argv, "f:i:jt:", long_options, &option_index);
+        int c = getopt_long(argc, argv, "f:i:Jt:", long_options, &option_index);
         if (c == -1)
             break;
 
@@ -219,7 +219,7 @@ int main(int argc, char **argv)
             opts.iterations = atoi(optarg);
             assert(opts.iterations > 0);
             break;
-        case 'j':
+        case 'J':
             opts.json = true;
             break;
         case 't':
