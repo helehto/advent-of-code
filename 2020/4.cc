@@ -20,9 +20,12 @@ struct Passport {
 
     static bool valid_year(std::string_view s, int min, int max)
     {
+        if (s.size() != 4)
+            return false;
+
         int value = 0;
         std::from_chars(s.data(), s.data() + s.size(), value);
-        return s.size() == 4 && value >= min && value <= max;
+        return value >= min && value <= max;
     }
 
     static bool valid_hgt(std::string_view s)
@@ -79,28 +82,31 @@ void run(std::string_view buf)
         for (; i < lines.size() && !lines[i].empty(); i++) {
             split(lines[i], fields, ' ');
             for (std::string_view field : fields) {
-                split(field, kvs, ':');
+                DEBUG_ASSERT(field.size() >= 4);
+                DEBUG_ASSERT(field[3] == ':');
+                auto key = field.substr(0, 3);
+                auto value = field.substr(4);
 
-                if (kvs[0] == "byr") {
-                    p.byr = kvs[1];
+                if (key == "byr") {
+                    p.byr = value;
                     p.present_mask |= Passport::HAS_BYR;
-                } else if (kvs[0] == "iyr") {
-                    p.iyr = kvs[1];
+                } else if (key == "iyr") {
+                    p.iyr = value;
                     p.present_mask |= Passport::HAS_IYR;
-                } else if (kvs[0] == "pid") {
-                    p.pid = kvs[1];
+                } else if (key == "pid") {
+                    p.pid = value;
                     p.present_mask |= Passport::HAS_PID;
-                } else if (kvs[0] == "eyr") {
-                    p.eyr = kvs[1];
+                } else if (key == "eyr") {
+                    p.eyr = value;
                     p.present_mask |= Passport::HAS_EYR;
-                } else if (kvs[0] == "ecl") {
-                    p.ecl = kvs[1];
+                } else if (key == "ecl") {
+                    p.ecl = value;
                     p.present_mask |= Passport::HAS_ECL;
-                } else if (kvs[0] == "hgt") {
-                    p.hgt = kvs[1];
+                } else if (key == "hgt") {
+                    p.hgt = value;
                     p.present_mask |= Passport::HAS_HGT;
-                } else if (kvs[0] == "hcl") {
-                    p.hcl = kvs[1];
+                } else if (key == "hcl") {
+                    p.hcl = value;
                     p.present_mask |= Passport::HAS_HCL;
                 }
             }
