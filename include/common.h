@@ -656,13 +656,33 @@ struct Matrix : MatrixBase<Matrix<T>> {
 
     constexpr Matrix &operator=(const Matrix &other)
     {
+        if (this == &other)
+            return *this;
+
+        if (rows == other.rows && cols == other.cols) {
+            std::ranges::copy(other.all(), data());
+            return *this;
+        }
+
         Matrix m(other);
         std::swap(m, *this);
         return *this;
     }
 
-    constexpr Matrix(Matrix &&) noexcept = default;
-    constexpr Matrix &operator=(Matrix &&) noexcept = default;
+    constexpr Matrix(Matrix &&other) noexcept
+        : data_(std::exchange(other.data_, nullptr))
+        , rows(std::exchange(other.rows, 0))
+        , cols(std::exchange(other.cols, 0))
+    {
+    }
+
+    constexpr Matrix &operator=(Matrix &&other) noexcept
+    {
+        data_ = std::exchange(other.data_, nullptr);
+        rows = std::exchange(other.rows, 0);
+        cols = std::exchange(other.cols, 0);
+        return *this;
+    }
 
     // Allow implicit conversion to MatrixView, akin to how std::vector<T> is
     // implicitly convertible to std::span<T>.
