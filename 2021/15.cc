@@ -3,27 +3,51 @@
 
 namespace aoc_2021_15 {
 
-constexpr int solve(MatrixView<const uint8_t> grid,
-                    MatrixView<uint16_t> dist,
-                    MonotonicBucketQueue<Vec2i, small_vector<Vec2i>> &q)
-{
-    constexpr Vec2i start{0, 0};
-    const Vec2i end(grid.cols - 1, grid.rows - 1);
+constexpr uint8_t pad_value = UINT8_MAX;
+constexpr size_t n_pad = 1;
 
-    std::ranges::fill(dist.all(), UINT16_MAX);
+constexpr int solve(MatrixView<const uint8_t> grid,
+                    uint16_t *dist,
+                    MonotonicBucketQueue<uint32_t, small_vector<uint32_t>> &q)
+{
+    const uint32_t start = &grid(n_pad, n_pad) - grid.data();
+    const uint32_t end =
+        &grid(grid.rows - n_pad - 1, grid.cols - n_pad - 1) - grid.data();
+
+    MatrixView<uint16_t> dist_grid(dist, grid.rows, grid.cols);
+    std::ranges::fill(dist_grid.all(), UINT16_MAX);
+
+    // Set the minimum distance of all padding cells to 0 to ensure that they
+    // are never visited. This saves a bounds check for every neighbor in the
+    // main loop below.
+    std::ranges::fill(dist_grid.col(0), 0);
+    std::ranges::fill(dist_grid.col(grid.cols - 1), 0);
+    std::ranges::fill(dist_grid.row(0), 0);
+    std::ranges::fill(dist_grid.row(grid.rows - 1), 0);
 
     q.clear();
     q.emplace(0, start);
-    dist(start) = 0;
+    dist[start] = 0;
 
-    while (std::optional<Vec2i> u = q.pop()) {
+    const ssize_t neighbor_strides[] = {
+        1,                                // right
+        static_cast<ssize_t>(grid.cols),  // down
+        static_cast<ssize_t>(-1),         // left
+        static_cast<ssize_t>(-grid.cols), // up
+    };
+
+    while (std::optional<const uint32_t> u = q.pop()) {
         if (*u == end)
-            return dist(end);
+            return dist[*u];
 
-        for (const Vec2i v : neighbors4(grid, *u)) {
-            if (const int alt = q.current_priority() + grid(v); alt < dist(v)) {
+        if (dist[*u] != q.current_priority())
+            continue;
+
+        for (const size_t stride : neighbor_strides) {
+            const size_t v = *u + stride;
+            if (const int alt = q.current_priority() + grid.data()[v]; alt < dist[v]) {
                 q.emplace(alt, v);
-                dist(v) = alt;
+                dist[v] = alt;
             }
         }
     }
@@ -53,16 +77,15 @@ constexpr Matrix<uint8_t> expand(MatrixView<const uint8_t> grid)
 void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
-    auto grid = Matrix<uint8_t>::from_lines(lines, λx(x - '0'));
 
-    auto dist_storage =
-        std::make_unique_for_overwrite<uint16_t[]>(5 * grid.rows * 5 * grid.cols);
-    MonotonicBucketQueue<Vec2i, small_vector<Vec2i>> q(10);
-    fmt::print("{}\n",
-               solve(grid, MatrixView(dist_storage.get(), grid.rows, grid.cols), q));
-    fmt::print("{}\n",
-               solve(expand(grid),
-                     MatrixView(dist_storage.get(), 5 * grid.rows, 5 * grid.cols), q));
+    auto grid = Matrix<uint8_t>::from_lines(lines, λx(x - '0'));
+    auto expanded_grid = expand(grid).padded(n_pad, pad_value);
+    grid = grid.padded(n_pad, pad_value);
+
+    auto dist = std::make_unique_for_overwrite<uint16_t[]>(5 * grid.rows * 5 * grid.cols);
+    MonotonicBucketQueue<uint32_t, small_vector<uint32_t>> q(10);
+    fmt::print("{}\n", solve(grid, dist.get(), q));
+    fmt::print("{}\n", solve(expanded_grid, dist.get(), q));
 }
 
 }
