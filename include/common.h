@@ -621,7 +621,7 @@ struct MatrixView : MatrixBase<MatrixView<T>> {
     {
     }
 
-    T *data() const noexcept { return data_; }
+    constexpr T *data() const noexcept { return data_; }
 };
 
 /// Owning container for a 2D matrix.
@@ -720,8 +720,8 @@ struct Matrix : MatrixBase<Matrix<T>> {
         return padded(pad, pad, pad_value);
     }
 
-    T *data() noexcept { return data_.get(); }
-    const T *data() const noexcept { return data_.get(); }
+    constexpr T *data() noexcept { return data_.get(); }
+    constexpr const T *data() const noexcept { return data_.get(); }
 };
 
 /// Concept that matches any kind of matrix (either an owning Matrix or a
