@@ -4,10 +4,9 @@ namespace aoc_2020_23 {
 
 void run(std::string_view buf)
 {
-    std::vector<int> v;
-    v.reserve(1'000'001);
+    auto storage = std::make_unique_for_overwrite<std::byte[]>(1024 * 1024 * 1024);
 
-    v.resize(10);
+    std::span<int> v(std::bit_cast<int *>(storage.get()), 10);
     v[0] = -99;
     for (size_t i = 1; i < buf.size(); ++i)
         v[buf[i - 1] - '0'] = buf[i] - '0';
@@ -38,7 +37,7 @@ void run(std::string_view buf)
 
     // Part 2:
     {
-        v.resize(1'000'001);
+        v = std::span(std::bit_cast<int *>(storage.get()), 1'000'001);
         for (size_t i = 1; i < buf.size(); ++i)
             v[buf[i - 1] - '0'] = buf[i] - '0';
         v[buf.back() - '0'] = 10;
