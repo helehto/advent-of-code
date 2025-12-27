@@ -732,12 +732,13 @@ static_assert(MatrixConcept<Matrix<int>>);
 static_assert(MatrixConcept<MatrixView<int>>);
 
 template <MatrixConcept M>
-struct fmt::formatter<M> : fmt::formatter<typename M::value_type> {
+struct fmt::formatter<M> : fmt::formatter<std::remove_cv_t<typename M::value_type>> {
     auto format(const M &m, auto &ctx) const
     {
         for (size_t i = 0; i < m.rows; i++) {
             for (size_t j = 0; j < m.cols; j++)
-                fmt::formatter<typename M::value_type>::format(m(i, j), ctx);
+                fmt::formatter<std::remove_cv_t<typename M::value_type>>::format(m(i, j),
+                                                                                 ctx);
             fmt::format_to(ctx.out(), "\n");
         }
 
