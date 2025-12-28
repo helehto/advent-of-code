@@ -1,126 +1,163 @@
 #include "common.h"
+#include "thread_pool.h"
+#include <mutex>
+#include <random>
 
 namespace aoc_2015_22 {
 
-struct State {
-    int16_t boss_hp;
-    int16_t boss_damage;
+struct alignas(16) State {
+    uint8_t turn = 0;
+    uint8_t flags = 0;
+    uint8_t boss_hp;
+    uint8_t boss_damage;
     int16_t player_hp = 50;
     int16_t mana = 500;
     int16_t spent = 0;
-    int16_t shield_until = -1;
-    int16_t poison_until = -1;
-    int16_t recharge_until = -1;
-    bool hard_mode = false;
+    int8_t shield_until = -1;
+    int8_t poison_until = -1;
+    int8_t recharge_until = -1;
+    int8_t player_hp_decrement = 0;
 };
+static_assert(sizeof(State) == 16);
 
-constexpr std::optional<State> cast_spell(State state, int cost)
+static void apply_common_effects(State &state)
 {
-    if (state.mana < cost)
-        return std::nullopt;
-
-    state.mana -= cost;
-    state.spent += cost;
-    return state;
-}
-
-constexpr int player_turn(int turn, int &minimum_spent, State state);
-
-constexpr void apply_common_effects(int turn, State &state)
-{
-    if (turn <= state.poison_until)
+    if (state.turn <= state.poison_until)
         state.boss_hp -= 3;
-    if (turn <= state.recharge_until)
+    if (state.turn <= state.recharge_until)
         state.mana += 101;
 }
 
-constexpr int boss_turn(int turn, int &minimum_spent, State state)
+static void do_boss_turn(State &state)
 {
-    if (state.spent > minimum_spent)
-        return state.spent;
-
-    apply_common_effects(turn, state);
-
-    if (state.boss_hp <= 0)
-        return minimum_spent = std::min<int>(minimum_spent, state.spent);
-
-    const int armor = (turn <= state.shield_until) ? 7 : 0;
+    DEBUG_ASSERT(state.turn < 100 && state.turn % 2 == 1);
+    apply_common_effects(state);
+    const int armor = (state.turn <= state.shield_until) ? 7 : 0;
     const int damage = std::max(1, state.boss_damage - armor);
-
     state.player_hp -= damage;
-    return player_turn(turn + 1, minimum_spent, state);
+    state.turn++;
 }
 
-constexpr int player_turn(int turn, int &minimum_spent, State state)
+static void do_player_preturn(State &state)
 {
-    if (state.spent > minimum_spent)
-        return state.spent;
+    DEBUG_ASSERT(state.turn < 100 && state.turn % 2 == 0);
+    state.player_hp -= state.player_hp_decrement;
+    apply_common_effects(state);
+}
 
-    state.player_hp -= state.hard_mode;
-    apply_common_effects(turn, state);
+static size_t do_player_turn(State *__restrict__ out, const State &state)
+{
+    DEBUG_ASSERT(state.turn < 100 && state.turn % 2 == 0);
+    DEBUG_ASSERT(state.player_hp > 0);
+    DEBUG_ASSERT(state.boss_hp > 0);
 
-    if (state.player_hp <= 0)
-        return INT_MAX;
-    if (state.boss_hp <= 0)
-        return minimum_spent = std::min<int>(minimum_spent, state.spent);
+    size_t n = 0;
 
-    int result = INT_MAX;
+    auto try_cast_spell = [&](int cost) {
+        if (state.mana < cost)
+            return false;
+
+        auto &next_state = out[n++];
+        next_state = state;
+        next_state.mana -= cost;
+        next_state.spent += cost;
+        return true;
+    };
 
     // Poison:
-    if (turn >= state.poison_until) {
-        if (auto next_state = cast_spell(state, 173)) {
-            next_state->poison_until = turn + 6;
-            result = std::min(result, boss_turn(turn + 1, minimum_spent, *next_state));
-        }
+    if (state.turn >= state.poison_until && try_cast_spell(173)) {
+        auto &next_state = out[n - 1];
+        next_state.poison_until = state.turn + 6;
+        next_state.turn++;
     }
 
     // Recharge:
-    if (turn >= state.recharge_until) {
-        if (auto next_state = cast_spell(state, 229)) {
-            next_state->recharge_until = turn + 5;
-            result = std::min(result, boss_turn(turn + 1, minimum_spent, *next_state));
-        }
+    if (state.turn >= state.recharge_until && try_cast_spell(229)) {
+        auto &next_state = out[n - 1];
+        next_state.recharge_until = state.turn + 5;
+        next_state.turn++;
     }
 
     // Shield:
-    if (turn >= state.shield_until) {
-        if (auto next_state = cast_spell(state, 113)) {
-            next_state->shield_until = turn + 6;
-            result = std::min(result, boss_turn(turn + 1, minimum_spent, *next_state));
-        }
+    if (state.turn >= state.shield_until && try_cast_spell(113)) {
+        auto &next_state = out[n - 1];
+        next_state.shield_until = state.turn + 6;
+        next_state.turn++;
     }
 
     // Magic Missile:
-    if (auto next_state = cast_spell(state, 53)) {
-        next_state->boss_hp -= 4;
-        result = std::min(result, boss_turn(turn + 1, minimum_spent, *next_state));
+    if (try_cast_spell(53)) {
+        auto &next_state = out[n - 1];
+        next_state.boss_hp -= 4;
+        next_state.turn++;
     }
 
     // Drain:
-    if (auto next_state = cast_spell(state, 73)) {
-        next_state->boss_hp -= 2;
-        next_state->player_hp += 2;
-        result = std::min(result, boss_turn(turn + 1, minimum_spent, *next_state));
+    if (try_cast_spell(73)) {
+        auto &next_state = out[n - 1];
+        next_state.boss_hp -= 2;
+        next_state.player_hp += 2;
+        next_state.turn++;
     }
 
-    return result;
+    return n;
 }
 
 void run(std::string_view buf)
 {
-    const auto [boss_hp, boss_damage] = find_numbers_n<int, 2>(buf);
+    const auto [boss_hp, boss_damage] = find_numbers_n<uint8_t, 2>(buf);
+    ThreadPool &pool = ThreadPool::get();
+    ForkPool<State> fork_pool(pool.num_threads());
+    std::atomic<int> solutions[2] = {INT_MAX, INT_MAX};
 
-    auto solve = [&](bool hard_mode) {
-        State initial_state{
-            .boss_hp = static_cast<int16_t>(boss_hp),
-            .boss_damage = static_cast<int16_t>(boss_damage),
-            .hard_mode = hard_mode,
+    fork_pool.push({
+        State{
+            .boss_hp = boss_hp,
+            .boss_damage = boss_damage,
+            .player_hp_decrement = 0,
+        },
+        State{
+            .boss_hp = boss_hp,
+            .boss_damage = boss_damage,
+            .player_hp_decrement = 1,
+        },
+    });
+
+    fork_pool.run(pool, [&](State state, small_vector_base<State> &next_states) {
+        DEBUG_ASSERT(state.turn < 100);
+
+        auto state_done = [&](const State &s) {
+            if (s.boss_hp <= 0) {
+                atomic_store_min<int>(solutions[s.player_hp_decrement], s.spent);
+                return true;
+            }
+            return s.player_hp <= 0;
         };
-        int minimum_spent = INT_MAX;
-        return player_turn(0, minimum_spent, initial_state);
-    };
 
-    fmt::print("{}\n{}\n", solve(false), solve(true));
+        if (state.spent >= solutions[state.player_hp_decrement].load())
+            return;
+
+        do_player_preturn(state);
+        if (state_done(state))
+            return;
+
+        std::array<State, 5> candidates;
+        size_t n = do_player_turn(candidates.data(), state);
+
+        for (size_t i = 0; i < n; i++) {
+            State &candidate = candidates[i];
+            if (state_done(candidate))
+                continue;
+
+            do_boss_turn(candidate);
+            if (state_done(candidate))
+                continue;
+
+            next_states.push_back(candidate);
+        }
+    });
+
+    fmt::print("{}\n{}\n", solutions[0].load(), solutions[1].load());
 }
 
 }
