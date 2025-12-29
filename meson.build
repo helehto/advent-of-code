@@ -108,6 +108,7 @@ executable(
     'main.cc',
     cpp_args: cpp_args,
     dependencies: [
+        cpp.find_library('atomic', required: false),
         dependency('eigen3', include_type: 'system'),
         dependency('fmt'),
     ],
@@ -126,7 +127,29 @@ test(
             '-mno-avx512f',
             '-DDOCTEST_CONFIG_NO_EXCEPTIONS_BUT_WITH_ALL_ASSERTS',
         ],
-        dependencies: [doctest, dependency('fmt')],
+        dependencies: [
+            cpp.find_library('atomic', required: false),
+            doctest,
+            dependency('fmt'),
+        ],
+        include_directories: include_directories('include'),
+        link_args: link_args,
+    ),
+)
+
+test(
+    'test-fork-pool',
+    executable(
+        'test-fork-pool',
+        'tests/test_fork_pool.cc',
+        cpp_args: [
+            cpp_args,
+            '-mno-avx512f',
+        ],
+        dependencies: [
+            cpp.find_library('atomic', required: false),
+            dependency('fmt'),
+        ],
         include_directories: include_directories('include'),
         link_args: link_args,
     ),
