@@ -214,11 +214,14 @@ class Measurements:
 @dataclass
 class BenchmarkArgs:
     iterations: T.Optional[int]
+    jobs: T.Optional[int]
     target_time: T.Optional[float]
     problems: T.Collection[str]
 
     def to_cmdline(self) -> list[str]:
         v = ["--json"]
+        if self.jobs:
+            v += ["-j", str(self.jobs)]
         if self.iterations:
             v += ["-i", str(self.iterations)]
         if self.target_time:
@@ -277,6 +280,7 @@ def benchmark(
 
         new_args = BenchmarkArgs(
             iterations=args.iterations,
+            jobs=args.jobs,
             target_time=(1 / len(rerun_problems)),
             problems=rerun_problems,
         )
@@ -308,7 +312,7 @@ def diff_solutions(
     assert len(binaries) == 2
 
     problems = problems or ["*"]
-    bargs = BenchmarkArgs(iterations=1, target_time=None, problems=problems)
+    bargs = BenchmarkArgs(iterations=1, jobs=None, target_time=None, problems=problems)
     _, outputs = run_binaries(bargs, binaries)
 
     ok = True
@@ -409,6 +413,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("-b", "--base-commit", default="HEAD", metavar="COMMIT")
     parser.add_argument("-i", "--iterations", default=1, type=int)
+    parser.add_argument("-j", "--jobs", default=None, type=int)
     parser.add_argument("-n", "--max-runs", default=5, type=int)
     parser.add_argument("-t", "--target-time", default=None, type=float)
     parser.add_argument("--diff", action="store_true")
@@ -425,6 +430,7 @@ def main() -> None:
 
     bargs = BenchmarkArgs(
         iterations=args.iterations,
+        jobs=args.jobs,
         target_time=args.target_time,
         problems=tuple(args.problems),
     )
