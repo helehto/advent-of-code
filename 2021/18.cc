@@ -100,16 +100,13 @@ constexpr int part1(std::span<const small_vector<int8_t>> lines)
 
 static int part2(std::span<const small_vector<int8_t>> lines)
 {
-    ThreadPool &pool = ThreadPool::get();
     std::atomic_int max_mag = INT_MIN;
 
-    pool.for_each_index(0, lines.size(), [&](size_t begin, size_t end) {
-        for (size_t i = begin; i < end; ++i) {
-            for (size_t j = 0; j < lines.size(); ++j) {
-                auto sum = lines[i];
-                add(sum, lines[j]);
-                atomic_store_max(max_mag, magnitude(sum.begin()).first);
-            }
+    ThreadPool::get().for_each(lines, [&](const auto &line) {
+        for (size_t j = 0; j < lines.size(); ++j) {
+            auto sum = line;
+            add(sum, lines[j]);
+            atomic_store_max(max_mag, magnitude(sum.begin()).first);
         }
     });
 

@@ -331,11 +331,8 @@ static int minimize(const Machine &machine)
 static int part2(std::span<const Machine> machines)
 {
     std::atomic<int> result = 0;
-    ThreadPool::get().for_each_index(0, machines.size(), [&](size_t begin, size_t end) {
-        for (size_t index = begin; index < end; ++index) {
-            int n = minimize(machines[index]);
-            result.fetch_add(n, std::memory_order_relaxed);
-        }
+    ThreadPool::get().for_each(machines, [&](const Machine &m) {
+        result.fetch_add(minimize(m), std::memory_order_relaxed);
     });
     return result.load();
 }

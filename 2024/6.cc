@@ -150,8 +150,8 @@ void run(std::string_view buf)
     fmt::print("{}\n", visited.size() + 1);
 
     std::atomic<int> total_loops = 0;
-    ThreadPool::get().for_each(visited, [&](std::span<const uint16_t> subspan) {
-        const auto loops = count_loops_with_obstructions(grid, start, subspan);
+    ThreadPool::get().for_each_slice(visited, [&](auto obstructions) {
+        const auto loops = count_loops_with_obstructions(grid, start, obstructions);
         total_loops.fetch_add(loops);
     });
 

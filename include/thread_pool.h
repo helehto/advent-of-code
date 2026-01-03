@@ -259,19 +259,31 @@ public:
             threads_[i] = std::thread(&ThreadPool::worker_loop, this, i);
     }
 
-    template <typename Container,
+    template <std::ranges::contiguous_range Range,
               std::invocable<
-                  std::span<typename std::remove_reference_t<Container>::value_type>> Fn>
-    void for_each(Container &&container, Fn &&fn)
-        requires(std::convertible_to<
-                 Container,
-                 std::span<typename std::remove_reference_t<Container>::value_type>>)
+                  const std::remove_reference_t<std::ranges::range_value_t<Range>> &> Fn>
+    void for_each(Range &&r, Fn &&fn)
     {
         ASSERT_MSG(threads_, "ThreadPool::for_each() called when not started!");
-        for_each_index(0, std::size(container),
-                       [&container, f = std::forward<Fn>(fn)](size_t begin, size_t end) {
-                           std::span span(container);
-                           f(span.subspan(begin, end - begin));
+        for_each_index(0zu, std::ranges::size(r),
+                       [&r, f = std::forward<Fn>(fn)](size_t begin, size_t end) {
+                           const auto *data = std::ranges::data(r);
+                           for (size_t i = begin; i < end; ++i)
+                               f(data[i]);
+                       });
+    }
+
+    template <std::ranges::contiguous_range Range,
+              std::invocable<std::span<
+                  const std::remove_reference_t<std::ranges::range_value_t<Range>>>> Fn>
+    void for_each_slice(Range &&r, Fn &&fn)
+    {
+        ASSERT_MSG(threads_, "ThreadPool::for_each_slice() called when not started!");
+        for_each_index(0zu, std::ranges::size(r),
+                       [&r, f = std::forward<Fn>(fn)](size_t begin, size_t end) {
+                           const auto *data = std::ranges::data(r) + begin;
+                           const size_t size = end - begin;
+                           f(std::span(data, size));
                        });
     }
 
@@ -290,10 +302,9 @@ public:
         lock();
         tasks_.reserve(tasks_.size() + n_threads_);
 
-        const size_t slice_size = ((end - begin) / n_threads_) + 1;
         for (size_t i = 0; i < n_threads_; ++i) {
-            const size_t local_begin = i * slice_size;
-            const size_t local_end = std::min((i + 1) * slice_size, end);
+            const size_t local_begin = i * (end - begin) / n_threads_ + begin;
+            const size_t local_end = (i + 1) * (end - begin) / n_threads_ + begin;
             tasks_.push_back(Task{
                 .type = Task::Type::for_each_index,
                 .work_fn = {.for_each_index = work_fn},

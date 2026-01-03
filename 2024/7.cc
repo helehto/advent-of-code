@@ -32,10 +32,10 @@ void run(std::string_view buf)
 
     std::atomic_int64_t s1 = 0;
     std::atomic_int64_t s2 = 0;
-    pool.for_each_index(0, lines.size(), [&](size_t begin, size_t end) {
+    pool.for_each_slice(lines, [&](auto span) {
         small_vector<int64_t, 16> nums;
-        for (size_t i = begin; i < end; ++i) {
-            find_numbers(lines[i], nums);
+        for (std::string_view line : span) {
+            find_numbers(line, nums);
             s1.fetch_add(solve<1>(nums[0], &nums[1], nums.size() - 1) ? nums[0] : 0,
                          std::memory_order_relaxed);
             s2.fetch_add(solve<2>(nums[0], &nums[1], nums.size() - 1) ? nums[0] : 0,

@@ -35,12 +35,11 @@ void run(std::string_view buf)
     std::vector<int16_t> sequence_sum(19 * 19 * 19 * 19);
     std::mutex sequence_sum_mutex;
 
-    pool.for_each_index(0, secrets.size(), [&](size_t begin, size_t end) {
+    pool.for_each_slice(secrets, [&](auto slice) {
         std::vector<int16_t> local_sequence_sum(19 * 19 * 19 * 19);
         std::bitset<19 * 19 * 19 * 19> seen;
 
-        for (size_t i = begin; i < end; ++i) {
-            const inplace_vector<int, N + 1> &s = secrets[i];
+        for (const inplace_vector<int, N + 1> &s : slice) {
             seen.reset();
 
             std::array<int, N + 1> delta;

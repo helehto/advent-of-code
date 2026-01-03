@@ -81,7 +81,7 @@ void run(std::string_view buf)
                 queue.emplace_back(d + 1, v);
     }
 
-    auto solve = [&]<int N>(std::span<std::pair<int, Vec2i>> s) {
+    auto solve = [&]<int N>(std::span<const std::pair<int, Vec2i>> s) {
         int cheats = 0;
         for (auto &[_, pos] : s)
             cheats += count_cheats_from_square<N>(dist, pos);
@@ -94,7 +94,7 @@ void run(std::string_view buf)
     // best here.
     std::atomic<int> part1{0};
     std::atomic<int> part2{0};
-    ThreadPool::get().for_each(queue, [&](auto span) {
+    ThreadPool::get().for_each_slice(queue, [&](auto span) {
         part1.fetch_add(solve.operator()<2>(span));
         part2.fetch_add(solve.operator()<N>(span));
     });

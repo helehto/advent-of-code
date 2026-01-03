@@ -180,15 +180,13 @@ void run(std::string_view buf)
             sample_nodes.emplace_back(u, v);
     }
 
-    pool.for_each_index(0, sample_nodes.size(), [&](size_t start, size_t end) noexcept {
+    pool.for_each_slice(sample_nodes, [&](auto slice) noexcept {
         MonotonicBucketQueue<uint16_t> bq(2);
         auto dist = std::make_unique_for_overwrite<uint16_t[]>(g.size());
         auto prev =
             std::make_unique_for_overwrite<std::pair<uint16_t, uint16_t>[]>(g.size());
-        for (size_t i = start; i < end; ++i) {
-            auto [source, target] = sample_nodes[i];
+        for (auto [source, target] : slice)
             dijkstra(g, source, target, dist.get(), prev.get(), bq);
-        }
     });
 
     std::atomic_thread_fence(std::memory_order_seq_cst);
