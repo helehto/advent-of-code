@@ -30,14 +30,6 @@ hash_search(std::string_view s, int n, int stride, std::atomic_int &limit)
     return {part1, part2};
 }
 
-template <typename T>
-static void atomic_store_min(std::atomic<T> &a, const T &b)
-{
-    auto value = a.load(std::memory_order_relaxed);
-    while (b < value && !a.compare_exchange_weak(value, b))
-        ;
-}
-
 void run(std::string_view buf)
 {
     ThreadPool &pool = ThreadPool::get();

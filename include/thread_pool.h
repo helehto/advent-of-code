@@ -343,14 +343,31 @@ public:
 };
 
 template <typename T>
-void atomic_store_max(std::atomic<T> &a,
+bool atomic_store_min(std::atomic<T> &a,
                       const T b,
                       std::memory_order order = std::memory_order_seq_cst) noexcept
 {
     auto value = a.load(order);
-    while (b > value &&
-           !a.compare_exchange_weak(value, b, order, std::memory_order_relaxed))
-        ;
+    while (true) {
+        if (value < b)
+            return false;
+        if (a.compare_exchange_weak(value, b, order, std::memory_order_relaxed))
+            return true;
+    }
+}
+
+template <typename T>
+bool atomic_store_max(std::atomic<T> &a,
+                      const T b,
+                      std::memory_order order = std::memory_order_seq_cst) noexcept
+{
+    auto value = a.load(order);
+    while (true) {
+        if (value > b)
+            return false;
+        if (a.compare_exchange_weak(value, b, order, std::memory_order_relaxed))
+            return true;
+    }
 }
 
 /// Implementation of a concurrent lock-free deque.
