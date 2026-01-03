@@ -1,39 +1,51 @@
 #include "common.h"
+#include "thread_pool.h"
 
 namespace aoc_2018_5 {
 
-static size_t react(std::string &polymer, std::string_view input)
+[[gnu::noinline]]
+static size_t react(char *scratch, std::string_view input)
 {
-    polymer.clear();
+    size_t i = 1;
+    scratch[0] = '\0';
 
     for (char c : input) {
-        if (!polymer.empty() && (polymer.back() ^ 0x20) == c)
-            polymer.pop_back();
-        else
-            polymer.push_back(c);
+        size_t mask = ((scratch[i] ^ 0x20) == c) ? SIZE_MAX : 0;
+        i += mask | 1; // ++i if no reaction, --i if reaction
+        scratch[i] = mask ? scratch[i] : c;
     }
 
-    return polymer.size();
+    return i - 1;
 }
 
 void run(std::string_view buf)
 {
-    auto s = split_lines(buf)[0];
+    while (!buf.empty() && buf.back() == '\n')
+        buf.remove_suffix(1);
 
-    std::string result;
-    fmt::print("{}\n", react(result, {s}));
-
-    size_t min = SIZE_MAX;
-    std::string spliced;
-    spliced.reserve(s.size());
-    for (char c = 'a'; c <= 'z'; c++) {
-        spliced.clear();
-        for (char k : s)
-            if ((k | 0x20) != c)
-                spliced.push_back(k);
-        min = std::min(min, react(result, spliced));
+    {
+        auto scratch = std::make_unique_for_overwrite<char[]>(buf.size() + 1);
+        fmt::print("{}\n", react(scratch.get(), buf));
     }
-    fmt::print("{}\n", min);
+
+    std::atomic<size_t> min = SIZE_MAX;
+    ThreadPool &pool = ThreadPool::get();
+    pool.for_each_index('a', 'z' + 1, [&](char begin, char end) {
+        auto spliced = std::make_unique_for_overwrite<char[]>(buf.size());
+        auto scratch = std::make_unique_for_overwrite<char[]>(buf.size() + 1);
+        for (char c = begin; c < end; c++) {
+            size_t spliced_len = 0;
+            for (char k : buf) {
+                spliced[spliced_len] = k;
+                if ((k | 0x20) != c)
+                    spliced_len++;
+            }
+            atomic_store_min(
+                min, react(scratch.get(), std::string_view(spliced.get(), spliced_len)));
+        }
+    });
+
+    fmt::print("{}\n", min.load());
 }
 
 }
