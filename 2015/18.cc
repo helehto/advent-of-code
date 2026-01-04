@@ -2,74 +2,64 @@
 
 namespace aoc_2015_18 {
 
-static int count_neighbors(const std::vector<std::string> &g, size_t x, size_t y)
+static int count_neighbors(const char *p, ssize_t stride)
 {
-    auto c = [&](int dx, int dy) {
-        return x + dx < g[0].size() && y + dy < g.size() && g[y + dy][x + dx] == '#';
-    };
-
-    return c(-1, -1) + c(-1, 1) + c(1, 1) + c(1, -1) + c(0, -1) + c(0, 1) + c(-1, 0) +
-           c(+1, 0);
+    int count = 0;
+    count += p[-stride - 1] == '#';
+    count += p[-stride + 0] == '#';
+    count += p[-stride + 1] == '#';
+    count += p[+stride - 1] == '#';
+    count += p[+stride + 0] == '#';
+    count += p[+stride + 1] == '#';
+    count += p[-1] == '#';
+    count += p[+1] == '#';
+    return count;
 }
 
-static void step(std::vector<std::string> &new_grid, const std::vector<std::string> &grid)
+static void step(MatrixView<char> new_grid, MatrixView<const char> grid)
 {
-    for (auto &s : new_grid)
-        std::fill(begin(s), end(s), '.');
-
-    for (size_t y = 0; y < grid.size(); y++) {
-        for (size_t x = 0; x < grid[0].size(); x++) {
-            const auto n = count_neighbors(grid, x, y);
-            if (grid[y][x] == '#')
-                new_grid[y][x] = n == 2 || n == 3 ? '#' : '.';
+    for (size_t i = 1; i < grid.rows - 1; i++) {
+        const char *src = &grid(i, 0);
+        char *dst = &new_grid(i, 0);
+        for (size_t j = 1; j < grid.cols - 1; j++) {
+            const auto n = count_neighbors(&src[j], grid.cols);
+            if (src[j] == '#')
+                dst[j] = n == 2 || n == 3 ? '#' : '.';
             else
-                new_grid[y][x] = n == 3 ? '#' : '.';
+                dst[j] = n == 3 ? '#' : '.';
         }
     }
 }
 
-static int count_on(const std::vector<std::string> &g)
-{
-    int count = 0;
-    for (auto &s : g) {
-        for (auto c : s)
-            count += c == '#';
-    }
-    return count;
-}
-
-static int solve(std::vector<std::string> grid, int iterations, bool stuck)
+static int solve(Matrix<char> grid, int iterations, bool stuck)
 {
     auto stuck_corners = [&] {
         if (stuck) {
-            grid.front().front() = '#';
-            grid.front().back() = '#';
-            grid.back().front() = '#';
-            grid.back().back() = '#';
+            grid(1, 1) = '#';
+            grid(1, grid.cols - 2) = '#';
+            grid(grid.rows - 2, 1) = '#';
+            grid(grid.rows - 2, grid.cols - 2) = '#';
         }
     };
 
     stuck_corners();
-    std::vector<std::string> new_grid(grid.size(), std::string(grid[0].size(), '.'));
+    Matrix<char> new_grid(grid.rows, grid.cols, '.');
     for (int i = 0; i < iterations; i++) {
         step(new_grid, grid);
         std::swap(new_grid, grid);
         stuck_corners();
     }
 
-    return count_on(grid);
+    return std::ranges::count(grid.all(), '#');
 }
 
 void run(std::string_view buf)
 {
-    std::vector<std::string> grid;
-
-    for (std::string_view line : split_lines(buf))
-        grid.emplace_back(line);
+    Matrix<char> grid = Matrix<char>::from_lines(split_lines(buf)).padded(1, '.');
 
     constexpr int iterations = 100;
     fmt::print("{}\n", solve(grid, iterations, false));
-    fmt::print("{}\n", solve(grid, iterations, true));
+    fmt::print("{}\n", solve(std::move(grid), iterations, true));
 }
 
 }
