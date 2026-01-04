@@ -1,190 +1,194 @@
 #include "common.h"
 #include "dense_map.h"
-#include <algorithm>
-#include <cstdio>
-#include <functional>
-#include <numeric>
-#include <queue>
-#include <ranges>
 
 namespace aoc_2023_20 {
 
 enum {
-    BROADCASTER,
+    UNTYPED,
     FLIPFLOP,
     CONJUNCTION,
 };
 
 struct Component {
-    int type;
-    bool on = false;                          // flipflop
-    dense_map<std::string_view, bool> inputs; // conjunction
-    small_vector<std::string_view, 8> outputs;
+    int type = UNTYPED;
+    bool on = false;                // flipflop
+    uint64_t input_signal_mask = 0; // conjunction
+    uint64_t inputs_mask = 0;
+    small_vector<uint8_t, 8> outputs;
 };
 
 struct Circuit {
-    dense_map<std::string_view, Component> components_by_name;
-    small_vector<std::string_view, 4> rx_comp_input_names;
-    std::string_view rx_input_name;
+    std::vector<Component> components;
+    size_t rx_pred_input_index = SIZE_MAX;
+    size_t broadcaster_index = SIZE_MAX;
 };
 
 static Circuit parse_input(std::string_view buf)
 {
-    dense_map<std::string_view, Component> components_by_name;
-    std::string_view rx_input_name;
-    std::vector<std::string_view> outputs;
+    struct ParsedLine {
+        int8_t type;
+        uint8_t source;
+        small_vector<uint8_t, 8> outputs;
+    };
 
     auto lines = split_lines(buf);
-    components_by_name.reserve(lines.size());
+    ASSERT(lines.size() < 64);
 
-    for (std::string_view line : lines) {
-        auto arrow = line.find("->");
-        ASSERT(arrow != std::string_view::npos);
+    Circuit result;
+    auto &components = result.components;
+    size_t rx_input_index = SIZE_MAX;
+    auto &broadcaster_index = result.broadcaster_index;
 
-        int type = -1;
+    dense_map<std::string_view, size_t> node_map;
+    node_map.reserve(lines.size());
 
-        size_t i = 0;
-        if (line.front() == '%') {
-            type = FLIPFLOP;
-            i++;
-        } else if (line.front() == '&') {
-            type = CONJUNCTION;
-            i++;
+    std::vector<std::string_view> output_names;
+
+    auto parsed_lines_buffer = std::make_unique_for_overwrite<ParsedLine[]>(lines.size());
+    std::span parsed_lines(parsed_lines_buffer.get(), lines.size());
+
+    {
+        auto get_node = [&](std::string_view s) {
+            ASSERT(node_map.size() <= 64);
+            auto [it, inserted] = node_map.try_emplace(s, node_map.size());
+            return it->second;
+        };
+
+        for (size_t k = 0; std::string_view line : lines) {
+            auto &[type, source, outputs] = parsed_lines[k++];
+
+            type = -1;
+            if (line.front() == '%')
+                type = FLIPFLOP;
+            else if (line.front() == '&')
+                type = CONJUNCTION;
+
+            if (type >= 0)
+                line.remove_prefix(1);
+
+            auto arrow = line.find("->");
+            ASSERT(arrow != std::string_view::npos);
+            std::string_view name = strip(line.substr(0, arrow));
+            source = get_node(name);
+
+            if (name == "broadcaster")
+                broadcaster_index = source;
+
+            split(line.substr(arrow + 2), output_names, ',');
+            for (std::string_view s : output_names) {
+                auto output = get_node(strip(s));
+                ASSERT(output < 64);
+                ASSERT(source != output);
+                outputs.push_back(output);
+            }
+            ASSERT(!outputs.empty());
         }
-
-        std::string_view name = strip(line.substr(i, arrow - i));
-
-        if (name == "broadcaster") {
-            ASSERT(type == -1);
-            type = BROADCASTER;
-        }
-
-        split(line.substr(arrow + 2), outputs, ',');
-        for (auto &s : outputs)
-            s = strip(s);
-        ASSERT(!outputs.empty());
-
-        if (outputs.front() == "rx") {
-            ASSERT(outputs.size() == 1);
-            ASSERT(rx_input_name.empty());
-            rx_input_name = name;
-        }
-
-        ASSERT(type != -1);
-        components_by_name.emplace(name, Component{
-                                             .type = type,
-                                             .outputs = {outputs.begin(), outputs.end()},
-                                         });
     }
-    ASSERT(!rx_input_name.empty());
-    ASSERT(components_by_name.count(rx_input_name));
+    ASSERT_MSG(broadcaster_index < node_map.size(), "No broadcaster node in circuit!?");
 
-    for (auto &[name, comp] : components_by_name) {
-        for (auto &sink_name : comp.outputs) {
-            if (auto it = components_by_name.find(sink_name);
-                it != components_by_name.end())
-                it->second.inputs[name] = 0;
-        }
+    components.resize(node_map.size());
+    for (const auto &[type, source, outputs] : parsed_lines) {
+        components[source] = Component{
+            .type = type,
+            .outputs = std::move(outputs),
+        };
     }
 
-    small_vector<std::string_view, 4> rx_comp_input_names;
-    for (auto s : std::views::keys(components_by_name.at(rx_input_name).inputs))
-        rx_comp_input_names.push_back(s);
-    ASSERT(rx_comp_input_names.size() == 4);
+    // Fill in back-edges (input mask).
+    for (size_t i = 0; i < components.size(); i++) {
+        const auto &comp = components[i];
+        for (auto sink : comp.outputs)
+            components[sink].inputs_mask |= UINT64_C(1) << i;
+    }
 
-    return Circuit{
-        std::move(components_by_name),
-        std::move(rx_comp_input_names),
-        rx_input_name,
-    };
+    ASSERT_MSG(node_map.count("rx"), "No rx node in circuit!?");
+    rx_input_index = node_map.at("rx");
+    auto rx_pred = std::countr_zero(components[rx_input_index].inputs_mask);
+    result.rx_pred_input_index = rx_pred;
+
+    return result;
 }
 
 struct State {
-    dense_map<std::string_view, int64_t> cycle_lengths;
+    dense_map<uint8_t, int64_t> cycle_lengths;
     std::array<int64_t, 2> pulses{{0, 0}};
-    int64_t total_cycle_length = 0;
     int64_t presses = 1;
 };
 
 struct Pulse {
-    std::string_view sink_name;
-    std::string_view source_name;
+    uint8_t sink;
+    uint8_t source;
     int value;
 };
 
-static void press_button(State &state, Circuit &circuit)
+static int64_t press_button(State &state, Circuit &circuit)
 {
-    auto &[components_by_name, rx_comp_input_names, rx_input_name] = circuit;
+    auto &[components, rx_pred_input_index, broadcaster_index] = circuit;
     small_vector<Pulse, 256> pending;
-    pending.emplace_back("broadcaster", "button", 0);
+
+    auto &broadcaster = components[broadcaster_index];
+    for (auto sink : broadcaster.outputs)
+        pending.emplace_back(sink, broadcaster_index, 0);
+    state.pulses[0]++; // account for button press
+
+    auto check_cycle = [&](const Component &comp) -> std::optional<int64_t> {
+        int64_t cycle_length = 1;
+        for (auto m = comp.inputs_mask; m != 0; m &= m - 1) {
+            int input = std::countr_zero(m);
+            auto it = state.cycle_lengths.find(input);
+            if (it == state.cycle_lengths.end())
+                return std::nullopt;
+            cycle_length = std::lcm(cycle_length, it->second);
+        }
+        return cycle_length;
+    };
 
     for (size_t i = 0; i < pending.size(); ++i) {
-        const auto [comp_name, source_name, v] = pending[i];
+        const auto [comp_index, source, v] = pending[i];
+        auto &comp = circuit.components[comp_index];
         state.pulses[v]++;
 
-        if (comp_name == rx_input_name && v) {
-            state.cycle_lengths.emplace(source_name, state.presses);
-
-            bool done = std::ranges::all_of(rx_comp_input_names,
-                                            λx(state.cycle_lengths.count(x)));
-            if (done) {
-                state.total_cycle_length = 1;
-                for (std::string_view input : rx_comp_input_names)
-                    state.total_cycle_length =
-                        std::lcm(state.total_cycle_length, state.cycle_lengths[input]);
-                return;
-            }
+        if (v && comp_index == rx_pred_input_index) {
+            state.cycle_lengths.emplace(source, state.presses);
+            if (auto length = check_cycle(comp))
+                return *length;
         }
-
-        if (comp_name == "rx")
-            continue;
-        auto &comp = circuit.components_by_name.at(comp_name);
 
         std::optional<int> outgoing_pulse;
-        switch (comp.type) {
-        case BROADCASTER:
-            outgoing_pulse = v;
-            break;
-
-        case FLIPFLOP:
+        if (comp.type == FLIPFLOP) {
             if (v == 0) {
                 comp.on = !comp.on;
-                outgoing_pulse = comp.on;
+                outgoing_pulse.emplace(comp.on);
             }
-            break;
-
-        case CONJUNCTION:
-            comp.inputs[source_name] = v;
-            outgoing_pulse.emplace(false);
-            for (auto v : std::views::values(comp.inputs))
-                *outgoing_pulse |= (v == 0);
-            break;
+        } else {
+            comp.input_signal_mask &= ~(UINT64_C(1) << source);
+            if (v)
+                comp.input_signal_mask |= (UINT64_C(1) << source);
+            outgoing_pulse.emplace(comp.input_signal_mask != comp.inputs_mask);
         }
 
-        if (outgoing_pulse.has_value()) {
-            for (auto &sink : comp.outputs)
-                pending.emplace_back(sink, comp_name, *outgoing_pulse);
-        }
+        if (outgoing_pulse.has_value())
+            for (auto sink : comp.outputs)
+                pending.emplace_back(sink, comp_index, *outgoing_pulse);
     }
+
+    return 0;
 }
 
 void run(std::string_view buf)
 {
     auto circuit = parse_input(buf);
 
-    {
-        State state;
-        Circuit c = circuit;
-        for (int i = 0; i < 1000; i++)
-            press_button(state, c);
-        fmt::print("{}\n", state.pulses[0] * state.pulses[1]);
-    }
+    State state;
+    for (; state.presses <= 1000; state.presses++)
+        press_button(state, circuit);
+    fmt::print("{}\n", state.pulses[0] * state.pulses[1]);
 
-    {
-        State state;
-        for (; state.total_cycle_length == 0; state.presses++)
-            press_button(state, circuit);
-        fmt::print("{}\n", state.total_cycle_length);
+    for (;; state.presses++) {
+        if (auto cycle_length = press_button(state, circuit)) {
+            fmt::print("{}\n", cycle_length);
+            break;
+        }
     }
 }
 
