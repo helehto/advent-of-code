@@ -1,72 +1,23 @@
 #include "common.h"
-#include <algorithm>
-#include <ranges>
-#include <unordered_set>
 
 namespace aoc_2023_14 {
 
-static size_t scan_x(Matrix<char> &grid, Vec2z p, int dx)
-{
-    auto [i, j] = p;
-    for (size_t k = j + dx;; k += dx) {
-        if (grid(i, k) != '.')
-            return k - dx;
-        if (k + dx >= grid.cols)
-            return k;
-    }
-}
+enum { N, W, S, E };
 
-static size_t scan_y(Matrix<char> &grid, Vec2z p, int dy)
+constexpr void
+roll(MatrixView<char> grid, std::span<const uint16_t> segments, const ssize_t stride)
 {
-    auto [i, j] = p;
-    for (size_t k = i + dy;; k += dy) {
-        if (grid(k, j) != '.')
-            return k - dy;
-        if (k + dy >= grid.rows)
-            return k;
-    }
-}
+    for (const uint16_t offset : segments) {
+        auto *dst = grid.data() + offset;
+        auto *src = grid.data() + offset;
 
-static void roll_n(Matrix<char> &grid)
-{
-    for (auto [i, j] : grid.ndindex()) {
-        if (i > 0 && grid(i, j) == 'O') {
-            if (size_t k = scan_y(grid, {i, j}, -1); k != i)
-                grid(k, j) = std::exchange(grid(i, j), '.');
-        }
-    }
-}
-
-static void roll_s(Matrix<char> &grid)
-{
-    for (size_t i = grid.rows - 1; i--;) {
-        for (size_t j = 0; j < grid.cols; j++) {
-            if (grid(i, j) == 'O') {
-                if (size_t k = scan_y(grid, {i, j}, 1); k != i)
-                    grid(k, j) = std::exchange(grid(i, j), '.');
+        while (*src != '#') {
+            if (*src == 'O') {
+                *src = '.';
+                *dst = 'O';
+                dst += stride;
             }
-        }
-    }
-}
-
-static void roll_w(Matrix<char> &grid)
-{
-    for (auto [i, j] : grid.ndindex()) {
-        if (j > 0 && grid(i, j) == 'O') {
-            if (size_t k = scan_x(grid, {i, j}, -1); k != j)
-                grid(i, k) = std::exchange(grid(i, j), '.');
-        }
-    }
-}
-
-static void roll_e(Matrix<char> &grid)
-{
-    for (size_t j = grid.cols - 1; j--;) {
-        for (size_t i = 0; i < grid.rows; i++) {
-            if (grid(i, j) == 'O') {
-                if (size_t k = scan_x(grid, {i, j}, 1); k != j)
-                    grid(i, k) = std::exchange(grid(i, j), '.');
-            }
+            src += stride;
         }
     }
 }
@@ -78,45 +29,77 @@ struct MatrixHasher {
     }
 };
 
-static Matrix<char> find_cycle(Matrix<char> grid, int which)
+static Matrix<char>
+find_cycle(Matrix<char> grid, int which, std::span<const small_vector<uint16_t>> segments)
 {
     std::unordered_map<Matrix<char>, int, MatrixHasher> cache;
     std::vector<const Matrix<char> *> seq;
 
     for (int j = 0;; j++) {
-        if (auto it = cache.find(grid); it != cache.end()) {
+        auto [it, inserted] = cache.try_emplace(grid, j);
+        if (!inserted) {
             auto mu = it->second;
             auto period = j - it->second;
             return *seq[mu + (which - mu) % period];
         }
 
-        auto [it, _] = cache.emplace(grid, j);
         seq.push_back(&it->first);
 
-        roll_n(grid);
-        roll_w(grid);
-        roll_s(grid);
-        roll_e(grid);
+        roll(grid, segments[N], +grid.cols);
+        roll(grid, segments[W], +1);
+        roll(grid, segments[S], -grid.cols);
+        roll(grid, segments[E], -1);
     }
 }
 
-static int total_load(MatrixView<const char> grid)
+constexpr size_t total_load(MatrixView<const char> grid)
 {
-    int sum = 0;
-    for (auto p : grid.ndindex())
-        if (grid(p) == 'O')
-            sum += grid.rows - p.y;
-    return sum;
+    size_t total = 0;
+    for (size_t i = 0; i < grid.rows; ++i)
+        for (size_t j = 0; j < grid.cols; ++j)
+            total += grid(i, j) == 'O' ? grid.rows - i - 1 : 0;
+    return total;
 }
 
 void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
-    auto grid = Matrix<char>::from_lines(lines);
-    auto grid2 = grid;
-    roll_n(grid);
-    fmt::print("{}\n", total_load(grid));
-    fmt::print("{}\n", total_load(find_cycle(grid2, 1000000000)));
+    auto grid = Matrix<char>::from_lines(lines).padded(1, '#');
+    ASSERT(grid.rows < 256);
+    ASSERT(grid.cols < 256);
+
+    small_vector<uint16_t> segments[4];
+    for (size_t i = 0; i < grid.rows; ++i) {
+        for (size_t j = 0; j < grid.cols; ++j) {
+            if (grid(i, j) != '#')
+                continue;
+
+            if (i > 0 && grid(i - 1, j) != '#')
+                segments[S].push_back(&grid(i - 1, j) - grid.data());
+
+            if (i + 1 < grid.rows && grid(i + 1, j) != '#')
+                segments[N].push_back(&grid(i + 1, j) - grid.data());
+
+            if (j > 0 && grid(i, j - 1) != '#')
+                segments[E].push_back(&grid(i, j - 1) - grid.data());
+
+            if (j + 1 < grid.cols && grid(i, j + 1) != '#')
+                segments[W].push_back(&grid(i, j + 1) - grid.data());
+        }
+    }
+
+    // Part 1:
+    {
+        auto g = grid;
+        roll(g, segments[N], g.cols);
+        fmt::print("{}\n", total_load(g));
+    }
+
+    // Part 2:
+    {
+        auto g = find_cycle(std::move(grid), 1'000'000'000, segments);
+        fmt::print("{}\n", total_load(g));
+    }
 }
 
 }
