@@ -6,9 +6,9 @@ using Region = std::array<std::array<int, 2>, 3>;
 
 constexpr bool overlaps(const Region &a, const Region &b)
 {
-    return !((a[0][1] < b[0][0] || a[0][0] > b[0][1]) ||
-             (a[1][1] < b[1][0] || a[1][0] > b[1][1]) ||
-             (a[2][1] < b[2][0] || a[2][0] > b[2][1]));
+    return !((a[0][1] <= b[0][0] || a[0][0] >= b[0][1]) ||
+             (a[1][1] <= b[1][0] || a[1][0] >= b[1][1]) ||
+             (a[2][1] <= b[2][0] || a[2][0] >= b[2][1]));
 }
 
 constexpr std::optional<Region> intersect(const Region &a, const Region &b)
@@ -25,31 +25,27 @@ constexpr std::optional<Region> intersect(const Region &a, const Region &b)
 
 constexpr int64_t volume(const Region &a)
 {
-    return (static_cast<int64_t>(a[0][1]) - a[0][0] + 1) *
-           (static_cast<int64_t>(a[1][1]) - a[1][0] + 1) *
-           (static_cast<int64_t>(a[2][1]) - a[2][0] + 1);
+    return (static_cast<int64_t>(a[0][1]) - a[0][0]) *
+           (static_cast<int64_t>(a[1][1]) - a[1][0]) *
+           (static_cast<int64_t>(a[2][1]) - a[2][0]);
 }
 
-constexpr int64_t solve(std::span<const std::pair<bool, Region>> input)
+static int64_t count(std::span<const std::pair<bool, Region>> input)
 {
-    small_vector<std::pair<Region, int>, 32> regions;
-    small_vector<std::pair<Region, int>, 32> new_regions;
+    if (input.empty())
+        return 0;
 
-    for (const auto &[on, a] : input) {
-        new_regions.clear();
-        for (auto &[b, sign] : regions)
-            if (auto ix = intersect(a, b))
-                new_regions.emplace_back(*ix, -sign);
+    const auto [state, region] = input.front();
+    const auto rest = input.subspan(1);
+    if (!state)
+        return count(rest);
 
-        regions.append_range(new_regions);
-        if (on)
-            regions.emplace_back(a, 1);
-    }
+    small_vector<std::pair<bool, Region>, 8> overlaps;
+    for (auto [_, r] : rest)
+        if (auto ix = intersect(region, r))
+            overlaps.emplace_back(true, *ix);
 
-    int64_t result = 0;
-    for (const auto &[r, sign] : regions)
-        result += sign * volume(r);
-    return result;
+    return volume(region) + count(rest) - count(overlaps);
 }
 
 void run(std::string_view buf)
@@ -60,16 +56,16 @@ void run(std::string_view buf)
     for (std::string_view line : lines) {
         auto [x0, x1, y0, y1, z0, z1] = find_numbers_n<int, 6>(line);
         full_input.emplace_back(line.substr(0, 2) == "on",
-                                Region{{{x0, x1}, {y0, y1}, {z0, z1}}});
+                                Region{{{x0, x1 + 1}, {y0, y1 + 1}, {z0, z1 + 1}}});
     }
 
-    constexpr Region part1_region{{{-50, 50}, {-50, 50}, {-50, 50}}};
+    constexpr Region part1_region{{{-50, 51}, {-50, 51}, {-50, 51}}};
     small_vector<std::pair<bool, Region>, 32> small_input;
     std::ranges::copy_if(full_input, std::back_inserter(small_input),
                          λa(overlaps(a.second, part1_region)));
 
-    fmt::print("{}\n", solve(small_input));
-    fmt::print("{}\n", solve(full_input));
+    fmt::print("{}\n", count(small_input));
+    fmt::print("{}\n", count(full_input));
 }
 
 }
