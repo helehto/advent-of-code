@@ -43,6 +43,7 @@ struct Options {
     int iterations = 1;
     int num_threads = 0;
     double target_time = -1;
+    bool stable_mode = false;
     bool json = false;
     std::vector<const Problem *> problems_to_run;
 };
@@ -157,8 +158,53 @@ run_problem(const Problem &p, std::string input_path, const Options &opts)
         run();
     }
 
-    for (int i = 1; i < opts.iterations || total_duration < opts.target_time * 1e9; i++) {
-        run();
+    if (opts.stable_mode) {
+        // Run for 100 ms or two iterations to warm up, whichever is longer, to
+        // determine the batch size.
+        while (total_duration < 100'000'000 || durations.size() < 2)
+            run();
+
+        // Run in batches of N runs until the timing of the last N runs look
+        // (somewhat) stable, or the time spent exceeds what was given in -t.
+        // The batch size is chosen to be ~50 ms based on the warmup runs, or
+        // at least two runs.
+        const size_t N =
+            std::max<size_t>(2, (50'000'000 * durations.size()) / total_duration);
+        size_t num_batches = 0;
+
+        while (true) {
+            for (size_t i = 0; i < N; i++)
+                run();
+
+            std::span batch(durations.end() - N, N);
+
+            // If we have sufficiently many runs, discard the top 10% to avoid
+            // outliers causing us to run for longer than necessary.
+            if (N >= 20) {
+                auto first_outlier = batch.end() - (N + 9) / 10;
+                std::ranges::nth_element(batch, first_outlier);
+                batch = batch.subspan(0, first_outlier - batch.begin());
+            }
+
+            uint64_t sum = std::ranges::fold_left(batch, UINT64_C(0), λab(a + b));
+            uint64_t min = std::ranges::min(batch);
+            auto mean = double(sum) / double(N);
+
+            double ratio = mean / min;
+            DV(min, mean, ratio);
+            ++num_batches;
+            if (ratio <= 1.05 ||
+                (opts.target_time > 0 && total_duration >= opts.target_time * 1e9)) {
+                DV(num_batches);
+                break;
+            }
+        }
+    } else if (opts.target_time > 0) {
+        while (total_duration < opts.target_time * 1e9)
+            run();
+    } else {
+        for (int i = 1; i < opts.iterations; i++)
+            run();
     }
 
     return {durations, output};
@@ -206,10 +252,11 @@ int main(int argc, char **argv)
             {"jobs", no_argument, nullptr, 'j'},
             {"json", no_argument, nullptr, 'J'},
             {"target-time", required_argument, nullptr, 't'},
+            {"stable", no_argument, nullptr, 's'},
         };
 
         int option_index;
-        int c = getopt_long(argc, argv, "f:i:j:Jt:", long_options, &option_index);
+        int c = getopt_long(argc, argv, "f:i:j:Jst:", long_options, &option_index);
         if (c == -1)
             break;
 
@@ -227,6 +274,9 @@ int main(int argc, char **argv)
             break;
         case 'J':
             opts.json = true;
+            break;
+        case 's':
+            opts.stable_mode = true;
             break;
         case 't':
             opts.target_time = strtod(optarg, nullptr);

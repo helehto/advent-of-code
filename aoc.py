@@ -215,6 +215,7 @@ class Measurements:
 class BenchmarkArgs:
     iterations: T.Optional[int]
     jobs: T.Optional[int]
+    stable_mode: bool
     target_time: T.Optional[float]
     problems: T.Collection[str]
 
@@ -224,6 +225,8 @@ class BenchmarkArgs:
             v += ["-j", str(self.jobs)]
         if self.iterations:
             v += ["-i", str(self.iterations)]
+        if self.stable_mode:
+            v += ["-s"]
         if self.target_time:
             v += ["-t", str(self.target_time)]
 
@@ -281,6 +284,7 @@ def benchmark(
         new_args = BenchmarkArgs(
             iterations=args.iterations,
             jobs=args.jobs,
+            stable_mode=args.stable_mode,
             target_time=(1 / len(rerun_problems)),
             problems=rerun_problems,
         )
@@ -312,7 +316,9 @@ def diff_solutions(
     assert len(binaries) == 2
 
     problems = problems or ["*"]
-    bargs = BenchmarkArgs(iterations=1, jobs=None, target_time=None, problems=problems)
+    bargs = BenchmarkArgs(
+        iterations=1, jobs=None, stable_mode=False, target_time=None, problems=problems
+    )
     _, outputs = run_binaries(bargs, binaries)
 
     ok = True
@@ -416,6 +422,7 @@ def main() -> None:
     parser.add_argument("-j", "--jobs", default=None, type=int)
     parser.add_argument("-n", "--max-runs", default=5, type=int)
     parser.add_argument("-t", "--target-time", default=None, type=float)
+    parser.add_argument("-s", "--stable-mode", action="store_true")
     parser.add_argument("--diff", action="store_true")
     parser.add_argument("problems", nargs="*")
     args = parser.parse_args()
@@ -431,6 +438,7 @@ def main() -> None:
     bargs = BenchmarkArgs(
         iterations=args.iterations,
         jobs=args.jobs,
+        stable_mode=args.stable_mode,
         target_time=args.target_time,
         problems=tuple(args.problems),
     )
