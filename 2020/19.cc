@@ -1,5 +1,6 @@
 #include "common.h"
 #include "inplace_vector.h"
+#include "thread_pool.h"
 
 namespace aoc_2020_19 {
 
@@ -86,6 +87,7 @@ void run(std::string_view buf)
     auto lines = split_lines(buf);
     auto separator = std::ranges::find(lines, "");
     ASSERT(separator != lines.end());
+    ThreadPool &pool = ThreadPool::get();
 
     small_vector<Rule, 256> rules(separator - lines.begin());
 
@@ -94,24 +96,20 @@ void run(std::string_view buf)
         rules[i] = rule;
     }
 
-    // Part 1:
-    {
-        int matching_strings = 0;
-        for (auto it = separator + 1; it != lines.end(); ++it)
-            matching_strings += match(*it, rules);
-        fmt::print("{}\n", matching_strings);
-    }
+    auto count = [&]() {
+        std::atomic<int> matching_strings = 0;
+        pool.for_each(std::span(separator + 1, lines.end()), [&](std::string_view line) {
+            if (match(line, rules))
+                matching_strings.fetch_add(1, std::memory_order_relaxed);
+        });
+        return matching_strings.load();
+    };
 
-    // Part 2:
-    {
-        rules[8] = Rule{RULE_ALT, {{42}, {42, 8}}};
-        rules[11] = Rule{RULE_ALT, {{42, 31}, {42, 11, 31}}};
+    fmt::print("{}\n", count());
 
-        int matching_strings = 0;
-        for (auto it = separator + 1; it != lines.end(); ++it)
-            matching_strings += match(*it, rules);
-        fmt::print("{}\n", matching_strings);
-    }
+    rules[8] = Rule{RULE_ALT, {{42}, {42, 8}}};
+    rules[11] = Rule{RULE_ALT, {{42, 31}, {42, 11, 31}}};
+    fmt::print("{}\n", count());
 }
 
 }
