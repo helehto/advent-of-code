@@ -7,7 +7,8 @@ static int part1(std::string_view buf)
 {
     auto lengths = find_numbers<uint8_t>(buf);
     KnotHash k;
-    k.sparse_round(lengths);
+    for (const size_t n : lengths)
+        k.sparse_round(n);
     return k.ring[0] * k.ring[1];
 }
 

@@ -1,5 +1,6 @@
 #include "common.h"
 #include "knot_hash.h"
+#include "thread_pool.h"
 
 namespace aoc_2017_14 {
 
@@ -7,24 +8,30 @@ void run(std::string_view buf)
 {
     Matrix<bool> grid(128, 128);
 
-    int used_squares = 0;
-    for (int i = 0; i < 128; ++i) {
-        char input[16];
-        const auto len = fmt::format_to(input, "{}-{}", buf, i) - input;
+    std::atomic<int> part1;
+    ThreadPool::get().for_each_index(0, 128, [&](size_t begin, size_t end) {
+        int used_squares = 0;
 
-        std::span input_u8(reinterpret_cast<uint8_t *>(input), len);
-        const auto hash = KnotHash{}.as_bytes(input_u8);
+        for (size_t i = begin; i < end; ++i) {
+            char input[32];
+            const auto len = fmt::format_to(input, "{}-{}", buf, i) - input;
 
-        auto *hash_u64 = reinterpret_cast<const uint64_t *>(hash.data());
-        used_squares += std::popcount(hash_u64[0]) + std::popcount(hash_u64[1]);
+            std::span input_u8(reinterpret_cast<uint8_t *>(input), len);
+            const auto hash = KnotHash{}.as_bytes(input_u8);
 
-        for (int j = 0; j < 16; ++j) {
-            auto dep = _pdep_u64(hash[j], uint64_t(0x0101010101010101));
-            auto dep_rev = std::byteswap(dep);
-            *reinterpret_cast<uint64_t *>(&grid(i, 8 * j)) = dep_rev;
+            auto *hash_u64 = reinterpret_cast<const uint64_t *>(hash.data());
+            used_squares += std::popcount(hash_u64[0]) + std::popcount(hash_u64[1]);
+
+            for (int j = 0; j < 16; ++j) {
+                auto dep = _pdep_u64(hash[j], uint64_t(0x0101010101010101));
+                auto dep_rev = std::byteswap(dep);
+                std::memcpy(&grid(i, 8 * j), &dep_rev, 8);
+            }
         }
-    }
-    fmt::print("{}\n", used_squares);
+
+        part1.fetch_add(used_squares, std::memory_order_relaxed);
+    });
+    fmt::print("{}\n", part1.load());
 
     Matrix<bool> visited(grid.rows, grid.cols, false);
     int regions = 0;

@@ -13,24 +13,41 @@ struct KnotHash {
 
     KnotHash() { std::iota(ring.begin(), ring.end(), 0); }
 
-    void sparse_round(std::span<const uint8_t> l)
+    void sparse_round(size_t n)
     {
-        for (size_t n : l) {
+        if (pos + n <= ring.size()) {
+            // Entire range is in bounds.
+            std::reverse(ring.begin() + pos, ring.begin() + pos + n);
+        } else if (pos + n / 2 > 256) {
+            // Second half of the range (partially) wraps around.
+            size_t i = 0;
+            for (; i < 256 - pos; ++i)
+                std::swap(ring[pos + i], ring[pos + n - i - 1 - 256]);
+            for (; i < n / 2; ++i)
+                std::swap(ring[pos + i - 256], ring[pos + n - i - 1 - 256]);
+        } else {
+            // First half of the range (partially) wraps around, second half is
+            // in bounds. (FIXME: This can be split into two cases just like
+            // above to avoid masking for each iteration, but the indexing is
+            // fiddly so I won't bother right now.)
             for (size_t i = 0; i < n / 2; ++i)
                 std::swap(ring[(pos + i) & 0xff], ring[(pos + n - i - 1) & 0xff]);
-
-            pos += n + skip;
-            skip++;
         }
+
+        pos = (pos + n + skip) & 0xff;
+        skip++;
     }
 
     inline std::array<uint8_t, 16> as_bytes(std::span<const uint8_t> lengths)
     {
-        static constexpr uint8_t extra[]{17, 31, 73, 47, 23};
-
         for (int i = 0; i < 64; ++i) {
-            sparse_round(lengths);
-            sparse_round(extra);
+            for (const size_t n : lengths)
+                sparse_round(n);
+            sparse_round(17);
+            sparse_round(31);
+            sparse_round(73);
+            sparse_round(47);
+            sparse_round(23);
         }
 
         std::array<uint8_t, 16> result;
