@@ -3,18 +3,19 @@
 
 namespace aoc_2024_11 {
 
-static void step(dense_map<int64_t, int64_t> &counter,
-                 dense_map<int64_t, int64_t> &result)
+[[gnu::noinline]]
+static void step(dense_map<int64_t, int64_t, CrcHasher> &counter,
+                 dense_map<int64_t, int64_t, CrcHasher> &result)
 {
     result.clear();
 
     for (auto [num, count] : counter) {
-        if (num == 0) {
+        if (num == 0) [[unlikely]] {
             result[1] += count;
         } else if (const auto d = digit_count_base10(num); d % 2 == 0) {
-            auto [a, b] = std::div(num, pow10i[digit_count_base10(num) / 2]);
-            result[a] += count;
-            result[b] += count;
+            const auto p = pow10i[d / 2];
+            result[num / p] += count;
+            result[num % p] += count;
         } else {
             result[num * 2024] += count;
         }
@@ -23,8 +24,11 @@ static void step(dense_map<int64_t, int64_t> &counter,
 
 void run(std::string_view buf)
 {
-    dense_map<int64_t, int64_t> counter;
-    dense_map<int64_t, int64_t> tmp;
+    dense_map<int64_t, int64_t, CrcHasher> counter;
+    dense_map<int64_t, int64_t, CrcHasher> tmp;
+    counter.reserve(4096);
+    tmp.reserve(4096);
+
     for (auto n : find_numbers_small<int64_t>(buf))
         counter[n]++;
 
