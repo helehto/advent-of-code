@@ -1,6 +1,31 @@
 #include "common.h"
+#include "thread_pool.h"
 
 namespace aoc_2024_14 {
+
+struct DivideFixed {
+    int16_t d;
+    uint16_t multiplier;
+    uint8_t shift;
+
+    DivideFixed() = default;
+
+    DivideFixed(int16_t d)
+        : d(d)
+    {
+        // FIXME: Hard-coded shift, but should work for all reasonable inputs.
+        shift = 16 + 3;
+        multiplier = (UINT32_C(1) << shift) / d;
+    }
+
+    /// Compute `n % d`.
+    constexpr int16_t modulo(int16_t n) const
+    {
+        int16_t q = (static_cast<int32_t>(n) * multiplier) >> shift;
+        int16_t r = n - q * d;
+        return r != d ? r : 0;
+    }
+};
 
 struct Robots {
     std::vector<int16_t> x;
@@ -9,35 +34,22 @@ struct Robots {
     std::vector<int16_t> vy;
     int w;
     int h;
+    DivideFixed w_div;
+    DivideFixed h_div;
+
+    void step(int rounds = 1)
+    {
+        const size_t n = x.size();
+
+        // The loops here are split between x/y and a pre-computed
+        // multiply+shift is used for the modulo operation to make this
+        // amenable to autovectorization.
+        for (size_t i = 0; i < n; ++i)
+            x[i] = w_div.modulo(x[i] + rounds * vx[i]);
+        for (size_t i = 0; i < n; ++i)
+            y[i] = h_div.modulo(y[i] + rounds * vy[i]);
+    }
 };
-
-static void step(Robots &r)
-{
-    const size_t n = r.x.size();
-
-    // Add velocity to position. The loops are manually split between x/y, and
-    // wrap around is handled separately below, to make this amenable to
-    // autovectorization.
-    for (size_t i = 0; i < n; ++i)
-        r.x[i] += r.vx[i];
-    for (size_t i = 0; i < n; ++i)
-        r.y[i] += r.vy[i];
-
-    // Wrap around. Avoid modulo to avoid emitting a division instruction and
-    // to make this autovectorizable.
-    for (size_t i = 0; i < n; ++i) {
-        if (r.x[i] < 0)
-            r.x[i] += r.w;
-        else if (r.x[i] >= r.w)
-            r.x[i] -= r.w;
-    }
-    for (size_t i = 0; i < n; ++i) {
-        if (r.y[i] < 0)
-            r.y[i] += r.h;
-        else if (r.y[i] >= r.h)
-            r.y[i] -= r.h;
-    }
-}
 
 static int safety_factor(const Robots &r)
 {
@@ -97,10 +109,12 @@ void run(std::string_view buf)
     std::vector<int> nums;
     find_numbers(buf, nums);
 
-    Robots r{
-        .w = nums.size() >= 120 ? 101 : 11,
-        .h = nums.size() >= 120 ? 103 : 7,
-    };
+    Robots r;
+    r.w = nums.size() >= 120 ? 101 : 11;
+    r.h = nums.size() >= 120 ? 103 : 7;
+    r.w_div = DivideFixed(r.w);
+    r.h_div = DivideFixed(r.h);
+
     for (size_t i = 0; i < nums.size(); i += 4) {
         r.x.push_back(nums[i + 0]);
         r.y.push_back(nums[i + 1]);
@@ -108,14 +122,37 @@ void run(std::string_view buf)
         r.vy.push_back(nums[i + 3]);
     }
 
-    size_t i = 0;
-    for (; i < 100; ++i)
-        step(r);
+    // Advance 25 steps at a time for part 1 instead of 100 steps to avoid
+    // overflowing int16_t.
+    r.step(25);
+    r.step(25);
+    r.step(25);
+    r.step(25);
     fmt::print("{}\n", safety_factor(r));
 
-    for (; !has_tree(r); i++)
-        step(r);
-    fmt::print("{}\n", i);
+    ThreadPool &pool = ThreadPool::get();
+    std::atomic<size_t> min_tree_step = SIZE_MAX;
+
+    // Thread `k` handles [100+k, 100+k+n, 100+k+2n, ...] where `n` is the
+    // number of threads.
+    pool.for_each_thread([&](size_t thread_id) {
+        Robots local_robots = r;
+
+        size_t i = 100 + thread_id;
+        local_robots.step(thread_id);
+
+        while (min_tree_step.load(std::memory_order_relaxed) > i) {
+            if (has_tree(local_robots)) {
+                atomic_store_min(min_tree_step, i, std::memory_order_relaxed);
+                return;
+            }
+
+            local_robots.step(pool.num_threads());
+            i += pool.num_threads();
+        }
+    });
+
+    fmt::print("{}\n", min_tree_step.load());
 }
 
 }
