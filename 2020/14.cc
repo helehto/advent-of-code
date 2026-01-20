@@ -20,22 +20,15 @@ static std::pair<uint64_t, uint64_t> parse_mask_line(std::string_view line)
     return std::pair(mask1, maskx);
 }
 
-static uint64_t memory_sum(const dense_map<uint64_t, uint64_t> &memory)
-{
-    uint64_t sum = 0;
-    for (uint64_t x : std::ranges::views::values(memory))
-        sum += x;
-    return sum;
-}
-
 void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
-    dense_map<uint64_t, uint64_t> memory;
+    dense_map<uint64_t, uint64_t, CrcHasher> memory;
     memory.reserve(100'000);
 
     // Part 1:
     {
+        uint64_t sum = 0;
         uint64_t maskx = 0;
         uint64_t mask1 = 0;
         for (std::string_view line : lines) {
@@ -43,15 +36,21 @@ void run(std::string_view buf)
                 std::tie(mask1, maskx) = parse_mask_line(line);
             } else {
                 auto [addr, value] = find_numbers_n<int, 2>(line);
-                memory[addr] = (maskx & value) | mask1;
+                auto result = (maskx & value) | mask1;
+                if (auto [it, ok] = memory.emplace(addr, result); !ok) {
+                    sum -= it->second;
+                    it->second = result;
+                }
+                sum += result;
             }
         }
-        fmt::print("{}\n", memory_sum(memory));
+        fmt::print("{}\n", sum);
     }
 
     // Part 2:
     memory.clear();
     {
+        uint64_t sum = 0;
         uint64_t mask1 = 0;
         uint64_t maskx = 0;
         for (std::string_view line : lines) {
@@ -60,12 +59,19 @@ void run(std::string_view buf)
             } else {
                 auto [raw_addr, value] = find_numbers_n<int, 2>(line);
                 uint64_t addr = raw_addr | mask1;
-                const uint64_t max_addr = uint64_t(1) << std::popcount(maskx);
-                for (uint64_t a = 0; a < max_addr; a++)
-                    memory[(addr & ~maskx) | _pdep_u64(a, maskx)] = value;
+                const auto popcount = std::popcount(maskx);
+                const uint64_t max_addr = uint64_t(1) << popcount;
+                for (uint64_t a = 0; a < max_addr; a++) {
+                    auto result = (addr & ~maskx) | _pdep_u64(a, maskx);
+                    if (auto [it, ok] = memory.emplace(result, value); !ok) {
+                        sum -= it->second;
+                        it->second = value;
+                    }
+                    sum += value;
+                }
             }
         }
-        fmt::print("{}\n", memory_sum(memory));
+        fmt::print("{}\n", sum);
     }
 }
 
