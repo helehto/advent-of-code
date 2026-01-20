@@ -1,82 +1,96 @@
 #include "common.h"
-#include "dense_map.h"
+#include "thread_pool.h"
 
 namespace aoc_2023_12 {
 
-struct u16_crc_hash {
-    size_t operator()(uint16_t v) const { return _mm_crc32_u32(0, v); }
-};
-
-struct SearchParameters {
-    std::string_view str;
-    std::span<const uint32_t> block_sizes;
-    dense_map<uint16_t, uint64_t, u16_crc_hash> &cache;
-};
-
-static uint64_t search(const SearchParameters &sp, size_t si, size_t bi)
+static uint64_t search(const char *s,
+                       size_t n,
+                       std::span<const uint32_t> blocks,
+                       std::vector<uint64_t> &buffer)
 {
-    std::string_view s(sp.str.substr(si));
+    const size_t rows = blocks.size() + 1;
+    const size_t cols = 2 * n;
+    buffer.resize(rows * cols);
+    MatrixView<uint64_t> m(buffer.data(), rows, cols);
+    std::ranges::fill(m.all(), 0);
 
-    size_t dots = 0;
-    while (dots < s.size() && s[dots] == '.')
-        dots++;
-    s.remove_prefix(dots);
-    si += dots;
+    std::vector<uint8_t> max_block_size(2 * m.cols, 0);
 
-    const uint16_t cache_key = si << 8 | bi;
-    if (auto it = sp.cache.find(cache_key); it != sp.cache.end())
-        return it->second;
+    // Compute the longest block that can placed at each position.
+    {
+        size_t i = 0;
+        while (i < n && s[i] == '.')
+            ++i;
+        while (true) {
+            size_t j = i;
+            while (j < n && s[j] != '.')
+                ++j;
+            for (size_t k = i; k < j; ++k)
+                max_block_size[k] = j - k;
+            i = j;
+            while (i < n && s[i] == '.')
+                ++i;
+            if (i >= n)
+                break;
+        }
+    }
 
-    if (bi >= sp.block_sizes.size())
-        return s.find('#') == std::string::npos ? 1 : 0;
+    size_t k = m.cols - 1;
+    do {
+        m(0, k) = 1;
+    } while (k-- && (k >= n || s[k] != '#'));
 
-    const auto block_size = sp.block_sizes[bi];
-    if (block_size > s.size())
-        return 0;
+    for (size_t i = 1; i <= blocks.size(); ++i) {
+        for (size_t j = n; j--;) {
+            auto b = blocks[blocks.size() - i];
 
-    uint64_t solutions = 0;
-    const auto c = sp.str[si];
-    ASSERT(c == '#' || c == '?');
-    if (block_size <= s.size() &&
-        s.substr(0, block_size).find('.') == std::string_view::npos &&
-        (block_size == s.size() || s[block_size] != '#'))
-        solutions += search(sp, si + std::min<size_t>(block_size + 1, s.size()), bi + 1);
+            auto dot = m(i, j + 1);
+            auto hash =
+                max_block_size[j] >= b && s[j + b] != '#' ? m(i - 1, j + b + 1) : 0;
 
-    if (s.front() == '?')
-        solutions += search(sp, si + 1, bi);
+            if (s[j] == '.')
+                m(i, j) = dot;
+            else if (s[j] == '#')
+                m(i, j) = hash;
+            else
+                m(i, j) = dot + hash;
+        }
+    }
 
-    sp.cache.emplace(cache_key, solutions);
-    return solutions;
+    return m(m.rows - 1, 0);
 }
 
 void run(std::string_view buf)
 {
-    uint64_t sum1 = 0;
-    uint64_t sum2 = 0;
+    std::atomic<uint64_t> part1 = 0;
+    std::atomic<uint64_t> part2 = 0;
+    auto lines = split_lines(buf);
 
-    small_vector<uint32_t> n;
-    small_vector<uint32_t, 64> n2;
-    dense_map<uint16_t, uint64_t, u16_crc_hash> cache;
-    std::string s2;
+    ThreadPool::get().for_each_slice(lines, [&](std::span<const std::string_view> slice) {
+        uint64_t local_part1 = 0;
+        uint64_t local_part2 = 0;
+        small_vector<uint32_t> n;
+        small_vector<uint32_t> n2;
+        std::vector<uint64_t> buffer;
+        std::string s2;
+        for (std::string_view sv : slice) {
+            find_numbers(sv, n);
+            std::string_view s = sv.substr(0, sv.find(' '));
+            local_part1 += search(s.data(), s.size(), n, buffer);
 
-    for (std::string_view sv : split_lines(buf)) {
-        find_numbers(sv, n);
-        std::string_view s = sv.substr(0, sv.find(' '));
-        cache.clear();
-        sum1 += search({s, n, cache}, 0, 0);
+            s2.clear();
+            fmt::format_to(std::back_inserter(s2), "{0}?{0}?{0}?{0}?{0}", s);
+            n2.clear();
+            for (int i = 0; i < 5; ++i)
+                n2.append_range(n);
+            local_part2 += search(s2.data(), s2.size(), n2, buffer);
+        }
 
-        s2.clear();
-        fmt::format_to(std::back_inserter(s2), "{}?{}?{}?{}?{}", s, s, s, s, s);
+        part1.fetch_add(local_part1, std::memory_order_relaxed);
+        part2.fetch_add(local_part2, std::memory_order_relaxed);
+    });
 
-        n2.clear();
-        for (size_t i = 0; i < 5; ++i)
-            n2.append_range(n);
-
-        cache.clear();
-        sum2 += search({s2, n2, cache}, 0, 0);
-    }
-    fmt::print("{}\n", sum1);
-    fmt::print("{}\n", sum2);
+    fmt::print("{}\n{}\n", part1.load(), part2.load());
 }
 
 }
