@@ -1,5 +1,6 @@
 #include "common.h"
 #include "small_vector.h"
+#include "thread_pool.h"
 
 namespace aoc_2018_24 {
 
@@ -198,21 +199,31 @@ static FightResult fight(small_vector<Group, 32> groups, int boost = 0)
 
 static int part2(small_vector<Group, 32> groups)
 {
-    int hi = 1;
+    struct alignas(16) Result {
+        int boost;
+        int units_left;
+    };
+    std::atomic<Result> best_result = Result{INT_MAX, 0};
 
-    while (fight(groups, hi).winner != IMMUNE_SYSTEM)
-        hi *= 2;
+    ThreadPool &pool = ThreadPool::get();
+    pool.for_each_thread([&](size_t thread_id) {
+        for (int boost = 1 + thread_id;
+             boost < best_result.load(std::memory_order_relaxed).boost;
+             boost += pool.num_threads()) {
+            auto [winner, units_left] = fight(groups, boost);
+            if (winner != IMMUNE_SYSTEM)
+                continue;
 
-    int lo = hi / 2;
-    while (lo + 1 < hi) {
-        const int mid = (lo + hi) / 2;
-        if (fight(groups, mid).winner == IMMUNE_SYSTEM)
-            hi = mid;
-        else
-            lo = mid;
-    }
+            auto result = best_result.load(std::memory_order_relaxed);
+            do {
+                if (boost > result.boost)
+                    return;
+            } while (!best_result.compare_exchange_weak(result, Result{boost, units_left},
+                                                        std::memory_order_relaxed));
+        }
+    });
 
-    return fight(groups, hi).units_left;
+    return best_result.load().units_left;
 }
 
 void run(std::string_view buf)
