@@ -1,4 +1,5 @@
 #include "common.h"
+#include "thread_pool.h"
 
 namespace aoc_2017_24 {
 
@@ -22,29 +23,47 @@ void run(std::string_view buf)
         }
     }
 
-    small_vector<std::tuple<uint64_t, int, int, int>, 64> queue;
-    queue.emplace_back(UINT64_MAX >> (64 - components.size()), 0, 0, 0);
+    struct alignas(16) Entry {
+        uint64_t remaining;
+        uint16_t curr;
+        uint16_t depth;
+        int32_t weight;
+    };
 
-    int part1 = INT_MIN;
-    std::pair<int, int> part2{INT_MIN, INT_MIN};
-    while (!queue.empty()) {
-        auto [remaining, curr, depth, weight] = queue.back();
-        queue.pop_back();
+    struct alignas(8) Part2Result {
+        int32_t depth;
+        int32_t weight;
+        std::strong_ordering operator<=>(const Part2Result &other) const = default;
+    };
 
+    ThreadPool &pool = ThreadPool::get();
+    ForkPool<Entry> fork_pool(pool.num_threads());
+    fork_pool.push({Entry{UINT64_MAX >> (64 - components.size()), 0, 0, 0}});
+
+    // TODO: This is ugly as sin.
+    struct alignas(64) PerThreadResult {
+        int32_t part1 = 0;
+        Part2Result part2{0, 0};
+    };
+    std::vector<PerThreadResult> thread_max(pool.num_threads());
+
+    fork_pool.run(pool, [&](ForkPool<Entry>::TaskContext &ctx, const Entry &e) {
+        auto [remaining, curr, depth, weight] = e;
         weight += curr;
 
-        part1 = std::max(part1, weight);
-        part2 = std::max(part2, std::pair(depth, weight));
+        auto &[p1, p2] = thread_max[ctx.thread_id];
+        p1 = std::max(p1, weight);
+        p2 = std::max(p2, Part2Result(depth, weight));
 
         for (const auto &[idx, other] : compatible[curr]) {
             const uint64_t bit = UINT64_C(1) << idx;
             if (remaining & bit)
-                queue.emplace_back(remaining & ~bit, other, depth + 1, weight + curr);
+                ctx.next.emplace_back(remaining & ~bit, other, depth + 1, weight + curr);
         }
-    }
+    });
 
-    fmt::print("{}\n", part1);
-    fmt::print("{}\n", part2.second);
+    fmt::print("{}\n", std::ranges::max(thread_max, {}, λa(a.part1)).part1);
+    fmt::print("{}\n", std::ranges::max(thread_max, {}, λa(a.part2)).part2.weight);
 }
 
 }
