@@ -1,5 +1,6 @@
 #include "common.h"
 #include "dense_map.h"
+#include "thread_pool.h"
 
 namespace aoc_2022_19 {
 
@@ -123,6 +124,14 @@ static int search(SearchParameters &p, const SearchState &state = {})
     return score;
 }
 
+static int fetch_mul(std::atomic<int> &value, int factor)
+{
+    int old = value.load();
+    while (!value.compare_exchange_weak(old, old * factor))
+        ;
+    return old;
+}
+
 void run(std::string_view buf)
 {
     std::vector<Blueprint> blueprints;
@@ -138,39 +147,43 @@ void run(std::string_view buf)
         b.costs[GEODE][OBSIDIAN] = geob;
     }
 
-    int part1 = 0;
-    int part2 = 1;
-    dense_map<CacheKey, int, CrcHasher> cache;
-    for (size_t i = 0; i < blueprints.size(); i++) {
-        std::array<uint8_t, 3> max_cost_per_material;
-        for (size_t j = 0; j < 4; j++) {
-            for (size_t k = 0; k < 3; k++) {
-                max_cost_per_material[k] =
-                    std::max(max_cost_per_material[k], blueprints[i].costs[j][k]);
+    std::atomic<int> part1 = 0;
+    std::atomic<int> part2 = 1;
+
+    ThreadPool::get().for_each_index(0, blueprints.size(), [&](size_t start, size_t end) {
+        for (size_t i = start; i < end; i++) {
+            dense_map<CacheKey, int, CrcHasher> cache;
+            cache.reserve(1024);
+
+            std::array<uint8_t, 3> max_cost_per_material;
+            for (size_t j = 0; j < 4; j++) {
+                for (size_t k = 0; k < 3; k++) {
+                    max_cost_per_material[k] =
+                        std::max(max_cost_per_material[k], blueprints[i].costs[j][k]);
+                }
+            }
+
+            SearchParameters p = {
+                .blueprint = blueprints[i],
+                .target = 24,
+                .max_cost_per_material = max_cost_per_material,
+                .cache = cache,
+            };
+
+            p.cache.clear();
+            p.largest = 0;
+            part1.fetch_add((i + 1) * search(p), std::memory_order_relaxed);
+
+            if (i < 3) {
+                p.cache.clear();
+                p.target = 32;
+                p.largest = 0;
+                fetch_mul(part2, static_cast<uint64_t>(search(p)));
             }
         }
+    });
 
-        SearchParameters p = {
-            .blueprint = blueprints[i],
-            .target = 24,
-            .max_cost_per_material = max_cost_per_material,
-            .cache = cache,
-        };
-
-        p.cache.clear();
-        p.largest = 0;
-        part1 += (i + 1) * search(p);
-
-        if (i < 3) {
-            p.cache.clear();
-            p.target = 32;
-            p.largest = 0;
-            part2 *= search(p);
-        }
-    }
-
-    fmt::print("{}\n", part1);
-    fmt::print("{}\n", part2);
+    fmt::print("{}\n{}\n", part1.load(), part2.load());
 }
 
 }
