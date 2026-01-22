@@ -123,7 +123,7 @@ void run(std::string_view buf)
         },
     });
 
-    fork_pool.run(pool, [&](State state, small_vector_base<State> &next_states) {
+    fork_pool.run(pool, [&](ForkPool<State>::TaskContext &ctx, State state) {
         DEBUG_ASSERT(state.turn < 100);
 
         auto state_done = [&](const State &s) {
@@ -153,7 +153,7 @@ void run(std::string_view buf)
             if (state_done(candidate))
                 continue;
 
-            next_states.push_back(candidate);
+            ctx.next.push_back(candidate);
         }
     });
 

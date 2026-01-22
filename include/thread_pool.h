@@ -676,6 +676,11 @@ struct ForkPool {
     }
 
 public:
+    struct TaskContext {
+        size_t thread_id;
+        small_vector_base<State> &next;
+    };
+
     ForkPool(size_t n_threads)
         : n_threads(n_threads)
         , work_queues(n_threads)
@@ -719,7 +724,8 @@ public:
                 while (queue.pop(u)) {
                 restart_with_new_work:
                     spawned_tasks.clear();
-                    fn(u, spawned_tasks);
+                    TaskContext ctx{thread_id, spawned_tasks};
+                    fn(ctx, std::move(u));
 
                     if (!spawned_tasks.empty()) {
                         u = spawned_tasks[0];

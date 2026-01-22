@@ -161,7 +161,7 @@ void run(std::string_view buf)
             State{.node_index = graph.start_index, .ignore_slopes = true},
         });
 
-        fork_pool.run(pool, [&](const State &u, small_vector_base<State> &next_states) {
+        fork_pool.run(pool, [&](ForkPool<State>::TaskContext &ctx, const State &u) {
             auto [visited_mask, node_index, total_weight, ignore_slopes] = u;
             if (node_index == graph.goal_index) {
                 auto &sol = ignore_slopes ? solutions[1] : solutions[0];
@@ -185,7 +185,7 @@ void run(std::string_view buf)
                     continue;
 
                 if ((visited_mask & (UINT64_C(1) << next_index)) == 0)
-                    next_states.push_back(State{
+                    ctx.next.push_back(State{
                         .visited_mask = visited_mask | (UINT64_C(1) << node_index),
                         .node_index = next_index,
                         .total_weight =
