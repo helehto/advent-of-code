@@ -704,20 +704,29 @@ struct Matrix : MatrixBase<Matrix<T>> {
         return m;
     }
 
-    constexpr Matrix<T>
-    padded(const size_t pad_rows, const size_t pad_cols, const T &pad_value)
+    constexpr Matrix<T> padded(const size_t pad_u,
+                               const size_t pad_d,
+                               const size_t pad_l,
+                               const size_t pad_r,
+                               const T &pad_value)
     {
-        Matrix<T> result(rows + 2 * pad_rows, cols + 2 * pad_cols, pad_value);
+        Matrix<T> result(rows + pad_u + pad_d, cols + pad_l + pad_r, pad_value);
 
         for (size_t i = 0; i < rows; ++i)
-            std::ranges::copy(this->row(i), result.row(i + pad_rows).begin() + pad_cols);
+            std::ranges::copy(this->row(i), result.row(i + pad_u).begin() + pad_l);
 
         return result;
     }
 
+    constexpr Matrix<T>
+    padded(const size_t pad_rows, const size_t pad_cols, const T &pad_value)
+    {
+        return padded(pad_rows, pad_rows, pad_cols, pad_cols, pad_value);
+    }
+
     constexpr Matrix<T> padded(const size_t pad, const T &pad_value)
     {
-        return padded(pad, pad, pad_value);
+        return padded(pad, pad, pad, pad, pad_value);
     }
 
     constexpr T *data() noexcept { return data_.get(); }

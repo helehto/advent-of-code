@@ -1,150 +1,235 @@
 #include "common.h"
-#include <climits>
+#include "uint256.h"
 
 namespace aoc_2022_23 {
 
-namespace {
-
-struct Map {
-    std::vector<uint8_t> array;
-    int xmin = 0;
-    int xmax = 0;
-    int ymin = 0;
-    int ymax = 0;
-    int k = 0;
-
-    uint8_t &at(Vec2i p) { return array[(xmax - xmin) * p.y + p.x - k]; }
-
-    void increment(Vec2i p)
-    {
-        if (p.x < xmin + 1 || p.x >= xmax - 1 || p.y < ymin + 1 || p.y >= ymax - 1)
-            resize_to(p);
-        at(p)++;
+static std::tuple<std::vector<uint256>, size_t, size_t> parse_input(std::string_view buf)
+{
+    std::vector<Vec2i> elves;
+    for (size_t i = 0; std::string_view s : split_lines(buf)) {
+        for (size_t j = 0; j < s.size(); j++)
+            if (s[j] == '#')
+                elves.push_back(Vec2i(j, i));
+        i++;
     }
 
-    __attribute__((cold)) void resize_to(Vec2i p)
-    {
-        Map new_map;
-        new_map.xmin = std::min(p.x - 16, xmin - 16);
-        new_map.xmax = std::max(p.x + 16, xmax + 16);
-        new_map.ymin = std::min(p.y - 16, ymin - 16);
-        new_map.ymax = std::max(p.y + 16, ymax + 16);
-        new_map.array.resize((new_map.ymax - new_map.ymin) *
-                             (new_map.xmax - new_map.xmin));
-        new_map.k = (new_map.xmax - new_map.xmin) * new_map.ymin + new_map.xmin;
+    auto min_x = std::ranges::min(elves, {}, λa(a.x)).x;
+    auto max_x = std::ranges::max(elves, {}, λa(a.x)).x;
+    auto min_y = std::ranges::min(elves, {}, λa(a.y)).y;
+    auto max_y = std::ranges::max(elves, {}, λa(a.y)).y;
 
-        // This is pretty slow, but it's not going to run very often.
-        for (int y = ymin; y < ymax; y++) {
-            for (int x = xmin; x < xmax; x++) {
-                new_map.at({x, y}) = at({x, y});
-            }
+    const size_t dy = max_y - min_y + 1;
+    const size_t dx = max_x - min_x + 1;
+    ASSERT(3 * dx < 256);
+
+    // In the worst case, we expand by a factor 3 in each direction (this would
+    // be guaranteed to leave a space between each elf, which would cause them
+    // to stop moving).
+    std::vector<uint256> rows((dy + 1) * 3);
+    const size_t y_offset = (rows.size() - dy) / 2;
+    const size_t x_offset = (256 - dx) / 2;
+    for (const auto [x, y] : elves) {
+        // center the input in the pre-sized grid
+        auto yy = y - min_y + y_offset;
+        auto xx = x - min_x + x_offset;
+        ASSERT(xx < 256);
+        rows[yy].set_bit(xx);
+    }
+
+    return {rows, y_offset, y_offset + dy - 1};
+}
+
+static uint256 shift_west_1(const uint256 &v)
+{
+    return v.shift_right1();
+}
+
+static uint256 shift_east_1(const uint256 &v)
+{
+    return v.shift_left1();
+}
+
+/// Propose moves for all elves in the grid, filling in the proposals_* arrays,
+/// which are bitmasks of potential target squares for each direction.
+static void propose_moves(std::span<const uint256> rows,
+                          const int round_num,
+                          uint256 *proposals_n,
+                          uint256 *proposals_s,
+                          uint256 *proposals_w,
+                          uint256 *proposals_e,
+                          const size_t min_y,
+                          const size_t max_y)
+{
+    // Carry these through each loop iteration; shifting is relatively
+    // expensive.
+    uint256 nw = shift_east_1(rows[min_y - 1]);
+    uint256 ne = shift_west_1(rows[min_y - 1]);
+    uint256 w = shift_east_1(rows[min_y]);
+    uint256 e = shift_west_1(rows[min_y]);
+
+    for (size_t i = min_y; i <= max_y; ++i) {
+        // Neighboring cells.
+        const uint256 n = rows[i - 1];
+        const uint256 s = rows[i + 1];
+        const uint256 sw = shift_east_1(s);
+        const uint256 se = shift_west_1(s);
+
+        const uint256 has_neighbors = n | s | w | e | nw | ne | sw | se;
+
+        const uint256 can_move_n = rows[i] & has_neighbors & ~(n | ne | nw);
+        const uint256 can_move_s = rows[i] & has_neighbors & ~(s | se | sw);
+        const uint256 can_move_w = rows[i] & has_neighbors & ~(w | nw | sw);
+        const uint256 can_move_e = rows[i] & has_neighbors & ~(e | ne | se);
+
+        switch (round_num % 4) {
+        case 0: // N -> S -> W -> E
+            proposals_n[i - 1] = can_move_n;
+            proposals_s[i + 1] = can_move_s & ~can_move_n;
+            proposals_w[i] = shift_west_1(can_move_w & ~can_move_n & ~can_move_s);
+            proposals_e[i] =
+                shift_east_1(can_move_e & ~can_move_n & ~can_move_s & ~can_move_w);
+            break;
+
+        case 1: // S -> W -> E -> N
+            proposals_s[i + 1] = can_move_s;
+            proposals_w[i] = shift_west_1(can_move_w & ~can_move_s);
+            proposals_e[i] = shift_east_1(can_move_e & ~can_move_s & ~can_move_w);
+            proposals_n[i - 1] = can_move_n & ~can_move_s & ~can_move_w & ~can_move_e;
+            break;
+
+        case 2: // W -> E -> N -> S
+            proposals_w[i] = shift_west_1(can_move_w);
+            proposals_e[i] = shift_east_1(can_move_e & ~can_move_w);
+            proposals_n[i - 1] = can_move_n & ~can_move_w & ~can_move_e;
+            proposals_s[i + 1] = can_move_s & ~can_move_w & ~can_move_e & ~can_move_n;
+            break;
+
+        case 3: // E -> N -> S -> W
+            proposals_e[i] = shift_east_1(can_move_e);
+            proposals_n[i - 1] = can_move_n & ~can_move_e;
+            proposals_s[i + 1] = can_move_s & ~can_move_e & ~can_move_n;
+            proposals_w[i] =
+                shift_west_1(can_move_w & ~can_move_e & ~can_move_n & ~can_move_s);
+            break;
         }
 
-        *this = std::move(new_map);
+        nw = std::exchange(w, sw);
+        ne = std::exchange(e, se);
     }
+}
 
-    uint64_t neighborhood_mask(Vec2i p)
-    {
-        const uint8_t *r0 = &at(p + Vec2i(-1, -1));
-        const uint8_t *r1 = &at(p + Vec2i(-1, 0));
-        const uint8_t *r2 = &at(p + Vec2i(-1, 1));
-        return (uint64_t)r0[0] << 0 | (uint64_t)r0[1] << 8 | (uint64_t)r0[2] << 16 |
-               (uint64_t)r1[0] << 24 | (uint64_t)r1[2] << 32 | (uint64_t)r2[0] << 40 |
-               (uint64_t)r2[1] << 48 | (uint64_t)r2[2] << 56;
-    }
-};
-
-} // namespace
-
-constexpr uint64_t gen_mask(int x1, int x2, int x3)
+/// Execute the proposed moves, returning true if any elf moved.
+static bool execute_moves(std::span<uint256> rows,
+                          const uint256 *proposals_n,
+                          const uint256 *proposals_s,
+                          const uint256 *proposals_w,
+                          const uint256 *proposals_e,
+                          size_t &min_y,
+                          size_t &max_y)
 {
-    return UINT64_C(0xff) << (8 * x1) | UINT64_C(0xff) << (8 * x2) |
-           UINT64_C(0xff) << (8 * x3);
+    uint256 moved = 0;
+    size_t new_min_y = min_y;
+    size_t new_max_y = max_y;
+
+    // Handle the row north of the current top row separately, to avoid bounds
+    // checking in the main loop below; this is greatly simplified by the fact
+    // that something cannot move into this row from above, and no sideways
+    // moves are possible either.
+    {
+        const uint256 proposals = proposals_n[min_y - 1];
+        moved |= proposals;
+        rows[min_y - 1] |= proposals;
+        rows[min_y] &= ~proposals;
+        new_min_y = proposals ? min_y - 1 : min_y;
+    }
+
+    // Handle the row below the current bottom row separately as well.
+    {
+        const uint256 proposals = proposals_s[max_y + 1];
+        moved |= proposals;
+        rows[max_y + 1] |= proposals;
+        rows[max_y] &= ~proposals;
+        new_max_y = proposals ? max_y + 1 : max_y;
+    }
+
+    // Main loop: handle all rows between min_y and max_y.
+    for (size_t i = min_y; i <= max_y; ++i) {
+        const uint256 to_move_n = proposals_n[i] & ~proposals_s[i];
+        const uint256 to_move_s = proposals_s[i] & ~proposals_n[i];
+        const uint256 to_move_w = proposals_w[i] & ~proposals_e[i];
+        const uint256 to_move_e = proposals_e[i] & ~proposals_w[i];
+        const uint256 all_moves = to_move_n | to_move_s | to_move_w | to_move_e;
+        moved |= all_moves;
+        rows[i] |= all_moves;
+        rows[i + 1] &= ~to_move_n;
+        rows[i - 1] &= ~to_move_s;
+        rows[i] &= ~shift_east_1(to_move_w) & ~shift_west_1(to_move_e);
+    }
+
+    min_y = new_min_y;
+    max_y = new_max_y;
+
+    return moved;
+}
+
+static bool step(std::span<uint256> rows,
+                 int round_num,
+                 uint256 *proposals_n,
+                 uint256 *proposals_s,
+                 uint256 *proposals_w,
+                 uint256 *proposals_e,
+                 size_t &min_y,
+                 size_t &max_y)
+{
+    propose_moves(rows, round_num, proposals_n, proposals_s, proposals_w, proposals_e,
+                  min_y, max_y);
+    return execute_moves(rows, proposals_n, proposals_s, proposals_w, proposals_e, min_y,
+                         max_y);
+}
+
+static size_t count_tiles(std::span<const uint256> rows)
+{
+    size_t min_i = rows.size();
+    size_t max_i = 0;
+    size_t min_j = 256;
+    size_t max_j = 0;
+    size_t elves = 0;
+
+    for (size_t i = 0; i < rows.size(); ++i) {
+        if (rows[i]) {
+            min_i = std::min(min_i, i);
+            max_i = std::max(max_i, i);
+            min_j = std::min<size_t>(min_j, countr_zero(rows[i]));
+            max_j = std::max<size_t>(max_j, 256 - countl_zero(rows[i]));
+            elves += popcount(rows[i]);
+        }
+    }
+
+    return (max_i - min_i + 1) * (max_j - min_j) - elves;
 }
 
 void run(std::string_view buf)
 {
-    std::vector<Vec2i> elves;
-    int i = 0;
-    for (std::string_view s : split_lines(buf)) {
-        for (size_t j = 0; j < s.size(); j++) {
-            if (s[j] == '#')
-                elves.push_back(Vec2{static_cast<int>(j), i});
-        }
-        i++;
-    }
+    auto [rows, min_y, max_y] = parse_input(buf);
 
-    struct Dir {
-        uint64_t mask;
-        Vec2i8 d;
-    };
+    std::vector<uint256> proposals_n(rows.size());
+    std::vector<uint256> proposals_s(rows.size());
+    std::vector<uint256> proposals_w(rows.size());
+    std::vector<uint256> proposals_e(rows.size());
 
-    std::array<Dir, 4> dirs = {{
-        {gen_mask(0, 1, 2), {0, -1}},
-        {gen_mask(5, 6, 7), {0, 1}},
-        {gen_mask(0, 3, 5), {-1, 0}},
-        {gen_mask(2, 4, 7), {1, 0}},
-    }};
+    // dump(rows);
+    int round = 0;
+    for (; round < 10; ++round)
+        step(rows, round, proposals_n.data(), proposals_s.data(), proposals_w.data(),
+             proposals_e.data(), min_y, max_y);
+    fmt::print("{}\n", count_tiles(rows));
 
-    Map map;
-    for (auto &elf : elves)
-        map.increment(elf);
-
-    Map new_map;
-    Map proposal_map;
-    std::vector<Vec2i> new_elves;
-    std::vector<Vec2i> proposals(elves.size());
-
-    for (int round = 1;; round++) {
-        for (auto &p : new_elves) {
-            new_map.resize_to(p);
-            proposal_map.resize_to(p);
-        }
-
-        for (size_t i = 0; i < elves.size(); i++) {
-            auto p = elves[i];
-            proposals[i] = p;
-
-            auto mask = map.neighborhood_mask(p);
-            if (mask == 0)
-                continue;
-
-            for (const auto &d : dirs) {
-                if ((mask & d.mask) == 0) {
-                    auto dest = p + d.d.cast<int>();
-                    proposal_map.increment(dest);
-                    proposals[i] = dest;
-                    break;
-                }
-            }
-        }
-
-        for (size_t i = 0; i < elves.size(); i++) {
-            Vec2i dest = proposal_map.at(proposals[i]) > 1 ? elves[i] : proposals[i];
-            new_elves.push_back(dest);
-            new_map.increment(dest);
-        }
-
-        if (std::ranges::all_of(elves, λx(new_map.at(x)))) {
-            fmt::print("{}\n", round);
+    for (;; ++round) {
+        if (!step(rows, round, proposals_n.data(), proposals_s.data(), proposals_w.data(),
+                  proposals_e.data(), min_y, max_y))
             break;
-        }
-
-        std::swap(map, new_map);
-        memset(proposal_map.array.data(), 0, proposal_map.array.size());
-        memset(new_map.array.data(), 0, new_map.array.size());
-        std::swap(elves, new_elves);
-        new_elves.clear();
-
-        if (round == 10) {
-            auto [xmin, xmax] = std::ranges::minmax_element(elves, λab(a.x < b.x));
-            auto [ymin, ymax] = std::ranges::minmax_element(elves, λab(a.y < b.y));
-            fmt::print("{}\n", ((xmax->x - xmin->x + 1) * (ymax->y - ymin->y + 1) -
-                                elves.size()));
-        }
-
-        std::rotate(std::begin(dirs), std::begin(dirs) + 1, std::end(dirs));
     }
+    fmt::print("{}\n", round + 1);
 }
 
 }
