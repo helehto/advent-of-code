@@ -710,7 +710,7 @@ struct Matrix : MatrixBase<Matrix<T>> {
         Matrix<T> result(rows + 2 * pad_rows, cols + 2 * pad_cols, pad_value);
 
         for (size_t i = 0; i < rows; ++i)
-            std::ranges::copy(this->row(i), result.row(i + pad_cols).begin() + pad_rows);
+            std::ranges::copy(this->row(i), result.row(i + pad_rows).begin() + pad_cols);
 
         return result;
     }
