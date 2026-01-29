@@ -29,10 +29,31 @@ struct uint256 {
         return _mm256_testz_si256(a, a) == 0;
     }
 
+    constexpr static uint256 ones(size_t n) noexcept
+    {
+        DEBUG_ASSERT(n <= 256);
+        uint256 result;
+        for (size_t i = 0; i < n; ++i)
+            result.set_bit(i);
+        return result;
+    }
+
     constexpr void set_bit(size_t n) noexcept
     {
         DEBUG_ASSERT(n < 256);
         limbs[n / 64] |= UINT64_C(1) << (n % 64);
+    }
+
+    constexpr void clear_bit(size_t n) noexcept
+    {
+        DEBUG_ASSERT(n < 256);
+        limbs[n / 64] &= ~(UINT64_C(1) << (n % 64));
+    }
+
+    constexpr bool test_bit(size_t n) const noexcept
+    {
+        DEBUG_ASSERT(n < 256);
+        return (limbs[n / 64] & (UINT64_C(1) << (n % 64))) != 0;
     }
 
     uint256 operator|(const uint256 &other) const noexcept
@@ -89,6 +110,24 @@ struct uint256 {
         return uint256(result);
     }
 
+    /// Rotate left by 1 bit, wrapping around at the given bit width.
+    uint256 rotate_left1(size_t n) const noexcept
+    {
+        DEBUG_ASSERT(n > 0 && n <= 256);
+        const bool wrapped_bit = test_bit(n - 1);
+        uint256 result = shift_left1();
+
+        // TODO: This can be probably done entirely using AVX2 instead of using
+        // a separate scalar path for the wraparound bit, using a lookup table
+        // for the shuffle and mask.
+        if (wrapped_bit) {
+            result.set_bit(0);
+            result.clear_bit(n);
+        }
+
+        return result;
+    }
+
     uint256 shift_right1() const noexcept
     {
         const __m256i a = _mm256_load_si256((const __m256i *)limbs.data());
@@ -103,6 +142,22 @@ struct uint256 {
         const __m256i result = _mm256_or_si256(shifted, carries);
 
         return uint256(result);
+    }
+
+    /// Rotate right by 1 bit, wrapping around at the given bit width.
+    uint256 rotate_right1(size_t n) const noexcept
+    {
+        DEBUG_ASSERT(n > 0 && n <= 256);
+        const bool wrapped_bit = test_bit(0);
+        uint256 result = shift_right1();
+
+        // TODO: This can be probably done entirely using AVX2 instead of using
+        // a separate scalar path for the wraparound bit, using a lookup table
+        // for the shuffle and mask.
+        if (wrapped_bit)
+            result.set_bit(n - 1);
+
+        return result;
     }
 };
 
