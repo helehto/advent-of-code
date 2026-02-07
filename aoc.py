@@ -10,18 +10,18 @@ from pathlib import Path
 import argparse
 from contextlib import contextmanager
 import difflib
-import itertools
 import json
 import os
+import shutil
+import sqlite3
 import subprocess as sp
+import sys
 import tempfile
 import typing as T
-import random
-import sys
 from dataclasses import dataclass
 
+import polars as pl
 import numpy as np
-import numpy.typing as npt
 from tabulate import tabulate, SEPARATING_LINE
 
 T1 = T.TypeVar("T1")
@@ -37,37 +37,31 @@ class AocBinary:
 
 
 @contextmanager
-def git_worktree(commit: str, patch: T.Optional[bytes], path: Path) -> T.Iterator[Path]:
+def jj_workspace(rev: str, path: Path) -> T.Iterator[Path]:
     try:
-        sp.run(
-            ("git", "worktree", "add", "--force", "--quiet", path, commit), check=True
-        )
-
-        if patch is not None:
-            sp.run(("git", "apply", "--allow-empty"), cwd=path, input=patch, check=True)
-
+        sp.check_call(("jj", "--quiet", "workspace", "add", "--revision", rev, path))
         yield Path(path)
     finally:
-        sp.run(("git", "worktree", "remove", "--force", path), check=False)
+        sp.check_call(("jj", "workspace", "forget", path.name))
+        assert TMPDIR in path.parents  # avoid accidents
+        shutil.rmtree(path, ignore_errors=True)
 
 
 @contextmanager
-def binary_for_commit(
-    commit: str, patch: T.Optional[bytes] = None
-) -> T.Iterator[AocBinary]:
-    # Note: we deliberately check out worktree in the same path for all
+def binary_for_commit(commit: str) -> T.Iterator[AocBinary]:
+    # Note: we deliberately check out the workspace in the same path for all
     # invocations of binary_for_commit() to maximize ccache compilation cache
     # hits.
-    worktree = TMPDIR / "tmpdiff-worktree"
+    workspace = TMPDIR / "tmpdiff-jj-workspace"
 
     with tempfile.TemporaryDirectory(prefix="aocdiff-") as d:
         exe = Path(d) / f"aoc-{commit}"
 
-        with git_worktree(commit, patch, worktree):
+        with jj_workspace(commit, workspace):
             meson_cmd = "meson setup --wipe . build -Dunity=on -Dunity_size=8".split()
-            sp.run(meson_cmd, cwd=worktree, stdout=sp.DEVNULL, check=True)
-            sp.run("ninja", cwd=worktree / "build", check=True)
-            exe.write_bytes((worktree / "build" / "aoc").read_bytes())
+            sp.run(meson_cmd, cwd=workspace, stdout=sp.DEVNULL, check=True)
+            sp.run("ninja", cwd=workspace / "build", check=True)
+            exe.write_bytes((workspace / "build" / "aoc").read_bytes())
 
         exe.chmod(0o755)
         yield AocBinary(exe, commit, None)
@@ -89,126 +83,6 @@ def colorize(value: T.Any, fmt: str, is_significant: T.Any = True) -> str:
         text = wrap_color_rgb(f"{value:{fmt}}", *color)
 
     return text
-
-
-@dataclass
-class Measurements:
-    ts: list[npt.NDArray[T.Any]]
-
-    @staticmethod
-    def _massage(t: npt.ArrayLike) -> npt.NDArray[T.Any]:
-        t = np.sort(np.array(t))
-        n_outliers = max(len(t) // 10, 0)
-
-        # Change units: ns -> μs
-        t *= 1e-3
-
-        # Throw away outliers.
-        if n_outliers > 0:
-            t = t[:-n_outliers]
-
-        return t
-
-    def __init__(self, ts: T.Iterable[npt.ArrayLike]) -> None:
-        self.ts = [self._massage(t) for t in ts]
-
-    @staticmethod
-    def merge(
-        ms1: dict[tuple[int, int], Measurements],
-        ms2: dict[tuple[int, int], Measurements],
-    ) -> None:
-        for (y, d), m2 in ms2.items():
-            m1 = ms1.get((y, d))
-            assert m1 is not None
-            for i, _ in enumerate(m1.ts):
-                m1.ts[i] = np.sort(np.hstack((m1.ts[i], m2.ts[i])))
-                assert len(m1.ts[i].shape) == 1
-
-    def min_diff(self) -> tuple[float, float]:
-        assert len(self.ts) == 2
-        d = np.min(self.ts[1]) - np.min(self.ts[0])
-        return (d, d / np.min(self.ts[0]))
-
-    def mins(self) -> tuple[float, ...]:
-        return tuple(map(np.min, self.ts))
-
-    def means(self) -> tuple[float, ...]:
-        return tuple(map(np.mean, self.ts))
-
-    def quantiles(self, k: float) -> tuple[float, ...]:
-        return tuple(sorted(t)[int(k * len(t))] for t in self.ts)
-
-    def significant_change(self) -> bool:
-        _, min_rel_diff = self.min_diff()
-        mean_abs_diff = np.mean(self.ts[1]) - np.mean(self.ts[0])
-        mean_rel_diff = mean_abs_diff / np.mean(self.ts[0])
-        return abs(min_rel_diff) >= 0.1 or abs(mean_rel_diff) >= 0.1
-
-    def format_row(self, year: int, day: int) -> tuple[T.Any, ...]:
-        min_diff, min_rel_diff = self.min_diff()
-
-        min_significant = abs(min_rel_diff) >= 0.1
-        mean_abs_diff = np.mean(self.ts[1]) - np.mean(self.ts[0])
-        mean_rel_diff = mean_abs_diff / np.mean(self.ts[0])
-
-        return (
-            year,
-            day,
-            len(self.ts[0]),
-            len(self.ts[1]),
-            *self.mins(),
-            colorize(min_diff, ".2f", min_significant),
-            colorize(min_rel_diff, "+.1%", min_significant),
-            *self.means(),
-            colorize(mean_abs_diff, ".2f", abs(mean_rel_diff) >= 0.1),
-            colorize(mean_rel_diff, "+.1%", abs(mean_rel_diff) >= 0.1),
-        )
-
-    @staticmethod
-    def header_row() -> tuple[str, ...]:
-        return (
-            "Year",
-            "Day",
-            "n0",
-            "n1",
-            "min t₀",
-            "min t₁",
-            "Δmin",
-            "Δmin%",
-            "avg t₀",
-            "avg t₁",
-            "Δavg",
-            "Δavg%",
-        )
-
-    @staticmethod
-    def format_summary_row(
-        all_measurements: T.Collection[Measurements],
-    ) -> tuple[T.Any, ...]:
-        def geomean(x: npt.ArrayLike) -> T.Any:
-            return np.exp(np.mean(np.log(np.array(x))))
-
-        old_mins, new_mins = np.array(tuple(map(Measurements.mins, all_measurements))).T
-        old_means, new_means = np.array(
-            tuple(map(Measurements.means, all_measurements))
-        ).T
-        delta_min_pct_gmean = geomean(1 + (new_mins - old_mins) / old_mins) - 1
-        delta_mean_pct_gmean = geomean(1 + (new_means - old_means) / old_means) - 1
-
-        return (
-            "Σ",
-            "",
-            sum(len(m.ts[0]) for m in all_measurements),
-            sum(len(m.ts[1]) for m in all_measurements),
-            sum(old_mins),
-            sum(new_mins),
-            sum(new_mins) - sum(old_mins),
-            f"{delta_min_pct_gmean:+.1%}",
-            sum(old_means),
-            sum(new_means),
-            sum(new_means) - sum(old_means),
-            f"{delta_mean_pct_gmean:+.1%}",
-        )
 
 
 @dataclass
@@ -234,66 +108,6 @@ class BenchmarkArgs:
         return v
 
 
-def group_by(iterable: T.Iterable[T1], key: T.Callable[[T1], T2]) -> dict[T2, list[T1]]:
-    groups: dict[T2, list[T1]] = {}
-    for x in iterable:
-        groups.setdefault(key(x), []).append(x)
-    return groups
-
-
-def run_binaries(
-    args: BenchmarkArgs, binaries: T.Collection[AocBinary]
-) -> tuple[dict[tuple[int, int], Measurements], dict[tuple[int, int], list[str]]]:
-    def _run(binary: AocBinary) -> str:
-        cmd = (str(binary.path.absolute()), *args.to_cmdline())
-        return sp.check_output(cmd, encoding="utf-8").strip().splitlines()[-1]
-
-    raw_output = map(_run, binaries)
-    json_output = tuple(map(json.loads, raw_output))
-
-    # Make sure all binaries output timing information for the same problems.
-    problems = [[(y, d) for y, d, _, _ in binary] for binary in json_output]
-    assert all(p == problems[0] for p in problems[1:])
-
-    flattened = itertools.chain.from_iterable(json_output)
-    grouped = group_by(flattened, lambda x: tuple(x[:2]))
-    outputs = {(y, d): [x[3] for x in data] for (y, d), data in grouped.items()}
-
-    measurements = {}
-    for (y, d), timing_info in grouped.items():
-        ts = [np.array(t, dtype=np.float64) for _, _, t, _ in timing_info]
-        measurements[(y, d)] = Measurements(ts)
-
-    return measurements, outputs
-
-
-def benchmark(
-    args: BenchmarkArgs, max_runs: int, binaries: T.Collection[AocBinary]
-) -> dict[tuple[int, int], Measurements]:
-    result, _ = run_binaries(args, binaries)
-
-    for _ in range(1, max_runs):
-        rerun_problems = [
-            f"{y}/{d}" for (y, d), m in result.items() if m.significant_change()
-        ]
-        if not rerun_problems:
-            break
-        random.shuffle(rerun_problems)
-        print("Rerunning problems:", rerun_problems)
-
-        new_args = BenchmarkArgs(
-            iterations=args.iterations,
-            jobs=args.jobs,
-            stable_mode=args.stable_mode,
-            target_time=(1 / len(rerun_problems)),
-            problems=rerun_problems,
-        )
-        new_result, _ = run_binaries(new_args, binaries)
-        Measurements.merge(result, new_result)
-
-    return result
-
-
 def color_diff(diff: T.Sequence[str]) -> list[str]:
     def color_line(s: str) -> str:
         if s.startswith("---") or s.startswith("+++"):
@@ -310,114 +124,248 @@ def color_diff(diff: T.Sequence[str]) -> list[str]:
     return list(map(color_line, diff))
 
 
-def diff_solutions(
-    old_commit: str, problems: T.Collection[str], binaries: T.Collection[AocBinary]
-) -> None:
-    assert len(binaries) == 2
-
-    problems = problems or ["*"]
-    bargs = BenchmarkArgs(
-        iterations=1, jobs=None, stable_mode=False, target_time=None, problems=problems
-    )
-    _, outputs = run_binaries(bargs, binaries)
-
-    ok = True
-    for (y, d), o in outputs.items():
-        if o[0] != o[1]:
-            a = o[0].splitlines()
-            b = o[1].splitlines()
-            diff = tuple(
-                difflib.unified_diff(
-                    a,
-                    b,
-                    fromfile=f"{y}/{d}: commit {old_commit}",
-                    tofile=f"{y}/{d}: new (with changes in index)",
-                    lineterm="",
-                )
+def diff_solutions(solutions_by_commit: dict[str, dict[tuple[int, int], str]]) -> bool:
+    first_commit_hash, first_solutions = next(iter(solutions_by_commit.items()))
+    for commit_hash, solutions in solutions_by_commit.items():
+        if set(solutions.keys()) != set(first_solutions.keys()):
+            print(
+                f"Different set of solutions between commits {first_commit_hash} and {commit_hash}!?"
             )
-            if diff:
-                ok = False
-                print("\n".join(color_diff(diff)))
+            return False
 
-    if not ok:
+        for (y, d), sol in first_solutions.items():
+            other_sol = solutions[(y, d)]
+            if other_sol != sol:
+                a = sol.splitlines()
+                b = other_sol.splitlines()
+                diff = tuple(
+                    difflib.unified_diff(
+                        a,
+                        b,
+                        fromfile=f"{y}/{d}: commit {first_commit_hash}",
+                        tofile=f"{y}/{d}: commit {commit_hash}",
+                        lineterm="",
+                    )
+                )
+                if diff:
+                    print("\n".join(color_diff(diff)))
+                    return False
+
+    return True
+
+
+def two_binaries(
+    db: sqlite3.Connection,
+    bargs: BenchmarkArgs,
+    binaries: T.Collection[AocBinary],
+) -> int:
+    json_outputs = {}
+
+    for binary in binaries:
+        cmd = (str(binary.path.absolute()), *bargs.to_cmdline())
+        data = sp.check_output(cmd, encoding="utf-8").strip().splitlines()[-1]
+        json_outputs[binary.commit] = json.loads(data)
+
+    # Make sure all solutions are the same.
+    solutions_by_commit = {
+        commit_hash: {(y, d): sol for y, d, _, sol in d}
+        for commit_hash, d in json_outputs.items()
+    }
+    if not diff_solutions(solutions_by_commit):
         sys.exit(1)
 
+    with db:
+        cur = db.execute("INSERT INTO runs DEFAULT VALUES")
+        run_id = cur.lastrowid
+        assert run_id is not None
 
-def one_binary(bargs: BenchmarkArgs, args: T.Any, binary: AocBinary) -> None:
-    if args.diff:
-        print(f"{sys.argv[0]}: no changes in index, nothing to compare to")
-
-    if args.problems:
-        measurements, _ = run_binaries(bargs, [binary])
-
-        rows: list[T.Any] = []
-
-        for (y, d), m in measurements.items():
-            rows.append(
-                [
-                    y,
-                    d,
-                    len(m.ts[0]),
-                    m.means()[0],
-                    np.std(m.ts[0]),
-                    m.quantiles(0.1)[0],
-                    m.quantiles(0.9)[0],
-                ]
+        for commit_hash, json_output in json_outputs.items():
+            cur = db.execute(
+                "INSERT INTO commit_runs (run_id, commit_hash) VALUES (?, ?)",
+                (run_id, commit_hash),
             )
-        if len(measurements) > 1:
-            rows.append(SEPARATING_LINE)
-            rows.append(
-                (
-                    "",
-                    "",
-                    sum(len(x.ts[0]) for x in measurements.values()),
-                    np.mean([x.means()[0] for x in measurements.values()]),
-                    0.0,
-                    np.mean([x.quantiles(0.1)[0] for x in measurements.values()]),
-                    np.mean([x.quantiles(0.9)[0] for x in measurements.values()]),
+            commit_run_id = cur.lastrowid
+
+            for year, day, durations, output in json_output:
+                durations = np.array(durations, dtype=np.int64)
+
+                db.execute(
+                    """
+                INSERT INTO commit_run_stats (
+                    commit_run_id,
+                    year,
+                    day,
+                    iterations,
+                    min_ns,
+                    p10_ns,
+                    p25_ns,
+                    p50_ns,
+                    p75_ns,
+                    p90_ns,
+                    max_ns,
+                    mean_ns
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                    (
+                        commit_run_id,
+                        year,
+                        day,
+                        len(durations),
+                        int(np.min(durations)),
+                        int(np.percentile(durations, 10)),
+                        int(np.percentile(durations, 25)),
+                        int(np.percentile(durations, 50)),
+                        int(np.percentile(durations, 75)),
+                        int(np.percentile(durations, 90)),
+                        int(np.max(durations)),
+                        int(np.mean(durations)),
+                    ),
                 )
-            )
 
-        print(
-            tabulate(
-                rows,
-                headers=(
-                    "Year",
-                    "Day",
-                    "Iterations",
-                    "Mean (μs)",
-                    "σ (μs)",
-                    "10% (μs)",
-                    "90% (μs)",
+    return run_id
+
+
+def print_timing_diff(db: sqlite3.Connection, run_id: int) -> None:
+    commits = db.execute(
+        "SELECT commit_hash FROM commit_runs WHERE run_id = ?", (run_id,)
+    ).fetchall()
+    commits = [c for (c,) in commits]
+    assert len(commits) == 2
+
+    df = pl.read_database(
+        """
+    SELECT
+        year,
+        day,
+        min_ns,
+        p50_ns,
+        mean_ns,
+        commit_hash
+    FROM commit_run_stats
+    JOIN commit_runs ON id = commit_run_id
+    WHERE run_id = :run_id
+    """,
+        db,
+        execute_options={"parameters": {"run_id": run_id}},
+    )
+
+    dfs = df.partition_by("commit_hash", include_key=False, as_dict=True)
+    df0 = dfs[(commits[0],)]
+    df1 = dfs[(commits[1],)]
+    df0 = df0.sort(["year", "day"])
+    df1 = df1.sort(["year", "day"])
+
+    delta = df0.select(pl.col(["year", "day"])).with_columns(
+        [
+            df0["min_ns"].alias("min0_ns"),
+            df1["min_ns"].alias("min1_ns"),
+            (df1["min_ns"] - df0["min_ns"]).alias("delta_min_ns"),
+            ((df1["min_ns"] - df0["min_ns"]) / df0["min_ns"]).alias("delta_min_rel"),
+            df0["mean_ns"].alias("mean0_ns"),
+            df1["mean_ns"].alias("mean1_ns"),
+            (df1["mean_ns"] - df0["mean_ns"]).alias("delta_mean_ns"),
+            ((df1["mean_ns"] - df0["mean_ns"]) / df0["mean_ns"]).alias(
+                "delta_mean_rel"
+            ),
+        ]
+    )
+
+    headers = (
+        "",
+        "Year",
+        "Day",
+        "min t₀",
+        "min t₁",
+        "Δmin",
+        "Δmin%",
+        "avg t₀",
+        "avg t₁",
+        "Δavg",
+        "Δavg%",
+    )
+
+    rows = []
+    for (
+        year,
+        day,
+        min0_ns,
+        min1_ns,
+        delta_min_ns,
+        delta_min_rel,
+        mean0_ns,
+        mean1_ns,
+        delta_mean_ns,
+        delta_mean_rel,
+    ) in delta.iter_rows():
+        min_significant = abs(delta_min_rel) >= 0.1
+        mean_significant = abs(delta_mean_rel) >= 0.1
+
+        rows.append(
+            (
+                "",
+                year,
+                day,
+                min0_ns / 1e3,
+                min1_ns / 1e3,
+                colorize(delta_min_ns / 1e3, ".2f", min_significant),
+                colorize(delta_min_rel, "+.1%", min_significant),
+                mean0_ns / 1e3,
+                mean1_ns / 1e3,
+                colorize(delta_mean_ns / 1e6, ".2f", mean_significant),
+                colorize(delta_mean_rel, "+.1%", mean_significant),
+            )
+        )
+
+    if len(rows) > 1:
+        rows.append(SEPARATING_LINE)
+        delta_sum = delta["min1_ns"].sum() - delta["min0_ns"].sum()
+        rows.append(
+            (
+                "Σ",
+                "",
+                "",
+                delta["min0_ns"].sum() / 1e3,
+                delta["min1_ns"].sum() / 1e3,
+                colorize(
+                    delta_sum / 1e3,
+                    ".2f",
+                    abs(delta_sum / delta["min0_ns"].sum()) >= 0.1,
+                ),
+                colorize(
+                    delta_sum / delta["min0_ns"].sum(),
+                    "+.1%",
+                    abs(delta_sum / delta["min0_ns"].sum()) >= 0.1,
+                ),
+                delta["mean0_ns"].sum() / 1e3,
+                delta["mean1_ns"].sum() / 1e3,
+                colorize(
+                    (delta["mean1_ns"].sum() - delta["mean0_ns"].sum()) / 1e6,
+                    ".2f",
+                    abs(
+                        (delta["mean1_ns"].sum() - delta["mean0_ns"].sum())
+                        / delta["mean0_ns"].sum()
+                    )
+                    >= 0.1,
+                ),
+                colorize(
+                    (delta["mean1_ns"].sum() - delta["mean0_ns"].sum())
+                    / delta["mean0_ns"].sum(),
+                    "+.1%",
+                    abs(
+                        (delta["mean1_ns"].sum() - delta["mean0_ns"].sum())
+                        / delta["mean0_ns"].sum()
+                    )
+                    >= 0.1,
                 ),
             )
         )
 
-
-def two_binaries(
-    bargs: BenchmarkArgs,
-    base_commit_hash: str,
-    args: T.Any,
-    binaries: T.Collection[AocBinary],
-) -> None:
-    assert len(binaries) == 2
-    diff_solutions(base_commit_hash, args.problems, binaries)
-
-    if args.problems:
-        measurements = benchmark(bargs, args.max_runs, binaries)
-
-        rows: list[T.Any] = []
-        for (y, d), m in measurements.items():
-            rows.append(m.format_row(y, d))
-        if len(measurements) > 1:
-            rows.append(SEPARATING_LINE)
-            rows.append(Measurements.format_summary_row(measurements.values()))
-        print(tabulate(rows, headers=Measurements.header_row()))
+    print(tabulate(rows, headers=headers))
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("-b", "--base-commit", default="HEAD", metavar="COMMIT")
+    parser.add_argument("-b", "--base-change", default="@-", metavar="CHANGE-ID")
     parser.add_argument("-i", "--iterations", default=1, type=int)
     parser.add_argument("-j", "--jobs", default=None, type=int)
     parser.add_argument("-n", "--max-runs", default=5, type=int)
@@ -428,12 +376,54 @@ def main() -> None:
     args = parser.parse_args()
 
     base_commit_hash = sp.check_output(
-        ("git", "rev-parse", args.base_commit), encoding="utf-8"
+        (
+            "jj",
+            "log",
+            "--no-graph",
+            "-r",
+            args.base_change,
+            "-T",
+            "self.commit_id() ++ '\n'",
+        ),
+        encoding="utf-8",
     ).strip()
     head_commit_hash = sp.check_output(
-        ("git", "rev-parse", "HEAD"), encoding="utf-8"
+        ("jj", "log", "--no-graph", "-r", "@", "-T", "self.commit_id() ++ '\n'"),
+        encoding="utf-8",
     ).strip()
-    index_patch = sp.check_output(("git", "diff"))
+
+    conn = sqlite3.connect("../scratch/aoc.db", autocommit=False)
+
+    with conn:
+        conn.executescript(
+            """
+        CREATE TABLE IF NOT EXISTS runs (
+            id INTEGER PRIMARY KEY,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS commit_runs (
+            id INTEGER PRIMARY KEY,
+            run_id INTEGER NOT NULL,
+            commit_hash TEXT NOT NULL,
+            FOREIGN KEY(run_id) REFERENCES runs(id)
+        );
+        CREATE TABLE IF NOT EXISTS commit_run_stats (
+            commit_run_id INTEGER NOT NULL,
+            year INTEGER NOT NULL,
+            day INTEGER NOT NULL,
+            iterations INTEGER NOT NULL,
+            min_ns INTEGER NOT NULL,
+            p10_ns INTEGER NOT NULL,
+            p25_ns INTEGER NOT NULL,
+            p50_ns INTEGER NOT NULL,
+            p75_ns INTEGER NOT NULL,
+            p90_ns INTEGER NOT NULL,
+            max_ns INTEGER NOT NULL,
+            mean_ns INTEGER NOT NULL,
+            FOREIGN KEY(commit_run_id) REFERENCES commit_runs(id)
+        );
+        """
+        )
 
     bargs = BenchmarkArgs(
         iterations=args.iterations,
@@ -443,14 +433,12 @@ def main() -> None:
         problems=tuple(args.problems),
     )
 
-    with binary_for_commit(base_commit_hash) as old_binary:
-        have_changes = base_commit_hash != head_commit_hash or index_patch.strip()
-
-        if have_changes and args.diff:
-            with binary_for_commit(head_commit_hash, index_patch) as new_binary:
-                two_binaries(bargs, base_commit_hash, args, [old_binary, new_binary])
-        else:
-            one_binary(bargs, args, old_binary)
+    with (
+        binary_for_commit(base_commit_hash) as old_binary,
+        binary_for_commit(head_commit_hash) as new_binary,
+    ):
+        run_id = two_binaries(conn, bargs, [old_binary, new_binary])
+        print_timing_diff(conn, run_id)
 
 
 if __name__ == "__main__":
