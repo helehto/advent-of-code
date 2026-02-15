@@ -88,6 +88,22 @@ struct uint256 {
         return *this;
     }
 
+    uint256 operator^(const uint256 &other) const noexcept
+    {
+        uint256 result = *this;
+        result ^= other;
+        return result;
+    }
+
+    uint256 &operator^=(const uint256 &other) noexcept
+    {
+        const __m256i a = _mm256_load_si256((const __m256i *)limbs.data());
+        const __m256i b = _mm256_load_si256((const __m256i *)other.limbs.data());
+        const __m256i result = _mm256_xor_si256(a, b);
+        _mm256_store_si256((__m256i *)limbs.data(), result);
+        return *this;
+    }
+
     uint256 operator~() const noexcept
     {
         const __m256i a = _mm256_load_si256((const __m256i *)limbs.data());
