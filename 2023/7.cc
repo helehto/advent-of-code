@@ -1,8 +1,5 @@
 #include "common.h"
-#include <algorithm>
-#include <cstdlib>
-#include <optional>
-#include <x86intrin.h>
+#include <hwy/highway.h>
 
 namespace aoc_2023_7 {
 
@@ -32,29 +29,36 @@ struct Hand {
     uint16_t bet;
 };
 
+[[gnu::noinline]]
 static std::pair<uint32_t, uint8_t> evaluate_hand(uint8_t *counts)
 {
-    const __m128i vcounts = _mm_loadu_si128(reinterpret_cast<__m128i *>(counts));
-    const uint32_t mask5 = _mm_movemask_epi8(_mm_cmpeq_epi8(vcounts, _mm_set1_epi8(5)));
-    const uint32_t mask4 = _mm_movemask_epi8(_mm_cmpeq_epi8(vcounts, _mm_set1_epi8(4)));
-    const uint32_t mask3 = _mm_movemask_epi8(_mm_cmpeq_epi8(vcounts, _mm_set1_epi8(3)));
-    const uint32_t mask2 = _mm_movemask_epi8(_mm_cmpeq_epi8(vcounts, _mm_set1_epi8(2)));
-    const uint32_t mask1 = _mm_movemask_epi8(_mm_cmpeq_epi8(vcounts, _mm_set1_epi8(1)));
+    using D = hn::FixedTag<uint8_t, 16>;
+    constexpr D d;
+    const hn::Vec<D> v = hn::Load(d, counts);
 
-    if (mask5)
-        return {five_of_a_kind, std::countr_zero(mask5)};
+    const hn::Mask<D> mask5 = hn::Eq(v, hn::Set(d, 5));
+    if (intptr_t b5 = hn::FindFirstTrue(d, mask5); b5 >= 0)
+        return {five_of_a_kind, static_cast<uint8_t>(b5)};
 
-    if (mask4)
-        return {four_of_a_kind, std::countr_zero(mask4)};
+    const hn::Mask<D> mask4 = hn::Eq(v, hn::Set(d, 4));
+    if (intptr_t b4 = hn::FindFirstTrue(d, mask4); b4 >= 0)
+        return {four_of_a_kind, static_cast<uint8_t>(b4)};
 
-    if (mask3)
-        return {mask2 ? full_house : three_of_a_kind, std::countr_zero(mask3)};
+    const hn::Mask<D> mask3 = hn::Eq(v, hn::Set(d, 3));
+    const hn::Mask<D> mask2 = hn::Eq(v, hn::Set(d, 2));
+    const intptr_t b2 = hn::FindFirstTrue(d, mask2);
+    if (intptr_t b3 = hn::FindFirstTrue(d, mask3); b3 >= 0)
+        return {b2 >= 0 ? full_house : three_of_a_kind, static_cast<uint8_t>(b3)};
 
-    if (mask2)
-        return {(mask2 & (mask2 - 1)) ? two_pair : one_pair, std::countr_zero(mask2)};
+    if (b2 >= 0) {
+        const uint64_t m = hn::BitsFromMask(d, mask2);
+        return {std::has_single_bit(m) ? one_pair : two_pair, static_cast<uint8_t>(b2)};
+    }
 
-    ASSERT(mask1 != 0);
-    return {high_card, std::countr_zero(mask1)};
+    const hn::Mask<D> mask1 = hn::Eq(v, hn::Set(d, 1));
+    intptr_t b1 = hn::FindFirstTrue(d, mask1);
+    ASSERT(b1 >= 0);
+    return {high_card, static_cast<uint8_t>(b1)};
 }
 
 static uint32_t evaluate_hand_with_jokers(std::array<uint8_t, 16> &counts)

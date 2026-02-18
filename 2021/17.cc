@@ -1,106 +1,71 @@
 #include "common.h"
-#include "dense_set.h"
-#include "inplace_vector.h"
+#include <hwy/highway.h>
 
 namespace aoc_2021_17 {
 
-/// Horizontal max of the 16-bit integers in `v`.
-static int16_t hmax_epi16(const __m256i v)
+using D = hn::ScalableTag<int16_t>;
+constexpr D d;
+
+/// Run the simulation for the velocities given by the lanes of `vx` and `vy`
+/// for which the corresponding element in active_mask is set with the target
+/// area given by the rectangle (x0, y0), (x1, y1) inclusive.
+static int simulate(hn::Vec<D> vx,
+                    hn::Vec<D> vy,
+                    hn::Mask<D> active_mask,
+                    const int16_t x0,
+                    const int16_t x1,
+                    const int16_t y0,
+                    const int16_t y1,
+                    size_t &valid_velocities_count)
 {
-    // Max of 32-bit blocks:
-    const __m256i vlo = _mm256_unpacklo_epi16(v, v);
-    const __m256i vhi = _mm256_unpackhi_epi16(v, v);
-    const __m256i m32 = _mm256_max_epi16(vlo, vhi);
-    const __m256i m32t = _mm256_shuffle_epi32(m32, 0b10'11'00'01);
-
-    // Max of 64-bit blocks:
-    const __m256i m64 = _mm256_max_epi16(m32, m32t);
-    const __m256d m64d = _mm256_castsi256_pd(m64);
-    const __m256i m64t = _mm256_castpd_si256(_mm256_shuffle_pd(m64d, m64d, 0b1100));
-
-    // Max within 128-bit lane:
-    const __m256i m128 = _mm256_max_epi16(m64, m64t);
-
-    // Max of both 128-bit lanes:
-    return std::max(_mm256_extract_epi16(m128, 0), _mm256_extract_epi16(m128, 8));
-}
-
-/// Run the simulation for the 16 velocities given by `vx` and `vy` for which
-/// the corresponding element in active_mask is set (-1), with the target area
-/// given by the rectangle (x0, y0), (x1, y1) inclusive.
-static int simulate16(__m256i vx,
-                      __m256i vy,
-                      __m256i active_mask,
-                      const int16_t x0,
-                      const int16_t x1,
-                      const int16_t y0,
-                      const int16_t y1,
-                      dense_set<Vec2i16> &valid_velocities)
-{
-    const __m256i orig_vx = vx;
-    const __m256i orig_vy = vy;
-
-    __m256i x = _mm256_setzero_si256();
-    __m256i y = _mm256_setzero_si256();
-    __m256i reached_mask = _mm256_setzero_si256();
+    hn::Vec<D> x = hn::Zero(d);
+    hn::Vec<D> y = hn::Zero(d);
+    hn::Mask<D> reached_mask = hn::MaskFalse(d);
 
     // Target area bounds:
-    const __m256i targetl = _mm256_set1_epi16(x0 - 1);
-    const __m256i targetr = _mm256_set1_epi16(x1 + 1);
-    const __m256i targetd = _mm256_set1_epi16(y0 - 1);
-    const __m256i targetu = _mm256_set1_epi16(y1 + 1);
+    const hn::Vec<D> targetl = hn::Set(d, x0 - 1);
+    const hn::Vec<D> targetr = hn::Set(d, x1 + 1);
+    const hn::Vec<D> targetd = hn::Set(d, y0 - 1);
+    const hn::Vec<D> targetu = hn::Set(d, y1 + 1);
 
-    __m256i ymax = _mm256_set1_epi16(INT16_MIN);
+    hn::Vec<D> ymax = hn::Set(d, INT16_MIN);
     while (true) {
         // Figure out which probes are below the target area. We assume the
         // target area to be below y=0, so at this point they are moving
         // downwards below it and will *never* intersect it (again):
-        const __m256i below_target_mask = _mm256_cmpgt_epi16(targetd, y);
+        const hn::Mask<D> below_target_mask = hn::Gt(targetd, y);
 
         // Figure out which probes are in the target area:
-        const __m256i pgtx0 = _mm256_cmpgt_epi16(x, targetl);
-        const __m256i pltx1 = _mm256_cmpgt_epi16(targetr, x);
-        const __m256i pgty0 = _mm256_cmpgt_epi16(y, targetd);
-        const __m256i plty1 = _mm256_cmpgt_epi16(targetu, y);
-        const __m256i in_target_x = _mm256_and_si256(pgtx0, pltx1);
-        const __m256i in_target_y = _mm256_and_si256(pgty0, plty1);
-        const __m256i in_target_area = _mm256_and_si256(in_target_x, in_target_y);
+        const hn::Mask<D> pgtx0 = hn::Gt(x, targetl);
+        const hn::Mask<D> pltx1 = hn::Lt(x, targetr);
+        const hn::Mask<D> pgty0 = hn::Gt(y, targetd);
+        const hn::Mask<D> plty1 = hn::Lt(y, targetu);
+        const hn::Mask<D> in_target_x = hn::And(pgtx0, pltx1);
+        const hn::Mask<D> in_target_y = hn::And(pgty0, plty1);
+        const hn::Mask<D> in_target_area = hn::And(in_target_x, in_target_y);
 
         // Update the mask signifying which probes that have reached the target
         // area for this simulation.
-        reached_mask = _mm256_or_si256(in_target_area, reached_mask);
+        reached_mask = hn::Or(in_target_area, reached_mask);
 
         // Deactivate the probes that are inside or below the target area.
-        const __m256i disable = _mm256_or_si256(below_target_mask, in_target_area);
-        active_mask = _mm256_andnot_si256(disable, active_mask);
+        const hn::Mask<D> disable = hn::Or(below_target_mask, in_target_area);
+        active_mask = hn::AndNot(disable, active_mask);
 
         // If no probe is active, we are done.
-        if (_mm256_testz_si256(active_mask, active_mask))
+        if (hn::AllFalse(d, active_mask))
             break;
 
         // Simulate one time step.
-        x = _mm256_add_epi16(x, vx);
-        y = _mm256_add_epi16(y, vy);
-        vx = _mm256_max_epi16(_mm256_sub_epi16(vx, _mm256_set1_epi16(1)),
-                              _mm256_setzero_si256());
-        vy = _mm256_sub_epi16(vy, _mm256_set1_epi16(1));
-        ymax = _mm256_max_epi16(ymax, y);
+        constexpr hn::RebindToUnsigned<D> du16;
+        x += vx;
+        y += vy;
+        vx = hn::BitCast(d, hn::SaturatedSub(hn::BitCast(du16, vx), hn::Set(du16, 1)));
+        vy -= hn::Set(d, 1);
+        ymax = hn::Max(ymax, y);
     }
-
-    // Discard the max Y coordinate for the probes that did not reach the
-    // target area.
-    ymax = _mm256_blendv_epi8(_mm256_set1_epi16(INT16_MIN), ymax, reached_mask);
-
-    // Interleave the 16 separate X/Y values to an array of 2D vectors:
-    std::array<Vec2i16, 16> v;
-    _mm256_storeu_si256((__m256i *)&v[0], _mm256_unpacklo_epi16(orig_vx, orig_vy));
-    _mm256_storeu_si256((__m256i *)&v[8], _mm256_unpackhi_epi16(orig_vx, orig_vy));
-
-    const uint32_t reached_mask_u32 = _mm256_movemask_epi8(reached_mask);
-    for (auto m = reached_mask_u32; m; m &= m - 1, m &= m - 1)
-        valid_velocities.insert(v[std::countr_zero(m) / 2]);
-
-    return hmax_epi16(ymax);
+    valid_velocities_count += hn::CountTrue(d, reached_mask);
+    return hn::MaskedReduceMax(d, reached_mask, ymax);
 }
 
 /// Determine if a probe with the initial X velocity `v` can ever be inside the
@@ -116,18 +81,7 @@ void run(std::string_view buf)
 {
     auto [x0, x1, y0, y1] = find_numbers_n<int16_t, 4>(buf);
 
-    dense_set<Vec2i16> s;
-    s.reserve(4096);
-
-    const __m256i iota16 =
-        _mm256_setr_epi16(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
-
-    constexpr uint16_t mask_window[] = {
-        0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-        0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-        0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-        0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-    };
+    size_t valid_velocities_count = 0;
 
     // The lower bound is the X velocity below which probes never reach the
     // target area before the velocity drops to zero.
@@ -138,13 +92,13 @@ void run(std::string_view buf)
         if (!vx_can_reach_target_area(vx, x0, x1))
             continue;
 
-        const __m256i vxx = _mm256_set1_epi16(vx);
-        for (int vy = y0; vy <= -y0; vy += 16) {
-            const __m256i vyy = _mm256_add_epi16(_mm256_set1_epi16(vy), iota16);
+        const hn::Vec<D> vxx = hn::Set(d, vx);
+        for (int vy = y0; vy <= -y0; vy += hn::Lanes(d)) {
+            const hn::Vec<D> vyy = hn::Set(d, vy) + hn::Iota(d, 0);
             const size_t n = -y0 - vy + 1;
-            const __m256i active_mask =
-                _mm256_loadu_si256((const __m256i *)&mask_window[16 - std::min(n, 16zu)]);
-            ymax = std::max(ymax, simulate16(vxx, vyy, active_mask, x0, x1, y0, y1, s));
+            const hn::Mask<D> active_mask = hn::FirstN(d, n);
+            ymax = std::max(ymax, simulate(vxx, vyy, active_mask, x0, x1, y0, y1,
+                                           valid_velocities_count));
         }
     }
 
@@ -152,7 +106,7 @@ void run(std::string_view buf)
 
     // Velocities that match the target area will cause the probe to enter the
     // target area within one time step, by definition; count those separately:
-    fmt::print("{}\n", s.size() + (y1 - y0 + 1) * (x1 - x0 + 1));
+    fmt::print("{}\n", valid_velocities_count + (y1 - y0 + 1) * (x1 - x0 + 1));
 }
 
 }

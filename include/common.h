@@ -13,6 +13,7 @@
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 #include <functional>
+#include <hwy/highway.h>
 #include <memory>
 #include <numeric>
 #include <ranges>
@@ -23,6 +24,10 @@
 #include <utility>
 #include <vector>
 #include <x86intrin.h>
+
+// Define this as a shorthand globally, we assume -march=native and only use
+// static dispatch anyway.
+namespace hn = hwy::HWY_NAMESPACE;
 
 template <typename T>
 struct Vec2 {
@@ -359,41 +364,29 @@ split(std::string_view s, std::vector<std::string_view> &out, char c)
 {
     out.clear();
 
-    size_t i = 0;
-    size_t curr_field_start = 0;
+    using D = hn::ScalableTag<uint8_t>;
+    const hn::Vec<D> vsep = hn::Set(D(), static_cast<uint8_t>(c));
 
-    for (; i + 31 < s.size(); i += 32) {
-        __m256i m = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(s.data() + i));
-        unsigned int mask =
-            _mm256_movemask_epi8(_mm256_cmpeq_epi8(m, _mm256_set1_epi8(c)));
+    const char *p = s.data();
+    const char *q = p + s.size();
+    const char *curr_field_start = p;
 
+    auto handle_chunk = [&](hn::Vec<D> vchars) {
+        uint64_t mask = hn::BitsFromMask(D(), hn::Eq(vchars, vsep));
         for (; mask != 0; mask &= mask - 1) {
             int offset = std::countr_zero(mask);
-            out.emplace_back(s.begin() + curr_field_start, s.begin() + i + offset);
-            curr_field_start = i + offset + 1;
+            out.emplace_back(curr_field_start, p + offset);
+            curr_field_start = p + offset + 1;
         }
-    }
+    };
 
-    for (; i + 15 < s.size(); i += 16) {
-        __m128i m = _mm_loadu_si128(reinterpret_cast<const __m128i *>(s.data() + i));
-        unsigned int mask = _mm_movemask_epi8(_mm_cmpeq_epi8(m, _mm_set1_epi8(c)));
+    for (; static_cast<size_t>(q - p) >= hn::Lanes(D()); p += hn::Lanes(D()))
+        handle_chunk(hn::LoadU(D(), reinterpret_cast<const uint8_t *>(p)));
+    if (size_t tail = q - p)
+        handle_chunk(hn::LoadN(D(), reinterpret_cast<const uint8_t *>(p), tail));
 
-        for (; mask != 0; mask &= mask - 1) {
-            int offset = std::countr_zero(mask);
-            out.emplace_back(s.begin() + curr_field_start, s.begin() + i + offset);
-            curr_field_start = i + offset + 1;
-        }
-    }
-
-    for (; i < s.size(); i++) {
-        if (s[i] == c) {
-            out.emplace_back(s.begin() + curr_field_start, s.begin() + i);
-            curr_field_start = i + 1;
-        }
-    }
-
-    if (curr_field_start != s.size())
-        out.emplace_back(s.begin() + curr_field_start, s.end());
+    if (curr_field_start != q)
+        out.emplace_back(curr_field_start, q);
 
     return out;
 }

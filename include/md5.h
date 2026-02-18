@@ -3,41 +3,35 @@
 #pragma once
 
 #include "common.h"
-#include <atomic>
+#include <hwy/highway.h>
 
 namespace md5 {
 
-inline __m256i mm256_rol(const __m256i a, const int n)
+using D = hn::FixedTag<uint32_t, 8>;
+using VecT = hn::Vec<D>;
+constexpr D d;
+
+inline VecT swap_nibbles(const VecT v)
 {
-    return _mm256_or_si256(_mm256_slli_epi32(a, n), _mm256_srli_epi32(a, 32 - n));
+    const VecT mask_hi = hn::Set(d, 0xf0f0f0f0);
+    const VecT mask_lo = hn::Set(d, 0x0f0f0f0f);
+    const VecT result_lo = hn::ShiftRight<4>(v & mask_hi);
+    const VecT result_hi = hn::ShiftLeft<4>(v & mask_lo);
+    return result_lo | result_hi;
 }
 
-inline __m256i mm256_not(const __m256i v)
-{
-    return _mm256_xor_si256(v, _mm256_set1_epi32(-1));
-}
-
-inline __m256i mm256_swapnibbles(const __m256i v)
-{
-    const __m256i mask_hi = _mm256_set1_epi32(0xf0f0f0f0);
-    const __m256i mask_lo = _mm256_set1_epi32(0x0f0f0f0f);
-    const __m256i result_lo = _mm256_srli_epi32(_mm256_and_si256(v, mask_hi), 4);
-    const __m256i result_hi = _mm256_slli_epi32(_mm256_and_si256(v, mask_lo), 4);
-    return _mm256_or_si256(result_lo, result_hi);
-}
-
-inline std::array<uint32_t, 8> mm256_u32x8(const __m256i v)
+inline std::array<uint32_t, 8> mm256_u32x8(const VecT v)
 {
     std::array<uint32_t, 8> result;
-    _mm256_storeu_si256((__m256i *)&result, v);
+    hn::StoreU(v, d, result.data());
     return result;
 }
 
 struct alignas(32) Result {
-    __m256i a;
-    __m256i b;
-    __m256i c;
-    __m256i d;
+    VecT a;
+    VecT b;
+    VecT c;
+    VecT d;
 
     std::array<std::array<uint32_t, 8>, 4> to_arrays() const
     {
@@ -46,19 +40,28 @@ struct alignas(32) Result {
 
     std::array<std::array<char, 32>, 8> to_hex() const
     {
-        const __m128i hex_chars = _mm_setr_epi8('0', '1', '2', '3', '4', '5', '6', '7',
-                                                '8', '9', 'a', 'b', 'c', 'd', 'e', 'f');
+        alignas(32) static constexpr uint8_t hex_chars[] = {
+            '0', '1', '2', '3', '4', '5', '6', '7',
+            '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
+        };
+
+        using D8 = hn::FixedTag<uint8_t, 16>;
+        using D64 = hn::FixedTag<uint64_t, 2>;
+
+        const hn::Vec<D8> vhexchars = hn::Load(D8(), hex_chars);
 
         auto output_u32 = [&](char *p, const uint32_t h) {
             // Expand each nibble to a full byte in the range 0x00-0x0f so that
-            // it can be used as a lookup index in _mm_shuffle_epi8() below.
+            // it can be used as a lookup index in TableLookupBytes() below.
             const uint64_t bytes = _pdep_u64(h, 0x0f0f0f0f0f0f0f0f);
-            const __m128i vbytes = _mm_cvtsi64x_si128(bytes);
+            const hn::Vec<D64> vbytes =
+                hn::InsertLane(hn::Zero(D64()), 0, bytes); // FIXME: ugh
+            const hn::Vec<D8> indices = hn::BitCast(D8(), vbytes);
 
             // Map each byte to its corresponding hex character.
-            const __m128i output = _mm_shuffle_epi8(hex_chars, vbytes);
+            const hn::Vec<D8> output = hn::TableLookupBytes(vhexchars, indices);
 
-            uint64_t out64 = _mm_cvtsi128_si64(output);
+            uint64_t out64 = hn::ExtractLane(hn::BitCast(D64(), output), 0);
             memcpy(p, &out64, sizeof(out64));
         };
 
@@ -66,10 +69,10 @@ struct alignas(32) Result {
         // endianness affects the byte order, *not* the order of nibbles within
         // each byte; e.g. for 0x4d we want to output '4' followed by 'd', i.e.
         // the *second* nibble first.)
-        const std::array<uint32_t, 8> aa = mm256_u32x8(mm256_swapnibbles(a));
-        const std::array<uint32_t, 8> bb = mm256_u32x8(mm256_swapnibbles(b));
-        const std::array<uint32_t, 8> cc = mm256_u32x8(mm256_swapnibbles(c));
-        const std::array<uint32_t, 8> dd = mm256_u32x8(mm256_swapnibbles(d));
+        const std::array<uint32_t, 8> aa = mm256_u32x8(swap_nibbles(a));
+        const std::array<uint32_t, 8> bb = mm256_u32x8(swap_nibbles(b));
+        const std::array<uint32_t, 8> cc = mm256_u32x8(swap_nibbles(c));
+        const std::array<uint32_t, 8> dd = mm256_u32x8(swap_nibbles(d));
 
         std::array<std::array<char, 32>, 8> result;
         for (size_t i = 0; i < 8; i++) {
@@ -170,26 +173,26 @@ inline void prepare_final_blocks(Block8x8x64 &__restrict messages,
 
 // Hash eight blocks simultaneously. The return values is an array where index
 // `k` contains the `k`:th 32-bit word of the eight resulting hashes.
-inline Result do_block_avx2(
-    const Block32x16x8 &__restrict M, __m256i a0, __m256i b0, __m256i c0, __m256i d0)
+inline Result
+hash_block(const Block32x16x8 &__restrict M, VecT a0, VecT b0, VecT c0, VecT d0)
 {
-    __m256i A = a0;
-    __m256i B = b0;
-    __m256i C = c0;
-    __m256i D = d0;
+    VecT A(a0);
+    VecT B(b0);
+    VecT C(c0);
+    VecT D(d0);
 
-#define F(b, c, d) _mm256_or_si256(_mm256_and_si256(b, c), _mm256_andnot_si256(b, d))
-#define G(b, c, d) _mm256_or_si256(_mm256_and_si256(d, b), _mm256_andnot_si256(d, c))
-#define H(b, c, d) _mm256_xor_si256(b, _mm256_xor_si256(c, d))
-#define I(b, c, d) _mm256_xor_si256(c, _mm256_or_si256(b, mm256_not(d)))
+#define F(b, c, d) ((b & c) | hn::AndNot(b, d))
+#define G(b, c, d) ((d & b) | hn::AndNot(d, c))
+#define H(b, c, d) (b ^ c ^ d)
+#define I(b, c, d) (c ^ (b | hn::Not(d)))
 
 #define QUARTER_ROUND(f, a, b, c, d, j, k, shift)                                        \
     do {                                                                                 \
-        a = _mm256_add_epi32(a, f(b, c, d));                                             \
-        a = _mm256_add_epi32(a, _mm256_set1_epi32(K[k]));                                \
-        a = _mm256_add_epi32(a, _mm256_load_si256((const __m256i *)(&M.data[8 * (j)]))); \
-        a = mm256_rol(a, shift);                                                         \
-        a = _mm256_add_epi32(a, b);                                                      \
+        a += f(b, c, d);                                                                 \
+        a += hn::Set(hn::DFromV<decltype(a)>(), K[k]);                                   \
+        a += hn::Load(hn::DFromV<decltype(a)>(), &M.data[8 * (j)]);                      \
+        a = hn::RotateLeft<shift>(a);                                                    \
+        a += b;                                                                          \
     } while (0)
 
     static constexpr uint32_t K[] = {
@@ -244,41 +247,36 @@ inline Result do_block_avx2(
 #undef I
 #undef QUARTER_ROUND
 
-    return Result{
-        .a = _mm256_add_epi32(a0, A),
-        .b = _mm256_add_epi32(b0, B),
-        .c = _mm256_add_epi32(c0, C),
-        .d = _mm256_add_epi32(d0, D),
-    };
+    return Result{a0 + A, b0 + B, c0 + C, d0 + D};
 }
 
-inline Result do_block_avx2(const Block32x16x8 &__restrict M)
+inline Result hash_block(const Block32x16x8 &__restrict M)
 {
-    __m256i a0 = _mm256_set1_epi32(0x67452301);
-    __m256i b0 = _mm256_set1_epi32(0xefcdab89);
-    __m256i c0 = _mm256_set1_epi32(0x98badcfe);
-    __m256i d0 = _mm256_set1_epi32(0x10325476);
-    return do_block_avx2(M, a0, b0, c0, d0);
+    const VecT a0 = hn::Set(d, 0x67452301);
+    const VecT b0 = hn::Set(d, 0xefcdab89);
+    const VecT c0 = hn::Set(d, 0x98badcfe);
+    const VecT d0 = hn::Set(d, 0x10325476);
+    return hash_block(M, a0, b0, c0, d0);
 }
 
-inline Result do_block_avx2(
-    const Block8x8x64 &__restrict chunks, __m256i a0, __m256i b0, __m256i c0, __m256i d0)
+inline Result
+hash_block(const Block8x8x64 &__restrict chunks, VecT a0, VecT b0, VecT c0, VecT d0)
 {
     // The input in `chunks` is eight 64-byte blocks laid out one after
     // another. The MD5 core loop expects memory to contain interleaved 4-byte
     // words from each block, so reshuffle the original input into that format.
     Block32x16x8 M = permute_input(chunks);
 
-    return do_block_avx2(M, a0, b0, c0, d0);
+    return hash_block(M, a0, b0, c0, d0);
 }
 
-inline Result do_block_avx2(const Block8x8x64 &__restrict chunks)
+inline Result hash_block(const Block8x8x64 &__restrict chunks)
 {
-    __m256i a0 = _mm256_set1_epi32(0x67452301);
-    __m256i b0 = _mm256_set1_epi32(0xefcdab89);
-    __m256i c0 = _mm256_set1_epi32(0x98badcfe);
-    __m256i d0 = _mm256_set1_epi32(0x10325476);
-    return do_block_avx2(chunks, a0, b0, c0, d0);
+    const VecT a0 = hn::Set(d, 0x67452301);
+    const VecT b0 = hn::Set(d, 0xefcdab89);
+    const VecT c0 = hn::Set(d, 0x98badcfe);
+    const VecT d0 = hn::Set(d, 0x10325476);
+    return hash_block(chunks, a0, b0, c0, d0);
 }
 
 [[gnu::noinline]] inline char *to_chars(char *p, int n)
@@ -339,12 +337,10 @@ static_assert(make_leading_zero_mask<6>() == 0xffffff);
 /// Return a 8-bit mask with a bit set for each element in `hashes` that
 /// has at least `N` leading zeroes when written as hexadecimal.
 template <size_t N>
-inline uint32_t leading_zero_mask(const __m256i hashes)
+inline uint32_t leading_zero_mask(const hn::Vec<D> &hashes)
 {
-    const auto mask = _mm256_set1_epi32(detail::make_leading_zero_mask<N>());
-    const auto zero = _mm256_setzero_si256();
-    const __m256i eq = _mm256_cmpeq_epi32(_mm256_and_si256(mask, hashes), zero);
-    return _mm256_movemask_ps(_mm256_castsi256_ps(eq));
+    const hn::Vec<D> mask = hn::Set(d, detail::make_leading_zero_mask<N>());
+    return hn::BitsFromMask(d, hn::Eq(mask & hashes, hn::Zero(d)));
 }
 
 struct State {
@@ -372,7 +368,7 @@ struct State {
         }
 
         prepare_final_blocks(messages, lengths);
-        return do_block_avx2(messages);
+        return hash_block(messages);
     }
 };
 

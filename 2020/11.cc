@@ -1,72 +1,64 @@
 #include "common.h"
+#include <hwy/highway.h>
 
 namespace aoc_2020_11 {
 
-static size_t part1(Matrix<char> grid)
+static size_t part1(Matrix<int8_t> grid)
 {
     auto next = grid;
+    const ssize_t cols = grid.cols;
 
-    const __m256i vdot = _mm256_set1_epi8('.');
-    const __m256i vl = _mm256_set1_epi8('L');
-    const __m256i vhash = _mm256_set1_epi8('#');
-    const __m256i vzero = _mm256_setzero_si256();
+    using D = hn::ScalableTag<decltype(grid)::value_type>;
+    constexpr D d;
+    const hn::Vec<D> vdot = hn::Set(d, '.');
+    const hn::Vec<D> vl = hn::Set(d, 'L');
+    const hn::Vec<D> vhash = hn::Set(d, '#');
+    const hn::Vec<D> one = hn::Set(d, 1);
 
     do {
         grid = next;
         for (size_t i = 1; i < grid.rows - 1; i++) {
             size_t j = 1;
+            const auto *p = &grid(i, j);
 
-            for (; j + 31 < grid.cols - 1; j += 32) {
-                const __m256i vgrid = _mm256_loadu_si256((__m256i *)&grid(i, j));
-                const __m256i vnext = _mm256_loadu_si256((__m256i *)&next(i, j));
-                const __m256i vskip = _mm256_cmpeq_epi8(vgrid, vdot);
-                const __m256i vgrid_eql = _mm256_cmpeq_epi8(vgrid, vl);
-                const __m256i vgrid_eqhash = _mm256_cmpeq_epi8(vgrid, vhash);
+            for (; j + hn::Lanes(d) - 1 < grid.cols - 1; j += hn::Lanes(d), p += hn::Lanes(d)) {
+                const hn::Vec<D> v = hn::LoadU(d, p);
+                const hn::Vec<D> vnext = hn::LoadU(d, &next(i, j));
+                const hn::Mask<D> eq_dot = hn::Eq(v, vdot);
+                const hn::Mask<D> eq_l = hn::Eq(v, vl);
+                const hn::Mask<D> eq_hash = hn::Eq(v, vhash);
 
                 // Load neighbor cells.
-                const __m256i vneighbors[] = {
-                    _mm256_loadu_si256((__m256i *)&grid(i - 1, j - 1)),
-                    _mm256_loadu_si256((__m256i *)&grid(i - 1, j + 0)),
-                    _mm256_loadu_si256((__m256i *)&grid(i - 1, j + 1)),
-                    _mm256_loadu_si256((__m256i *)&grid(i + 0, j - 1)),
-                    _mm256_loadu_si256((__m256i *)&grid(i + 0, j + 1)),
-                    _mm256_loadu_si256((__m256i *)&grid(i + 1, j - 1)),
-                    _mm256_loadu_si256((__m256i *)&grid(i + 1, j + 0)),
-                    _mm256_loadu_si256((__m256i *)&grid(i + 1, j + 1)),
-                };
+                const hn::Vec<D> neighbors0 = hn::LoadU(d, p - cols - 1);
+                const hn::Vec<D> neighbors1 = hn::LoadU(d, p - cols);
+                const hn::Vec<D> neighbors2 = hn::LoadU(d, p - cols + 1);
+                const hn::Vec<D> neighbors3 = hn::LoadU(d, p - 1);
+                const hn::Vec<D> neighbors4 = hn::LoadU(d, p + 1);
+                const hn::Vec<D> neighbors5 = hn::LoadU(d, p + cols - 1);
+                const hn::Vec<D> neighbors6 = hn::LoadU(d, p + cols);
+                const hn::Vec<D> neighbors7 = hn::LoadU(d, p + cols + 1);
 
-                // Masks indicating which neighbors have '#'.
-                const __m256i vhashes[] = {
-                    _mm256_cmpeq_epi8(vneighbors[0], vhash),
-                    _mm256_cmpeq_epi8(vneighbors[1], vhash),
-                    _mm256_cmpeq_epi8(vneighbors[2], vhash),
-                    _mm256_cmpeq_epi8(vneighbors[3], vhash),
-                    _mm256_cmpeq_epi8(vneighbors[4], vhash),
-                    _mm256_cmpeq_epi8(vneighbors[5], vhash),
-                    _mm256_cmpeq_epi8(vneighbors[6], vhash),
-                    _mm256_cmpeq_epi8(vneighbors[7], vhash),
-                };
+                // Compute number of occupied neighbors.
+                hn::Vec<D> n = hn::Zero(d);
+                n = hn::MaskedAddOr(n, hn::Eq(neighbors0, vhash), one, n);
+                n = hn::MaskedAddOr(n, hn::Eq(neighbors1, vhash), one, n);
+                n = hn::MaskedAddOr(n, hn::Eq(neighbors2, vhash), one, n);
+                n = hn::MaskedAddOr(n, hn::Eq(neighbors3, vhash), one, n);
+                n = hn::MaskedAddOr(n, hn::Eq(neighbors4, vhash), one, n);
+                n = hn::MaskedAddOr(n, hn::Eq(neighbors5, vhash), one, n);
+                n = hn::MaskedAddOr(n, hn::Eq(neighbors6, vhash), one, n);
+                n = hn::MaskedAddOr(n, hn::Eq(neighbors7, vhash), one, n);
 
-                // Number of occupied neighbors (actually negated here since we
-                // are directly adding masks which are 0 or -1).
-                const __m256i vn = _mm256_add_epi8(
-                    _mm256_add_epi8(_mm256_add_epi8(vhashes[0], vhashes[1]),
-                                    _mm256_add_epi8(vhashes[2], vhashes[3])),
-                    _mm256_add_epi8(_mm256_add_epi8(vhashes[4], vhashes[5]),
-                                    _mm256_add_epi8(vhashes[6], vhashes[7])));
+                const hn::Mask<D> vn_eq0 = hn::Eq(n, hn::Zero(d));
+                const hn::Mask<D> vn_gt3 = hn::Gt(n, hn::Set(d, 3));
 
-                const __m256i vn_eq0 = _mm256_cmpeq_epi8(vn, vzero);
-                const __m256i vn_gt3 = _mm256_cmpgt_epi8(_mm256_set1_epi8(-3), vn);
+                const hn::Vec<D> vnew_next_l = hn::IfThenElse(
+                    hn::AndNot(eq_dot, hn::And(eq_l, vn_eq0)), vhash, vnext);
 
-                const __m256i vnew_next_l = _mm256_blendv_epi8(
-                    vnext, vhash,
-                    _mm256_andnot_si256(vskip, _mm256_and_si256(vgrid_eql, vn_eq0)));
+                const hn::Vec<D> vnew_next_hash = hn::IfThenElse(
+                    hn::AndNot(eq_dot, hn::And(eq_hash, vn_gt3)), vl, vnew_next_l);
 
-                const __m256i vnew_next_hash = _mm256_blendv_epi8(
-                    vnew_next_l, vl,
-                    _mm256_andnot_si256(vskip, _mm256_and_si256(vgrid_eqhash, vn_gt3)));
-
-                _mm256_storeu_si256((__m256i *)&next(i, j), vnew_next_hash);
+                hn::StoreU(vnew_next_hash, d, &next(i, j));
             }
 
             for (; j < grid.cols - 1; j++) {
@@ -87,7 +79,7 @@ static size_t part1(Matrix<char> grid)
     return std::ranges::count(grid.all(), '#');
 }
 
-static const char *scan_seat(const char *p, size_t stride)
+static const int8_t *scan_seat(const int8_t *p, size_t stride)
 {
     while (true) {
         p += stride;
@@ -103,7 +95,7 @@ static const char *scan_seat(const char *p, size_t stride)
     }
 }
 
-static size_t part2(Matrix<char> grid)
+static size_t part2(Matrix<int8_t> grid)
 {
     // Pre-compute the visible seats in each direction for each position.
     // Visible seats are represented using a 16-bit relative offset from the
@@ -122,10 +114,10 @@ static size_t part2(Matrix<char> grid)
             for (size_t j = 1; j < grid.cols - 1; j++) {
                 if (grid(i, j) == '.')
                     continue;
-                const char *p = &grid(i, j);
+                const auto *p = &grid(i, j);
                 for (size_t k = 0; k < 8; k++) {
                     ptrdiff_t offset = &grid(0, 0) - p;
-                    if (const char *q = scan_seat(p, strides[k]))
+                    if (const auto *q = scan_seat(p, strides[k]))
                         offset = q - p;
                     ASSERT(offset > INT16_MIN && offset <= INT16_MAX);
                     visible_seats(i, j)[k] = offset;
@@ -143,7 +135,7 @@ static size_t part2(Matrix<char> grid)
                 Vec2z p(j, i);
                 if (next(p) != '.') {
                     const int16_t *offsets = visible_seats(p).data();
-                    const char *k = &grid(p);
+                    const int8_t *k = &grid(p);
                     int occupied_neighbors =
                         (k[offsets[0]] == '#') + (k[offsets[1]] == '#') +
                         (k[offsets[2]] == '#') + (k[offsets[3]] == '#') +
@@ -164,7 +156,7 @@ static size_t part2(Matrix<char> grid)
 void run(std::string_view buf)
 {
     auto lines = split_lines(buf);
-    auto grid = Matrix<char>::from_lines(lines).padded(1, '@');
+    auto grid = Matrix<int8_t>::from_lines(lines).padded(1, '@');
     fmt::print("{}\n", part1(grid));
     fmt::print("{}\n", part2(grid));
 }

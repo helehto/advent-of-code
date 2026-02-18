@@ -1,5 +1,6 @@
 #include "common.h"
 #include "inplace_vector.h"
+#include <hwy/highway.h>
 
 namespace aoc_2024_25 {
 
@@ -38,15 +39,22 @@ constexpr uint16_t carry_bit_mask = 0b1'001'001'001'001'001;
 
 void run(std::string_view buf)
 {
-    inplace_vector<uint16_t, 256> locks;
-    inplace_vector<uint16_t, 256> keys;
+    inplace_vector<int16_t, 256> locks;
+
+    // The key array is a fixed multiple of 128 so that we can unroll the core
+    // loop below without needing a 1-way vectorized or scalar fallback for the
+    // remaining elements. The value 0xffff will always result in an overlap,
+    // so this does not affect the final value.
+    std::array<int16_t, 256> keys;
+    keys.fill(0xffff);
+    size_t n_keys = 0;
 
     size_t i = 0;
     for (; i + 3 < buf.size(); i += 6 * 7 + 1) {
-        __m256i vchars =
-            _mm256_loadu_si256(reinterpret_cast<const __m256i *>(&buf[i + 6]));
-        __m256i vfilled = _mm256_cmpeq_epi8(vchars, _mm256_set1_epi8('#'));
-        unsigned int filled = _mm256_movemask_epi8(vfilled);
+        constexpr hn::FixedTag<uint8_t, 32> d;
+        auto vchars = hn::LoadU(d, reinterpret_cast<const uint8_t *>(&buf[i + 6]));
+        auto vfilled = hn::Eq(vchars, hn::Set(d, '#'));
+        unsigned int filled = hn::BitsFromMask(d, vfilled);
 
         // Add an entire column/group at a time to `u`. The highest bit in each
         // group of 6 here is the newline, which we ignore:
@@ -63,56 +71,30 @@ void run(std::string_view buf)
         if (buf[i] == '#')
             locks.unchecked_push_back(u);
         else
-            keys.unchecked_push_back(u);
+            keys[n_keys++] = u;
     }
 
-    // Make sure the key vector is a multiple of 128 so that we can use 8-way
-    // unrolling in the loop below without needing a 1-way vectorized or scalar
-    // fallback for the remaining elements. The value 0xffff will always result
-    // in an overlap, so this does not affect the final value.
-    if (auto r = keys.size() % 128; r != 0)
-        for (size_t i = 0; i < 128 - r; ++i)
-            keys.unchecked_push_back(0xffff);
+    using D = hn::ScalableTag<int16_t>;
+    constexpr D d;
+    hn::Vec<D> count = hn::Zero(d);
 
-    uint64_t count = 0;
-    __m256i vcount[8]{};
-
-    const __m256i carry_bit_mask_16x16 = _mm256_set1_epi16(carry_bit_mask);
-
-    auto compatible16 = [&](const __m256i vlock_biased, size_t j, __m256i &count) {
-        __m256i vkeys = _mm256_loadu_si256(reinterpret_cast<__m256i *>(&keys[j]));
-        __m256i vsum = _mm256_add_epi16(vlock_biased, vkeys);
-        __m256i vcarries = _mm256_xor_si256(_mm256_xor_si256(vlock_biased, vkeys), vsum);
-        __m256i vgroup_carry_in = _mm256_and_si256(vcarries, carry_bit_mask_16x16);
-        __m256i vgood = _mm256_cmpeq_epi16(vgroup_carry_in, _mm256_setzero_si256());
-        count = _mm256_sub_epi16(count, vgood);
-    };
+    const hn::Vec<D> carry_bit_mask_16x16 = hn::Set(d, carry_bit_mask);
+    const hn::Vec<D> counter_bias_16x16 = hn::Set(d, counter_bias);
 
     for (size_t i = 0; i < locks.size(); ++i) {
-        const __m256i counter_bias_16x16 = _mm256_set1_epi16(counter_bias);
-        const __m256i vlock = _mm256_set1_epi16(locks[i]);
-        const __m256i vlock_biased = _mm256_add_epi16(vlock, counter_bias_16x16);
+        const hn::Vec<D> vlock = hn::Set(d, locks[i]);
+        const hn::Vec<D> vlock_biased = vlock + counter_bias_16x16;
 
-        for (size_t j = 0; j < keys.size(); j += 128) {
-            compatible16(vlock_biased, j + 0 * 16, vcount[0]);
-            compatible16(vlock_biased, j + 1 * 16, vcount[1]);
-            compatible16(vlock_biased, j + 2 * 16, vcount[2]);
-            compatible16(vlock_biased, j + 3 * 16, vcount[3]);
-            compatible16(vlock_biased, j + 4 * 16, vcount[4]);
-            compatible16(vlock_biased, j + 5 * 16, vcount[5]);
-            compatible16(vlock_biased, j + 6 * 16, vcount[6]);
-            compatible16(vlock_biased, j + 7 * 16, vcount[7]);
+        for (size_t j = 0; j < keys.size(); j += hn::Lanes(d)) {
+            const hn::Vec<D> vkeys = hn::LoadU(d, &keys[j]);
+            const hn::Vec<D> vcarries = vlock_biased ^ vkeys ^ (vlock_biased + vkeys);
+            const hn::Vec<D> vgroup_carry_in = vcarries & carry_bit_mask_16x16;
+            const hn::Mask<D> vgood = hn::Eq(vgroup_carry_in, hn::Zero(d));
+            count = hn::MaskedAddOr(count, vgood, count, hn::Set(d, 1));
         }
     }
 
-    for (size_t j = 0; j < std::size(vcount); ++j) {
-        std::array<uint16_t, 16> c;
-        _mm256_store_si256(reinterpret_cast<__m256i *>(&c), vcount[j]);
-        for (size_t k = 0; k < 16; ++k)
-            count += c[k];
-    }
-
-    fmt::print("{}\n", count);
+    fmt::print("{}\n", hn::ReduceSum(d, count));
 }
 
 }

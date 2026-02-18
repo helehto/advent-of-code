@@ -85,14 +85,14 @@ static void search(State &state, std::string_view prefix, size_t start, size_t s
     md5::State md5(prefix);
 
     for (size_t n = 8 * start; !state.done(n); n += 8 * stride) {
-        const __m256i hashes = md5.run(n).a;
+        const hn::Vec<md5::D> hashes = md5.run(n).a;
         const uint32_t mask5 = md5::leading_zero_mask<5>(hashes);
 
         if (mask5 == 0)
             continue;
 
         alignas(32) std::array<uint32_t, 8> hashes_u32;
-        _mm256_store_si256(reinterpret_cast<__m256i *>(&hashes_u32), hashes);
+        hn::Store(hashes, md5::D(), hashes_u32.data());
 
         for (uint32_t m = mask5; m; m &= m - 1) {
             const auto bit = std::countr_zero(m);

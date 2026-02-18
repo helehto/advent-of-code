@@ -78,7 +78,7 @@ md5_hex_stretch1(const std::array<std::array<char, 32>, 8> &hex)
     static constexpr uint32_t lengths[8] = {32, 32, 32, 32, 32, 32, 32, 32};
     md5::prepare_final_blocks(messages, lengths);
 
-    return md5::do_block_avx2(messages).to_hex();
+    return md5::hash_block(messages).to_hex();
 }
 
 static int solve2(std::string_view prefix)

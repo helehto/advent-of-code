@@ -1,5 +1,6 @@
 #include "common.h"
 #include "dense_map.h"
+#include <hwy/highway.h>
 
 namespace aoc_2024_9 {
 
@@ -14,7 +15,8 @@ static int64_t part1(std::string_view line)
     for (size_t i = 0; i < line.size(); ++i) {
         const int n = line[i] - '0';
         const int f = i % 2 == 0 ? i / 2 : -1;
-        _mm256_storeu_si256((__m256i *)&disk[offset], _mm256_set1_epi16(f));
+        hn::FixedTag<int16_t, 16> d;
+        hn::StoreU(hn::Set(d, f), d, &disk[offset]);
         offset += n;
     }
 

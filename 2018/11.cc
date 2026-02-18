@@ -1,5 +1,5 @@
 #include "common.h"
-#include <algorithm>
+#include <hwy/highway.h>
 
 namespace aoc_2018_11 {
 
@@ -41,11 +41,13 @@ void run(std::string_view buf)
     }
 
     auto search = [&](size_t min_n, size_t max_n) {
-        __m256i vbestpower = _mm256_set1_epi32(INT32_MIN);
+        using D = hn::ScalableTag<int32_t>;
+        const D d;
+        hn::Vec<D> vbestpower = hn::Set(d, INT32_MIN);
 
         // Values of (n,i,j) with the best power, packed into a 32-bit integer
         // to reduce the number of blends required below.
-        __m256 vbestnij = _mm256_undefined_ps();
+        hn::Vec<D> vbestnij = hn::Undefined(d);
 
         // FIXME: This only considers the interior of the grid...
         for (size_t n = min_n; n <= max_n; n++) {
@@ -55,38 +57,25 @@ void run(std::string_view buf)
                 const int *usums = &rectangle_sum(i, 0);
                 const int *dsums = &rectangle_sum(i - n, 0);
 
-                const __m256i vni = _mm256_set1_epi32(n << 20 | (i - n + 2) << 10);
+                const hn::Vec<D> vni = hn::Set(d, n << 20 | (i - n + 2) << 10);
 
                 size_t j = 0;
-                for (; j + 7 < grid.cols - n; j += 8) {
-                    const __m256i vlsums = _mm256_loadu_si256((const __m256i *)&lsums[j]);
-                    const __m256i vusums = _mm256_loadu_si256((const __m256i *)&usums[j]);
-                    const __m256i vdsums = _mm256_loadu_si256((const __m256i *)&dsums[j]);
-                    __m256i power = _mm256_loadu_si256((const __m256i *)&elems[j]);
-                    power = _mm256_sub_epi32(power, vlsums);
-                    power = _mm256_sub_epi32(power, vusums);
-                    power = _mm256_add_epi32(power, vdsums);
-
-                    const __m256i gt = _mm256_cmpgt_epi32(power, vbestpower);
-
-                    // The tons of ugly casts here are required since AVX2
-                    // doesn't have _mm256_blendv_epi32, but at least it all
-                    // compiles down to a single blend instruction.
-                    vbestpower = _mm256_castps_si256(_mm256_blendv_ps(
-                        _mm256_castsi256_ps(vbestpower), _mm256_castsi256_ps(power),
-                        _mm256_castsi256_ps(gt)));
-
-                    const __m256i vj = _mm256_setr_epi32(j + 2, j + 3, j + 4, j + 5,
-                                                         j + 6, j + 7, j + 8, j + 9);
-                    const __m256 vnij = _mm256_castsi256_ps(_mm256_or_si256(vni, vj));
-                    vbestnij = _mm256_blendv_ps(vbestnij, vnij, _mm256_castsi256_ps(gt));
+                for (; j + hn::Lanes(d) - 1 < grid.cols - n; j += hn::Lanes(d)) {
+                    const hn::Vec<D> vlsums = hn::LoadU(d, lsums + j);
+                    const hn::Vec<D> vusums = hn::LoadU(d, usums + j);
+                    const hn::Vec<D> vdsums = hn::LoadU(d, dsums + j);
+                    hn::Vec<D> power = hn::LoadU(d, elems + j) - vlsums - vusums + vdsums;
+                    const hn::Mask<D> gt = hn::Gt(power, vbestpower);
+                    vbestpower = hn::IfThenElse(gt, power, vbestpower);
+                    vbestnij = hn::IfThenElse(gt, vni | hn::Iota(d, j + 2), vbestnij);
                 }
             }
         }
 
-        alignas(32) std::array<int, 8> bestpower, bestnij;
-        _mm256_store_si256((__m256i *)&bestpower, vbestpower);
-        _mm256_store_si256((__m256i *)&bestnij, _mm256_castps_si256(vbestnij));
+        std::array<int32_t, hn::MaxLanes(d)> bestpower, bestnij;
+        bestpower.fill(INT32_MIN);
+        hn::StoreU(vbestpower, d, bestpower.data());
+        hn::StoreU(vbestnij, d, bestnij.data());
 
         const size_t k = std::ranges::max_element(bestpower) - bestpower.begin();
         return std::tuple((bestnij[k]) & 0x3ff, (bestnij[k] >> 10) & 0x3ff,

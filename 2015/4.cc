@@ -1,7 +1,7 @@
 #include "common.h"
 #include "md5.h"
 #include "thread_pool.h"
-#include <cstring>
+#include <hwy/highway.h>
 
 namespace aoc_2015_4 {
 
@@ -14,7 +14,7 @@ hash_search(std::string_view s, int n, int stride, std::atomic_int &limit)
     md5::State md5(s);
 
     for (; n < limit.load(); n += stride) {
-        __m256i hashes = md5.run(n).a;
+        const hn::Vec<md5::D> hashes = md5.run(n).a;
 
         if (uint32_t eqmask5 = md5::leading_zero_mask<5>(hashes))
             part1 = std::min(part1, n + std::countr_zero(eqmask5));

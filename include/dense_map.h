@@ -3,11 +3,10 @@
 
 #include "common.h"
 #include <bit>
-#include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <cstring>
-#include <functional>
+#include <hwy/highway.h>
 #include <initializer_list>
 #include <iterator>
 #include <memory>
@@ -16,6 +15,9 @@
 #include <utility>
 
 namespace detail {
+
+using D = hn::ScalableTag<uint8_t>;
+constexpr D d;
 
 // NOTE: The code is dependent on the states having these specific values.
 // clang-format off
@@ -29,16 +31,14 @@ enum class bucket_state : uint8_t {
 
 constexpr static uint8_t state_hash_mask = 0b00111111;
 
-// How things should be aligned due to SIMD.
-constexpr static size_t simd_align = 16;
-constexpr static size_t max_simd_size = 32;
-
+[[gnu::noinline]]
 inline size_t find_occupied(const uint8_t *states, size_t i)
 {
-    for (;; i += 32) {
-        const auto *p = reinterpret_cast<const __m256i *>(states + i);
-        if (unsigned int mask = _mm256_movemask_epi8(_mm256_loadu_si256(p)))
-            return i + std::countr_zero(mask);
+    for (;; i += hn::Lanes(d)) {
+        using DS = hn::RebindToSigned<D>;
+        const hn::Vec<DS> v = hn::BitCast(DS(), hn::LoadU(d, states + i));
+        if (intptr_t offset = hn::FindFirstTrue(DS(), hn::IsNegative(v)); offset >= 0)
+            return i + offset;
     }
 }
 
@@ -95,7 +95,7 @@ compound_allocate(std::span<const std::pair<size_t, size_t>> fields, Pointers...
 /// iterators, expected the array of bucket states to be non-null, and rather
 /// than introducing null checks everywhere, the states_ member points here.
 constexpr auto empty_map_states = [] {
-    std::array<uint8_t, max_simd_size> a;
+    std::array<uint8_t, hn::MaxLanes(D())> a;
     a.fill(static_cast<uint8_t>(bucket_state::sentinel));
     return a;
 }();
@@ -207,6 +207,8 @@ private:
     std::tuple<size_t, bool> find_bucket_with_hash_(const size_t hash,
                                                     const Key &key) const
     {
+        using detail::D;
+
         if (capacity_ == 0) [[unlikely]] {
             // We cannot find the corresponding in an empty map, by definition.
             return {0, false};
@@ -215,7 +217,7 @@ private:
         const auto mask = capacity_ - 1;
         size_t i = hash & mask;
         uint8_t expected_state = 0b11000000 | (hash & detail::state_hash_mask);
-        constexpr static size_t stride = 32;
+        constexpr static size_t stride = hn::Lanes(D());
 
         // Fast path before we drop into the SIMD loop: is the very first
         // bucket we landed at empty or the key we're looking for?
@@ -227,21 +229,21 @@ private:
         // No, unfortunately not. Skip it and start checking buckets en masse.
         i = (i + 1) & mask;
 
-        const __m256i vexpected_state = _mm256_set1_epi8(expected_state);
-        const __m256i vzero = _mm256_set1_epi8(0);
+        const hn::Vec<D> vexpected_state = hn::Set(D(), expected_state);
+        const hn::Vec<D> vzero = hn::Zero(D());
 
         for (;; i = (i + stride < capacity_) ? i + stride : 0) {
             // Note that if we are near the end of the table, this load will
             // also fetch a bunch of sentinel bucket states past the logical
             // end of the state array. These will never match anything, so we
-            // are effectively checking fewer than 32 buckets in that case.
-            const __m256i *p = reinterpret_cast<const __m256i *>(states_ + i);
-            __m256i v = _mm256_loadu_si256(p);
-            __m256i match = _mm256_cmpeq_epi8(v, vexpected_state);
-            __m256i empty = _mm256_cmpeq_epi8(v, vzero);
+            // are effectively checking fewer than hn::Lanes(D()) buckets in
+            // that case.
+            const hn::Vec<D> v = hn::LoadU(D(), states_ + i);
+            const hn::Mask<D> match = hn::Eq(v, vexpected_state);
+            const hn::Mask<D> empty = hn::Eq(v, vzero);
 
-            uint32_t match_mask = _mm256_movemask_epi8(match);
-            uint32_t empty_mask = _mm256_movemask_epi8(empty);
+            uint64_t match_mask = hn::BitsFromMask(D(), match);
+            uint64_t empty_mask = hn::BitsFromMask(D(), empty);
 
             // We want to stop at the first empty bucket; mask out any matches
             // that occur after it.
@@ -281,14 +283,13 @@ private:
     {
         const std::pair<size_t, size_t> fields[] = {
             {sizeof(bucket) * new_capacity, alignof(bucket)},
-            {sizeof(bucket_state) * (new_capacity + detail::max_simd_size),
-             detail::simd_align},
+            {sizeof(bucket_state) * (new_capacity + hn::Lanes(detail::D())), 128},
         };
         storage_ = detail::compound_allocate(fields, &buckets_, &states_);
 
         capacity_ = new_capacity;
         memset(states_, 0, capacity_);
-        for (size_t i = 0; i < detail::max_simd_size; i++)
+        for (size_t i = 0; i < hn::Lanes(detail::D()); i++)
             set_state_of(capacity_ + i, bucket_state::occupied);
     }
 

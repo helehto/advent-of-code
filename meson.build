@@ -8,7 +8,7 @@ project(
         'debug=true',
         'warning_level=3',
     ],
-    meson_version: '>=1.0.1',
+    meson_version: '>=1.2.0',
 )
 
 solutions = {
@@ -110,6 +110,16 @@ executable(
         cpp.find_library('atomic', required: false),
         dependency('eigen3', include_type: 'system'),
         dependency('fmt'),
+        dependency(
+            'libhwy',
+            version: '>=1.3.0',
+            fallback: ['libhwy', 'hwy_dep'],
+            default_options: {
+                'examples': 'disabled',
+                'tests': 'disabled',
+                'test_standalone': 'true',  # otherwise it drags in gtest anyway
+            },
+        ),
     ],
     include_directories: include_directories('include'),
     link_args: link_args,

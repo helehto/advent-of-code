@@ -1,5 +1,6 @@
 #include "common.h"
 #include "dense_map.h"
+#include <hwy/highway.h>
 
 namespace aoc_2017_13 {
 
@@ -19,6 +20,7 @@ constexpr int part1(std::span<const Scanner> scanners)
 
 static int part2(std::span<const Scanner> scanners)
 {
+    using D = hn::ScalableTag<float>;
     dense_map<int, small_vector<uint8_t>> forbidden_remainders;
     forbidden_remainders.reserve(16);
 
@@ -45,55 +47,55 @@ static int part2(std::span<const Scanner> scanners)
     }
 
     struct SieveEntry {
-        /// Vector containing 8 copies of the divisor.
-        __m256 d;
+        /// Vector containing n copies of the divisor.
+        hn::Vec<D> divisor_vec;
 
         /// The set of remainders which are forbidden; in other words, if the
         /// remainder of dividing the duration we wait by `d` matches _any_ of
         /// these, we get caught.
-        __m256 forbidden_remainders;
+        hn::Vec<D> forbidden_remainders;
 
         SieveEntry(size_t divisor, const std::span<const uint8_t> forbidden)
-            : d(_mm256_set1_ps(static_cast<float>(divisor)))
+            : divisor_vec(hn::Set(D(), static_cast<float>(divisor)))
         {
-            DEBUG_ASSERT(forbidden.size() <= 8);
+            DEBUG_ASSERT(forbidden.size() <= hn::MaxLanes(D()));
             DEBUG_ASSERT(divisor < (1 << 23));
 
             // -1.0f acts as a dummy value if the set of forbidden remainders
             // for this entry does not fill an entire AVX vector of 8 floats --
             // since nothing will have a negative remainder, these values will
             // not filter out any valid solution.
-            std::array<float, 8> fr{-1.0f, -1.0f, -1.0f, -1.0f,
-                                    -1.0f, -1.0f, -1.0f, -1.0f};
+            std::array<float, hn::MaxLanes(D())> fr;
+            fr.fill(-1.0f);
             std::ranges::copy(forbidden, fr.begin());
-            forbidden_remainders = _mm256_load_ps((const float *)fr.data());
+            forbidden_remainders = hn::LoadU(D(), (const float *)fr.data());
         }
 
-        bool caught(const __m256 t) const noexcept
+        bool caught(const hn::Vec<D> t) const noexcept
         {
             // Compute the remainder t % d with floating-point math:
-            const __m256 q = _mm256_div_ps(t, d);       // t/d
-            const __m256 f = _mm256_floor_ps(q);        // ⌊t/d⌋
-            const __m256 r = _mm256_fnmadd_ps(f, d, t); // t - ⌊t/d⌋ * d
+            const hn::Vec<D> d = divisor_vec;            // d
+            const hn::Vec<D> q = hn::Div(t, d);          // t/d
+            const hn::Vec<D> f = hn::Floor(q);           // ⌊t/d⌋
+            const hn::Vec<D> r = hn::NegMulAdd(f, d, t); // t - ⌊t/d⌋ * d
 
             // Does the computed remainder match any forbidden remainder?
-            const __m256 c = _mm256_cmp_ps(r, forbidden_remainders, _CMP_EQ_OQ);
-            return !_mm256_testz_ps(c, c);
+            return !hn::AllFalse(D(), hn::Eq(r, forbidden_remainders));
         }
 
         bool caught(const float t) const noexcept
         {
             DEBUG_ASSERT(t < (1 << 23));
-            return caught(_mm256_set1_ps(t));
+            return caught(hn::Set(D(), t));
         }
     };
 
-    // Construct the sieve entries, splitting divisors with more than 8
-    // forbidden remainders across multiple entries.
+    // Construct the sieve entries, splitting divisors with more than the
+    // number of SIMD lanes of forbidden remainders across multiple entries.
     small_vector<SieveEntry, 16> sieve_entries;
     for (auto &[i, fr] : forbidden_remainders) {
         for (std::span f = fr; !f.empty();) {
-            const auto n = std::min<size_t>(f.size(), 8);
+            const auto n = std::min<size_t>(f.size(), hn::Lanes(D()));
             sieve_entries.emplace_back(i, f.first(n));
             f = f.subspan(n);
         }

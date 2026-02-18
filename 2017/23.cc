@@ -1,5 +1,6 @@
 #include "common.h"
 #include "inplace_vector.h"
+#include <hwy/highway.h>
 
 namespace aoc_2017_23 {
 
@@ -135,24 +136,25 @@ constexpr bool is_composite(int n)
         return true;
 
     // Enough primes to support testing for compositeness up to 419² = 175561.
-    alignas(32) constexpr float primes[]{
+    HWY_ALIGN_MAX constexpr float primes[]{
         3,   5,   7,   11,  13,  17,  19,  23,  29,  31,  37,  41,  43,  47,  53,  59,
         61,  67,  71,  73,  79,  83,  89,  97,  101, 103, 107, 109, 113, 127, 131, 137,
         139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227,
         229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307, 311, 313,
         317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409, 419};
-    static_assert(std::size(primes) % 8 == 0);
 
-    // Trial division by 8 primes at a time (single-precision floating point
-    // math is safe here since the numbers are less than 2²³). A number `n` is
-    // composite if there is any d such that d*⌊n/d⌋ = n.
-    const __m256 n8 = _mm256_set1_ps(n);
-    for (size_t i = 0; i < std::size(primes); i += 8) {
-        const __m256 d = _mm256_loadu_ps(&primes[i]);           // d
-        const __m256 q = _mm256_floor_ps(_mm256_div_ps(n8, d)); // ⌊n/d⌋
-        const __m256 m = _mm256_mul_ps(q, d);                   // d*⌊n/d⌋
-        const __m256 c = _mm256_cmp_ps(m, n8, _CMP_EQ_OQ);      // d*⌊n/d⌋ == n
-        if (!_mm256_testz_ps(c, c))
+    using D = hn::ScalableTag<float>;
+    static_assert(std::size(primes) % hn::Lanes(D()) == 0);
+
+    // Trial division by multiple primes at a time (single-precision floating
+    // point math is safe here since the numbers are less than 2²³). A number
+    // `n` is composite if there is any d such that d*⌊n/d⌋ = n.
+    const hn::Vec<D> vn = hn::Set(D(), n);
+    for (size_t i = 0; i < std::size(primes); i += hn::Lanes(D())) {
+        const hn::Vec<D> d = hn::Load(D(), primes + i); // d
+        const hn::Vec<D> q = hn::Floor(hn::Div(vn, d)); // ⌊n/d⌋
+        const hn::Vec<D> m = hn::Mul(q, d);             // d*⌊n/d⌋
+        if (!hn::AllFalse(D(), hn::Eq(m, vn)))          // d*⌊n/d⌋ == n
             return true;
     }
 

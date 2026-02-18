@@ -1,25 +1,42 @@
 #include "common.h"
 #include "dense_set.h"
+#include <hwy/highway.h>
 
 namespace aoc_2020_22 {
 
 using namespace std::literals;
 
 struct Deck {
-    std::array<uint8_t, 65> cards;
+    static constexpr size_t NUM_CARDS = 64;
 
-    Deck()
-    {
-        const __m256i zero = _mm256_setzero_si256();
-        _mm256_storeu_si256((__m256i *)&cards[0], zero);
-        _mm256_storeu_si256((__m256i *)&cards[32], zero);
-        cards[64] = 0;
-    }
+    using D = hn::CappedTag<uint8_t, NUM_CARDS>;
+    static constexpr D d{};
+    static_assert(NUM_CARDS % hn::Lanes(d) == 0);
+
+    // Array of cards, in order, with the oldest card at index 0. All valid
+    // cards are grouped at the start of the array, with remaining elements set
+    // to zero.
+    //
+    // The size is +1 to be able to read single card (logically) out of bounds.
+    std::array<uint8_t, NUM_CARDS + 1> cards{};
 
     Deck prefix(size_t len) const
     {
         Deck result;
-        std::copy(cards.begin(), cards.begin() + len, result.cards.begin());
+        const hn::Vec<D> v = hn::LoadU(d, cards.data());
+        hn::StoreN(v, d, result.cards.data(), len);
+        return result;
+    }
+
+    uint8_t max() const
+    {
+        uint8_t result = 0;
+
+        for (size_t i = 0; i < NUM_CARDS; i += hn::Lanes(d)) {
+            const hn::Vec<D> v = hn::LoadU(d, &cards[i]);
+            result = std::max<uint8_t>(result, hn::ReduceMax(d, v));
+        }
+
         return result;
     }
 
@@ -27,26 +44,26 @@ struct Deck {
     {
         auto result = cards[0];
 
-        // Left-rotate by two pairs of overlapping 32-byte loads/stores that
-        // are offset by one byte. (Note that this requires the array to be 65
-        // bytes long to not read out of bounds.)
-        const __m256i asrc = _mm256_loadu_si256((const __m256i *)&cards[1]);
-        const __m256i bsrc = _mm256_loadu_si256((const __m256i *)&cards[33]);
-        _mm256_storeu_si256((__m256i *)&cards[0], asrc);
-        _mm256_storeu_si256((__m256i *)&cards[32], bsrc);
-        cards[64] = 0;
+        // Left-rotate by overlapping loads/stores that are offset by one byte.
+        for (size_t i = 0; i < NUM_CARDS; i += hn::Lanes(d)) {
+            const hn::Vec<D> v = hn::LoadU(d, &cards[i + 1]);
+            hn::StoreU(v, d, &cards[i]);
+        }
 
         return result;
     }
 
     size_t size() const
     {
-        const __m256i zero = _mm256_setzero_si256();
-        const __m256i a = _mm256_loadu_si256((const __m256i *)&cards[0]);
-        const __m256i b = _mm256_loadu_si256((const __m256i *)&cards[32]);
-        const unsigned int cmplo = _mm256_movemask_epi8(_mm256_cmpgt_epi8(a, zero));
-        const unsigned int cmphi = _mm256_movemask_epi8(_mm256_cmpgt_epi8(b, zero));
-        return std::popcount((uint64_t)cmphi << 32 | cmplo);
+        size_t result = 0;
+        const hn::Vec<D> zero = hn::Zero(d);
+
+        for (size_t i = 0; i < NUM_CARDS; i += hn::Lanes(d)) {
+            const hn::Vec<D> v = hn::LoadU(d, &cards[i]);
+            result += hn::CountTrue(d, hn::Ne(v, zero));
+        }
+
+        return result;
     }
 
     void push(int card1, int card2)
@@ -58,12 +75,14 @@ struct Deck {
 
     bool operator==(const Deck &other) const
     {
-        const __m256i a0 = _mm256_loadu_si256((const __m256i *)&cards[0]);
-        const __m256i a1 = _mm256_loadu_si256((const __m256i *)&other.cards[0]);
-        const __m256i b0 = _mm256_loadu_si256((const __m256i *)&cards[32]);
-        const __m256i b1 = _mm256_loadu_si256((const __m256i *)&other.cards[32]);
-        return (uint32_t)_mm256_movemask_epi8(_mm256_cmpeq_epi8(a0, a1)) == 0xffffffff &&
-               (uint32_t)_mm256_movemask_epi8(_mm256_cmpeq_epi8(b0, b1)) == 0xffffffff;
+        for (size_t i = 0; i < 64; i += hn::Lanes(d)) {
+            const hn::Vec<D> a = hn::LoadU(d, &cards[i]);
+            const hn::Vec<D> b = hn::LoadU(d, &other.cards[i]);
+            if (!hn::AllTrue(d, hn::Eq(a, b)))
+                return false;
+        }
+
+        return true;
     }
 
     size_t score() const
@@ -101,8 +120,8 @@ static bool recursive_combat(Deck &&a, Deck &&b, bool is_root_game = true)
 
     // Credits for the optimization below to /u/curious_sapi3n on Reddit:
     // <https://old.reddit.com/r/adventofcode/comments/khyjgv/2020_day_22_solutions/ggpcsnd/>
-    uint8_t max_a = *std::ranges::max_element(a.cards);
-    uint8_t max_b = *std::ranges::max_element(b.cards);
+    const uint8_t max_a = a.max();
+    const uint8_t max_b = b.max();
     if (max_a > max_b && max_a > a_initial_size + b_initial_size)
         return true;
 

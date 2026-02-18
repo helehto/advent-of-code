@@ -1,4 +1,5 @@
 #include "common.h"
+#include <hwy/highway.h>
 
 namespace aoc_2018_18 {
 
@@ -13,57 +14,54 @@ constexpr int score_of(const std::span<uint8_t> grid)
     return std::ranges::count(grid, TREE) * std::ranges::count(grid, YARD);
 }
 
-/// Compute the next state of 32 acres at a time.
-static __m256i step_acre_avx2(const uint8_t *p, const size_t cols)
+/// Compute the next state of many acres at a time using SIMD.
+template <typename D>
+static hn::Vec<D> step_acres_simd(D d, const uint8_t *p, const size_t cols)
 {
-    const __m256i ke = _mm256_set1_epi8(EMPTY);
-    const __m256i kt = _mm256_set1_epi8(TREE);
-    const __m256i ky = _mm256_set1_epi8(YARD);
+    const hn::Vec<D> ke = hn::Set(d, EMPTY);
+    const hn::Vec<D> kt = hn::Set(d, TREE);
+    const hn::Vec<D> ky = hn::Set(d, YARD);
 
     // Load neighbors from above, the current row and below:
-    const __m256i u0 = _mm256_loadu_si256((const __m256i *)(p - cols - 1));
-    const __m256i u1 = _mm256_loadu_si256((const __m256i *)(p - cols));
-    const __m256i u2 = _mm256_loadu_si256((const __m256i *)(p - cols + 1));
-    const __m256i c0 = _mm256_loadu_si256((const __m256i *)(p - 1));
-    const __m256i c2 = _mm256_loadu_si256((const __m256i *)(p + 1));
-    const __m256i d0 = _mm256_loadu_si256((const __m256i *)(p + cols - 1));
-    const __m256i d1 = _mm256_loadu_si256((const __m256i *)(p + cols));
-    const __m256i d2 = _mm256_loadu_si256((const __m256i *)(p + cols + 1));
+    const hn::Vec<D> u0 = hn::LoadU(d, p - cols - 1);
+    const hn::Vec<D> u1 = hn::LoadU(d, p - cols);
+    const hn::Vec<D> u2 = hn::LoadU(d, p - cols + 1);
+    const hn::Vec<D> c0 = hn::LoadU(d, p - 1);
+    const hn::Vec<D> c2 = hn::LoadU(d, p + 1);
+    const hn::Vec<D> d0 = hn::LoadU(d, p + cols - 1);
+    const hn::Vec<D> d1 = hn::LoadU(d, p + cols);
+    const hn::Vec<D> d2 = hn::LoadU(d, p + cols + 1);
 
     // Count the number of neighboring trees and lumberyards. As trees are
     // represented as 0x01 and lumberyards as 0x10, the sum of all
     // neighboring acres will contain the total number of neighboring
     // lumberyards in the upper 4 bits and trees in the lower 4 bits.
-    const __m256i neighbors = _mm256_add_epi8(
-        _mm256_add_epi8(_mm256_add_epi8(u0, u1), _mm256_add_epi8(u2, c0)),
-        _mm256_add_epi8(_mm256_add_epi8(c2, d0), _mm256_add_epi8(d1, d2)));
-    const __m256i n_trees =
-        _mm256_and_si256(neighbors, _mm256_set1_epi8(static_cast<int8_t>(0xf * TREE)));
-    const __m256i n_yards =
-        _mm256_and_si256(neighbors, _mm256_set1_epi8(static_cast<int8_t>(0xf * YARD)));
+    const hn::Vec<D> neighbors = u0 + u1 + u2 + c0 + c2 + d0 + d1 + d2;
+    const hn::Vec<D> n_trees = neighbors & hn::Set(d, 0xf * TREE);
+    const hn::Vec<D> n_yards = neighbors & hn::Set(d, 0xf * YARD);
 
     // The input acres and masks corresponding to their current states.
-    const __m256i input = _mm256_loadu_si256((const __m256i *)p);
-    const __m256i emask = _mm256_cmpeq_epi8(input, ke);
-    const __m256i tmask = _mm256_cmpeq_epi8(input, kt);
-    const __m256i ymask = _mm256_cmpeq_epi8(input, ky);
+    const hn::Vec<D> input = hn::LoadU(d, p);
+    const hn::Mask<D> emask = hn::Eq(input, ke);
+    const hn::Mask<D> tmask = hn::Eq(input, kt);
+    const hn::Mask<D> ymask = hn::Eq(input, ky);
 
     // Comparison masks for n(trees) >= {1,3} and n(yards) >= {1,3} among the
     // neighboring acres.
-    const __m256i t1 = _mm256_cmpgt_epi8(n_trees, _mm256_setzero_si256());
-    const __m256i y1 = _mm256_cmpgt_epi8(n_yards, _mm256_setzero_si256());
-    const __m256i t3 = _mm256_cmpgt_epi8(n_trees, _mm256_set1_epi8(2 * TREE));
-    const __m256i y3 = _mm256_cmpgt_epi8(n_yards, _mm256_set1_epi8(2 * YARD));
+    const hn::Mask<D> t1 = hn::Ge(n_trees, hn::Set(d, 1 * TREE));
+    const hn::Mask<D> y1 = hn::Ge(n_yards, hn::Set(d, 1 * YARD));
+    const hn::Mask<D> t3 = hn::Ge(n_trees, hn::Set(d, 3 * TREE));
+    const hn::Mask<D> y3 = hn::Ge(n_yards, hn::Set(d, 3 * YARD));
 
     // Next state for each acre, for each of the three possible current states.
-    const __m256i eresult = _mm256_blendv_epi8(ke, kt, t3);
-    const __m256i tresult = _mm256_blendv_epi8(kt, ky, y3);
-    const __m256i yresult = _mm256_blendv_epi8(ke, ky, _mm256_and_si256(t1, y1));
+    const hn::Vec<D> eresult = hn::IfThenElse(t3, kt, ke);
+    const hn::Vec<D> tresult = hn::IfThenElse(y3, ky, kt);
+    const hn::Vec<D> yresult = hn::IfThenElse(hn::And(t1, y1), ky, ke);
 
     // Combine the results from empty/tree/lumberyard acres.
-    __m256i result = _mm256_and_si256(emask, eresult);
-    result = _mm256_or_si256(result, _mm256_and_si256(tmask, tresult));
-    result = _mm256_or_si256(result, _mm256_and_si256(ymask, yresult));
+    const hn::Vec<D> result = hn::IfThenElseZero(emask, eresult) |
+                              hn::IfThenElseZero(tmask, tresult) |
+                              hn::IfThenElseZero(ymask, yresult);
     return result;
 }
 
@@ -92,8 +90,10 @@ static void step(Matrix<uint8_t> &grid, Matrix<uint8_t> &tmp)
     // Process the entire input matrix in a single contiguous pass. (This
     // clobbers the border/padding acres which need to be fixed up below, but
     // avoids having to special case neighbor computations for those areas.)
-    for (; q - p >= 32; p += 32, out += 32)
-        _mm256_storeu_si256((__m256i *)out, step_acre_avx2(p, grid.cols));
+    using D = hn::ScalableTag<uint8_t>;
+    const ptrdiff_t lanes = hn::Lanes(D());
+    for (; q - p >= lanes; p += lanes, out += lanes)
+        hn::StoreU(step_acres_simd(D(), p, grid.cols), D(), out);
     for (; p < q; ++p, ++out)
         *out = step_acre(p, grid.cols);
 

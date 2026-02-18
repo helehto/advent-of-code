@@ -1,7 +1,10 @@
 #include "common.h"
 #include "dense_set.h"
+#include <hwy/highway.h>
 
 namespace aoc_2020_24 {
+
+constexpr hn::ScalableTag<int8_t> d;
 
 constexpr Vec2i walk(std::string_view s)
 {
@@ -35,31 +38,33 @@ constexpr Vec2i walk(std::string_view s)
     }
 }
 
-static void step_avx2(const int8_t *__restrict__ row_above,
-                      const int8_t *__restrict__ row_input,
-                      const int8_t *__restrict__ row_below,
-                      int8_t *dest)
+template <typename D>
+static void step_block(D d,
+                       const hn::TFromD<D> *HWY_RESTRICT row_above,
+                       const hn::TFromD<D> *HWY_RESTRICT row_input,
+                       const hn::TFromD<D> *HWY_RESTRICT row_below,
+                       hn::TFromD<D> *HWY_RESTRICT dest)
 {
-    const __m256i a0 = _mm256_loadu_si256((const __m256i *)row_above);
-    const __m256i a1 = _mm256_loadu_si256((const __m256i *)(row_above + 1));
-    const __m256i b0 = _mm256_loadu_si256((const __m256i *)(row_input - 1));
-    const __m256i b1 = _mm256_loadu_si256((const __m256i *)(row_input + 1));
-    const __m256i c0 = _mm256_loadu_si256((const __m256i *)(row_below - 1));
-    const __m256i c1 = _mm256_loadu_si256((const __m256i *)row_below);
+    const hn::Vec<D> a0 = hn::LoadU(d, row_above);
+    const hn::Vec<D> a1 = hn::LoadU(d, row_above + 1);
+    const hn::Vec<D> b0 = hn::LoadU(d, row_input - 1);
+    const hn::Vec<D> b1 = hn::LoadU(d, row_input + 1);
+    const hn::Vec<D> c0 = hn::LoadU(d, row_below - 1);
+    const hn::Vec<D> c1 = hn::LoadU(d, row_below);
 
-    const __m256i va = _mm256_add_epi8(a0, a1);
-    const __m256i vb = _mm256_add_epi8(b0, b1);
-    const __m256i vc = _mm256_add_epi8(c0, c1);
+    // Note: cells are -1 or 0, so this is actually the *negative* of the
+    // number of neighbors.
+    const hn::Vec<D> neighbors = a0 + a1 + b0 + b1 + c0 + c1;
 
-    const __m256i neighbors = _mm256_add_epi8(va, _mm256_add_epi8(vb, vc));
-    const __m256i has1 = _mm256_cmpeq_epi8(neighbors, _mm256_set1_epi8(-1));
-    const __m256i has2 = _mm256_cmpeq_epi8(neighbors, _mm256_set1_epi8(-2));
-    const __m256i has1or2 = _mm256_or_si256(has1, has2);
+    const hn::Mask<D> has1 = hn::Eq(neighbors, hn::Set(d, -1));
+    const hn::Mask<D> has2 = hn::Eq(neighbors, hn::Set(d, -2));
+    const hn::Mask<D> has1or2 = hn::Or(has1, has2);
 
-    const __m256i black = _mm256_loadu_si256((const __m256i *)row_input);
-    const __m256i result = _mm256_blendv_epi8(has2, has1or2, black);
+    const hn::Vec<D> black = hn::LoadU(d, row_input);
+    const hn::Vec<D> result =
+        hn::IfNegativeThenElse(black, hn::VecFromMask(has1or2), hn::VecFromMask(has2));
 
-    _mm256_storeu_si256((__m256i *)dest, result);
+    hn::StoreU(result, d, dest);
 }
 
 static void step(Matrix<int8_t> &out,
@@ -70,11 +75,11 @@ static void step(Matrix<int8_t> &out,
                  size_t &max_y)
 {
     for (size_t y = min_y - 1; y <= max_y + 1; y += 4) {
-        for (size_t x = min_x - 1; x <= max_x + 1; x += 32) {
-            step_avx2(&g(y - 1, x), &g(y + 0, x), &g(y + 1, x), &out(y + 0, x));
-            step_avx2(&g(y + 0, x), &g(y + 1, x), &g(y + 2, x), &out(y + 1, x));
-            step_avx2(&g(y + 1, x), &g(y + 2, x), &g(y + 3, x), &out(y + 2, x));
-            step_avx2(&g(y + 2, x), &g(y + 3, x), &g(y + 4, x), &out(y + 3, x));
+        for (size_t x = min_x - 1; x <= max_x + 1; x += hn::Lanes(d)) {
+            step_block(d, &g(y - 1, x), &g(y + 0, x), &g(y + 1, x), &out(y + 0, x));
+            step_block(d, &g(y + 0, x), &g(y + 1, x), &g(y + 2, x), &out(y + 1, x));
+            step_block(d, &g(y + 1, x), &g(y + 2, x), &g(y + 3, x), &out(y + 2, x));
+            step_block(d, &g(y + 2, x), &g(y + 3, x), &g(y + 4, x), &out(y + 3, x));
         }
     }
 
@@ -133,7 +138,7 @@ void run(std::string_view buf)
     }
 
     const size_t max_size = max - min + 200;
-    Matrix<int8_t> g(max_size + 32, max_size + 32, 0);
+    Matrix<int8_t> g(max_size, max_size + hn::Lanes(d), 0);
     size_t min_x = SIZE_MAX;
     size_t min_y = SIZE_MAX;
     size_t max_x = 0;

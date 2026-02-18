@@ -1,6 +1,7 @@
 #include "common.h"
 #include "md5.h"
 #include "thread_pool.h"
+#include <hwy/highway.h>
 #include <mutex>
 #include <random>
 
@@ -40,16 +41,16 @@ static md5::Result md5_full(std::string_view s)
     };
 
     md5::Result r;
-    r.a = _mm256_set1_epi32(0x67452301);
-    r.b = _mm256_set1_epi32(0xefcdab89);
-    r.c = _mm256_set1_epi32(0x98badcfe);
-    r.d = _mm256_set1_epi32(0x10325476);
+    r.a = hn::Set(hn::FixedTag<uint32_t, 8>(), 0x67452301);
+    r.b = hn::Set(hn::FixedTag<uint32_t, 8>(), 0xefcdab89);
+    r.c = hn::Set(hn::FixedTag<uint32_t, 8>(), 0x98badcfe);
+    r.d = hn::Set(hn::FixedTag<uint32_t, 8>(), 0x10325476);
 
     for (; s.size() >= 64; s.remove_prefix(64)) {
         md5::Block8x8x64 m{};
         for (size_t i = 0; i < 4; ++i)
             memcpy(&m.data[i * 64], s.data(), 64);
-        r = md5::do_block_avx2(m, r.a, r.b, r.c, r.d);
+        r = md5::hash_block(m, r.a, r.b, r.c, r.d);
     }
 
     md5::Block8x8x64 m{};
@@ -69,14 +70,14 @@ static md5::Result md5_full(std::string_view s)
         } else {
             x80_offset = 0;
         }
-        r = md5::do_block_avx2(m, r.a, r.b, r.c, r.d);
+        r = md5::hash_block(m, r.a, r.b, r.c, r.d);
         m = {};
     } else {
         x80_offset = s.size() + 1;
     }
 
     prepare_final_blocks(m, x80_offset, lengths);
-    return md5::do_block_avx2(m, r.a, r.b, r.c, r.d);
+    return md5::hash_block(m, r.a, r.b, r.c, r.d);
 }
 
 struct State {

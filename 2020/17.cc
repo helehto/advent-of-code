@@ -1,29 +1,11 @@
 #include "common.h"
 #include "dense_set.h"
+#include <hwy/highway.h>
 
 namespace aoc_2020_17 {
 
-// clang-format off
-alignas(16) static constexpr uint8_t tail_masks[][16] = {
-    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-    {0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-    {0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-    {0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-    {0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-    {0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-    {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-    {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-    {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-    {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-    {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-    {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00},
-    {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00},
-    {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00},
-    {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00},
-    {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00},
-    {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
-};
-// clang-format on
+using D = hn::ScalableTag<uint8_t>;
+constexpr D d;
 
 struct Grid4D {
     std::unique_ptr<uint8_t[]> storage;
@@ -133,9 +115,10 @@ static Grid4D step_grid_3d(const Grid4D &prev)
 }
 
 /// Count the number of neighbors to the elements `p .. p+15`.
-static __m128i count_neighbors4d_16(const Grid4D &grid, const uint8_t *const p)
+static hn::Vec<D> count_neighbors_4d(const Grid4D &grid, const uint8_t *const p)
 {
-    __m128i result = _mm_setzero_si128();
+    hn::Vec<D> result = hn::Zero(d);
+
     const ssize_t wstride = grid.strides[0];
     const ssize_t zstride = grid.strides[1];
     const ssize_t ystride = grid.strides[2];
@@ -143,48 +126,45 @@ static __m128i count_neighbors4d_16(const Grid4D &grid, const uint8_t *const p)
     for (ssize_t dw = -1; dw <= 1; ++dw) {
         for (ssize_t dz = -1; dz <= 1; ++dz) {
             for (ssize_t dy = -1; dy <= 1; ++dy) {
-                const uint8_t *row = &p[dw * wstride + dz * zstride + dy * ystride];
-                result = _mm_add_epi8(result, _mm_loadu_si128((const __m128i *)&row[-1]));
-                result = _mm_add_epi8(result, _mm_loadu_si128((const __m128i *)&row[0]));
-                result = _mm_add_epi8(result, _mm_loadu_si128((const __m128i *)&row[1]));
+                const auto *row = &p[dw * wstride + dz * zstride + dy * ystride];
+                result += hn::LoadU(d, row - 1);
+                result += hn::LoadU(d, row + 0);
+                result += hn::LoadU(d, row + 1);
             }
         }
     }
 
-    return _mm_sub_epi8(result, _mm_loadu_si128((const __m128i *)p));
+    return result - hn::LoadU(d, p);
 }
 
-/// Compute the next state of the elements at `prev .. prev+15`, given a vector
-/// of neighbor counts.
-static __m128i step_chunk16(const __m128i neighbors, const uint8_t *prev)
+/// Compute the next state of the elements at `prev .. prev+lanes-1`, given a
+/// vector of neighbor counts.
+static hn::Vec<D> step_chunk(const hn::Vec<D> neighbors, const uint8_t *prev)
 {
-    const __m128i vprev = _mm_loadu_si128((const __m128i *)prev);
-    const __m128i prev_zero_mask = _mm_cmpeq_epi8(vprev, _mm_setzero_si128());
-    const __m128i eq2 = _mm_abs_epi8(_mm_cmpeq_epi8(neighbors, _mm_set1_epi8(2)));
-    const __m128i eq3 = _mm_abs_epi8(_mm_cmpeq_epi8(neighbors, _mm_set1_epi8(3)));
-    const __m128i eq2or3 = _mm_or_si128(eq2, eq3);
-    return _mm_blendv_epi8(eq2or3, eq3, prev_zero_mask);
+    const hn::Vec<D> one = hn::Set(d, 1);
+    const hn::Vec<D> vprev = hn::LoadU(d, prev);
+    const hn::Mask<D> prev_zero_mask = hn::Eq(vprev, hn::Zero(d));
+    const hn::Vec<D> eq2 = hn::IfThenElseZero(hn::Eq(neighbors, hn::Set(d, 2)), one);
+    const hn::Vec<D> eq3 = hn::IfThenElseZero(hn::Eq(neighbors, hn::Set(d, 3)), one);
+    return hn::IfThenElse(prev_zero_mask, eq3, eq2 | eq3);
 }
 
 /// Compute the next state of a full row of length `n` in `prev_grid`, starting
 /// at `prevp`, and write the results to `nextp`.
-[[gnu::noinline, gnu::flatten]] static void
-step_row_4d(const Grid4D &prev_grid, uint8_t *nextp, size_t n, const uint8_t *prevp)
+static void
+step_row(const Grid4D &prev_grid, uint8_t *nextp, size_t n, const uint8_t *prevp)
 {
-    for (;; n -= 16, nextp += 16, prevp += 16) {
-        const __m128i neighbors = count_neighbors4d_16(prev_grid, prevp);
-        const __m128i result = step_chunk16(neighbors, prevp);
-        if (n >= 16) {
-            _mm_storeu_si128((__m128i *)nextp, result);
-        } else {
-            const __m128i mask = _mm_loadu_si128((const __m128i *)tail_masks[n]);
-            _mm_storeu_si128((__m128i *)nextp, _mm_and_si128(result, mask));
+    for (;; n -= hn::Lanes(d), nextp += hn::Lanes(d), prevp += hn::Lanes(d)) {
+        const hn::Vec<D> neighbors = count_neighbors_4d(prev_grid, prevp);
+        const hn::Vec<D> result = step_chunk(neighbors, prevp);
+        const hn::Vec<D> tail_mask = hn::VecFromMask(hn::FirstN(d, n));
+        hn::StoreU(result & tail_mask, d, nextp);
+        if (n < hn::Lanes(d))
             break;
-        }
     }
 }
 
-[[gnu::noinline]] static Grid4D step_grid_4d(const Grid4D &prev)
+static Grid4D step_grid_4d(const Grid4D &prev)
 {
     constexpr int pad = 2;
     const size_t innerw = prev.bbox_max[0] - prev.bbox_min[0] + 3;
@@ -193,18 +173,20 @@ step_row_4d(const Grid4D &prev_grid, uint8_t *nextp, size_t n, const uint8_t *pr
     const size_t innerx = prev.bbox_max[3] - prev.bbox_min[3] + 3;
 
     Grid4D next({
-        (innerw + 2 * pad + 16) & ~15,
-        (innerz + 2 * pad + 16) & ~15,
-        (innery + 2 * pad + 16) & ~15,
-        (innerx + 2 * pad + 16) & ~15,
+        innerw + 2 * pad + 1,
+        innerz + 2 * pad + 1,
+        innery + 2 * pad + 1,
+        (innerx + 2 * pad + hn::Lanes(d)) & ~(hn::Lanes(d) - 1),
     });
 
     for (size_t w = 0; w < innerw; ++w) {
         for (size_t z = 0; z < innerz; ++z) {
             for (size_t y = 0; y < innery; ++y) {
-                step_row_4d(prev, &next[w + pad, z + pad, y + pad, pad], innerx,
-                            &prev[w + prev.bbox_min[0] - 1, z + prev.bbox_min[1] - 1,
-                                  y + prev.bbox_min[2] - 1, 0 + prev.bbox_min[3] - 1]);
+                const uint8_t *prev_row =
+                    &prev[w + prev.bbox_min[0] - 1, z + prev.bbox_min[1] - 1,
+                          y + prev.bbox_min[2] - 1, 0 + prev.bbox_min[3] - 1];
+                uint8_t *next_row = &next[w + pad, z + pad, y + pad, pad];
+                step_row(prev, next_row, innerx, prev_row);
             }
         }
     }
@@ -270,6 +252,7 @@ void run(std::string_view buf)
         constexpr int pad = 2;
 
         extents[0] += 2 * pad;
+        extents[0] = (extents[0] + hn::Lanes(d) - 1) & ~(hn::Lanes(d) - 1);
 
         Grid4D active(extents);
 

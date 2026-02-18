@@ -1,10 +1,11 @@
 #include "common.h"
-#include "inplace_vector.h"
 #include "thread_pool.h"
-#include <future>
-#include <thread>
+#include <hwy/highway.h>
 
 namespace aoc_2017_15 {
+
+using D = hn::FixedTag<uint64_t, 4>; // TODO: Make this scalable
+constexpr D d;
 
 /// Compute x mod (2³¹ - 1) for x < 2^62.
 constexpr uint32_t mod_2p31m1_bounded(uint64_t x)
@@ -18,12 +19,12 @@ constexpr uint32_t mod_2p31m1_bounded(uint64_t x)
 }
 
 /// Compute x mod (2³¹ - 1) for packed 64-bit unsigned integers less than 2^62.
-static __m256i mod_2p31m1_bounded_epu64(__m256i x)
+static hn::Vec<D> mod_2p31m1_bounded_epu64(hn::Vec<D> x)
 {
     // This uses the same trick as the scalar version above.
-    const __m256i mask = _mm256_set1_epi64x(0x7fffffff);
-    x = _mm256_add_epi64(_mm256_and_si256(x, mask), _mm256_srli_epi64(x, 31));
-    x = _mm256_add_epi64(_mm256_and_si256(x, mask), _mm256_srli_epi64(x, 31));
+    const hn::Vec<D> mask = hn::Set(d, 0x7fffffff);
+    x = (x & mask) + hn::ShiftRight<31>(x);
+    x = (x & mask) + hn::ShiftRight<31>(x);
     return x;
 }
 
@@ -41,104 +42,53 @@ constexpr uint32_t modexp_2p31m1_bounded(uint64_t a, uint64_t b, uint64_t n)
 }
 
 // Advance the state of a generator by multiplying each 64-bit integer by
-// `factor_4x64` and reducing modulo 0x7fffffff.
-static __m256i advance_4x64(__m256i n_4x64, __m256i factor_4x64)
+// `factor` and reducing modulo 0x7fffffff.
+static hn::Vec<D> advance(hn::Vec<D> n, uint64_t factor)
 {
-    return mod_2p31m1_bounded_epu64(_mm256_mul_epu32(n_4x64, factor_4x64));
+    constexpr hn::RepartitionToNarrow<D> d_half;
+    hn::Vec<D> product = hn::MulEven(hn::BitCast(d_half, n), hn::Set(d_half, factor));
+    return mod_2p31m1_bounded_epu64(product);
 }
 
-static int part1(uint32_t a, uint32_t b)
+static int part1(uint32_t a, uint32_t b, size_t limit = 40'000'000)
 {
-    constexpr size_t limit = 40'000'000;
-    constexpr int max_threads = 32;
-
-    const auto n_threads = std::bit_floor(
-        std::min<unsigned int>(std::thread::hardware_concurrency(), max_threads));
-
-    ASSERT(limit % n_threads == 0);
-    const auto stride = limit / n_threads;
-    ASSERT(stride % 4 == 0);
-
     std::atomic<int> result = 0;
 
-    // Constant factors for skipping ahead in the output stream by 4 iterations
-    // at a time for the two generators.
-    constexpr uint32_t a_skip4 = modexp_2p31m1_bounded(1, 16807, 4);
-    constexpr uint32_t b_skip4 = modexp_2p31m1_bounded(1, 48271, 4);
+    // Constant factors for skipping ahead in the output stream by the number
+    // of SIMD lanes used at a time for the two generators.
+    const uint32_t a_skip_factor = modexp_2p31m1_bounded(1, 16807, hn::Lanes(d));
+    const uint32_t b_skip_factor = modexp_2p31m1_bounded(1, 48271, hn::Lanes(d));
 
-    ThreadPool::get().for_each_thread([=, &result](size_t thread_id) noexcept {
-        // TODO: Compute `stride` and `start` above instead and pass them in.
-
-        const uint32_t start = thread_id * stride;
-        std::array<uint64_t, 4> a_init, b_init;
-        for (size_t i = 0; i < 4; ++i) {
+    ThreadPool::get().for_each_index(0, limit, [&](size_t start, size_t end) noexcept {
+        HWY_ALIGN_MAX std::array<uint64_t, hn::MaxLanes(d)> a_init, b_init;
+        for (size_t i = 0; i < std::size(a_init); ++i) {
             a_init[i] = modexp_2p31m1_bounded(a, 16807, start + i);
             b_init[i] = modexp_2p31m1_bounded(b, 48271, start + i);
         }
-        __m256i a_4x64 = _mm256_loadu_si256(reinterpret_cast<__m256i *>(&a_init));
-        __m256i b_4x64 = _mm256_loadu_si256(reinterpret_cast<__m256i *>(&b_init));
 
-        const __m256i mask_4x64 = _mm256_set1_epi64x(0xffff);
-        __m256i count_4x64 = _mm256_setzero_si256();
+        const hn::Vec<D> mask = hn::Set(d, 0xffff);
+        hn::Vec<D> count = hn::Zero(d);
+        hn::Vec<D> va = hn::Load(d, a_init.data());
+        hn::Vec<D> vb = hn::Load(d, b_init.data());
 
-        // Check and advance by 4 elements at a time. Each thread is assumed to
-        // process a multiple of 4 elements, so we don't need a fallback scalar
-        // loop below.
-        for (size_t i = 0; i < stride; i += 4) {
-            a_4x64 = advance_4x64(a_4x64, _mm256_set1_epi64x(a_skip4));
-            b_4x64 = advance_4x64(b_4x64, _mm256_set1_epi64x(b_skip4));
-            const __m256i a_lo16_4x64 = _mm256_and_si256(a_4x64, mask_4x64);
-            const __m256i b_lo16_4x64 = _mm256_and_si256(b_4x64, mask_4x64);
-            const __m256i eq_4x64 = _mm256_cmpeq_epi64(a_lo16_4x64, b_lo16_4x64);
-            count_4x64 = _mm256_sub_epi64(count_4x64, eq_4x64);
+        // Check and advance as many states as we have SIMD lanes at a time.
+        size_t i = start;
+        for (; i + hn::Lanes(d) <= end; i += hn::Lanes(d)) {
+            const hn::Mask<D> eq = hn::Eq(va & mask, vb & mask);
+            count = hn::MaskedAddOr(count, eq, count, hn::Set(d, 1));
+            va = advance(va, a_skip_factor);
+            vb = advance(vb, b_skip_factor);
         }
 
-        std::array<uint64_t, 4> count;
-        _mm256_storeu_si256(reinterpret_cast<__m256i *>(&count), count_4x64);
-        result.fetch_add(count[0] + count[1] + count[2] + count[3]);
+        if (i != end) {
+            const hn::Mask<D> eq = hn::Eq(va & mask, vb & mask);
+            count -= hn::VecFromMask(hn::And(eq, hn::FirstN(d, end - i)));
+        }
+
+        result.fetch_add(hn::ReduceSum(d, count), std::memory_order_relaxed);
     });
 
     return result.load();
-}
-
-/// Store the states in `n_4x64` for which the bits in `mask` are zero into an
-/// output buffer, and advance the state. Returns the number of elements stored
-/// into `buffer`.
-static size_t step_compress(__m256i *n_4x64,
-                            uint64_t *buffer,
-                            const uint64_t factor,
-                            const uint32_t mask)
-{
-    const auto mask_4x64 = _mm256_set1_epi64x(mask);
-    const auto zero_4x64 = _mm256_setzero_si256();
-
-    // Figure out which elements that fulfil the given mask.
-    const auto low_bits_4x64 = _mm256_and_si256(*n_4x64, mask_4x64);
-    const auto ctrl_mask_4x64 = _mm256_cmpeq_epi64(low_bits_4x64, zero_4x64);
-
-    // Note: using vmovmskps instead of vmovmskpd here is intended despite the
-    // 64-bit elements, to better fit the compressed store logic below.
-    const uint64_t ctrl_mask = _mm256_movemask_ps(_mm256_castsi256_ps(ctrl_mask_4x64));
-
-    // Pack those elements into the output buffer. This is a slight variation
-    // on a technique for doing this with AVX2 + BMI2 (for pext); credits to
-    // Peter Cordes:
-    //
-    //     https://stackoverflow.com/questions/36932240/avx2-what-is-the-most-efficient-way-to-pack-left-based-on-a-mask
-    size_t result = std::popcount(ctrl_mask) / 2;
-    {
-        const auto expanded_mask = _pdep_u64(ctrl_mask, 0x0101010101010101) * 0xff;
-        const auto wanted_indices = _pext_u64(0x0706050403020100, expanded_mask);
-        const auto bytevec = _mm_cvtsi64_si128(wanted_indices);
-        const auto shufmask = _mm256_cvtepu8_epi32(bytevec);
-        const auto shuffled = _mm256_permutevar8x32_epi32(*n_4x64, shufmask);
-        _mm256_storeu_si256(reinterpret_cast<__m256i *>(buffer), shuffled);
-    }
-
-    // Advance the generator state for each element.
-    *n_4x64 = advance_4x64(*n_4x64, _mm256_set1_epi64x(factor));
-
-    return result;
 }
 
 static int part2(uint32_t a, uint32_t b)
@@ -167,19 +117,26 @@ static int part2(uint32_t a, uint32_t b)
 
     auto search = [&](std::span<uint64_t> &buffer, uint64_t init, uint64_t k,
                       uint64_t mask, uint64_t begin, uint64_t steps) noexcept {
-        ASSERT(steps % 4 == 0);
+        ASSERT(steps % hn::Lanes(d) == 0);
 
-        const uint64_t skip = modexp_2p31m1_bounded(1, k, 4);
+        const uint64_t skip = modexp_2p31m1_bounded(1, k, hn::Lanes(d));
 
-        __m256i state_4x64 =
-            _mm256_setr_epi64x(modexp_2p31m1_bounded(init, k, begin + 0),
-                               modexp_2p31m1_bounded(init, k, begin + 1),
-                               modexp_2p31m1_bounded(init, k, begin + 2),
-                               modexp_2p31m1_bounded(init, k, begin + 3));
+        HWY_ALIGN_MAX std::array<uint64_t, hn::MaxLanes(d)> init_state;
+        for (size_t i = 0; i < std::size(init_state); ++i)
+            init_state[i] = modexp_2p31m1_bounded(init, k, begin + i);
+        hn::Vec<D> state = hn::Load(d, init_state.data());
 
         size_t n = 0;
-        for (size_t i = 0; i < steps; i += 4)
-            n += step_compress(&state_4x64, buffer.data() + n, skip, mask);
+        for (size_t i = 0; i < steps; i += hn::Lanes(d)) {
+            // NB: Use Compress() + StoreU() here instead of CompressStore();
+            // vpcompressq with a memory operand as a destination is abysmally
+            // slow on Zen 4. uops.info claims 60 μops (wtf) compared to just 2
+            // with a register operand.
+            const hn::Mask<D> zero_mask = hn::Eq(state & hn::Set(d, mask), hn::Zero(d));
+            hn::StoreU(hn::Compress(state, zero_mask), d, &buffer[n]);
+            n += hn::CountTrue(d, zero_mask);
+            state = advance(state, skip);
+        }
 
         buffer = buffer.first(n);
     };

@@ -1,4 +1,5 @@
 #include "common.h"
+#include <hwy/highway.h>
 
 namespace aoc_2025_8 {
 
@@ -98,10 +99,12 @@ void run(std::string_view buf)
         // Instead, gather pairs which lie inside the interval [lo, hi) for
         // each iteration, with the interval incrementing by `bucket_width`
         // each time, and gather and sort only those.
+        using D = hn::ScalableTag<float>;
+        constexpr D d;
         const float lo = y * bucket_width;
         const float hi = (y + 1) * bucket_width;
-        const __m256 vlo2 = _mm256_set1_ps(lo * lo);
-        const __m256 vhi2 = _mm256_set1_ps(hi * hi);
+        const hn::Vec<D> vlo2 = hn::Set(d, lo * lo);
+        const hn::Vec<D> vhi2 = hn::Set(d, hi * hi);
 
         // Form a bucket by collecting all pairs with distances in [lo, hi).
         //
@@ -113,12 +116,12 @@ void run(std::string_view buf)
 
             size_t j = i + 1;
 
-            for (; j + 7 < n; j += 8) {
-                const __m256 vd2 = _mm256_loadu_ps(&row[j]);
-                const __m256 vcmp_lo = _mm256_cmp_ps(vd2, vlo2, _CMP_GE_OQ);
-                const __m256 vcmp_hi = _mm256_cmp_ps(vd2, vhi2, _CMP_LT_OQ);
-                const __m256 vmask = _mm256_and_ps(vcmp_lo, vcmp_hi);
-                const int mask = _mm256_movemask_ps(vmask);
+            for (; j + hn::Lanes(d) - 1 < n; j += hn::Lanes(d)) {
+                const hn::Vec<D> vd2 = hn::LoadU(d, &row[j]);
+                const hn::Mask<D> cmp_lo = hn::Ge(vd2, vlo2);
+                const hn::Mask<D> cmp_hi = hn::Lt(vd2, vhi2);
+                const hn::Mask<D> vmask = hn::And(cmp_lo, cmp_hi);
+                const uint64_t mask = hn::BitsFromMask(d, vmask);
                 for (uint32_t m = mask; m; m &= m - 1) {
                     const int bit = std::countr_zero(m);
                     bucket_storage[bucket_len++] = {static_cast<uint16_t>(i),

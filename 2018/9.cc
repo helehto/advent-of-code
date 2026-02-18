@@ -1,22 +1,22 @@
 #include "common.h"
+#include <hwy/highway.h>
 
 namespace aoc_2018_9 {
 
-static const __m256i insert_shuffle_ctrl[] = {
-    _mm256_setr_epi32(0, 0, 1, 2, 3, 4, 5, 6), _mm256_setr_epi32(0, 0, 1, 2, 3, 4, 5, 6),
-    _mm256_setr_epi32(0, 1, 0, 2, 3, 4, 5, 6), _mm256_setr_epi32(0, 1, 2, 0, 3, 4, 5, 6),
-    _mm256_setr_epi32(0, 1, 2, 3, 0, 4, 5, 6), _mm256_setr_epi32(0, 1, 2, 3, 4, 0, 5, 6),
-    _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 0, 6), _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 0),
-};
-
-static const __m256i pop_shuffle_ctrl[] = {
-    _mm256_setr_epi32(1, 2, 3, 4, 5, 6, 7, 0), _mm256_setr_epi32(0, 2, 3, 4, 5, 6, 7, 0),
-    _mm256_setr_epi32(0, 1, 3, 4, 5, 6, 7, 0), _mm256_setr_epi32(0, 1, 2, 4, 5, 6, 7, 0),
-    _mm256_setr_epi32(0, 1, 2, 3, 5, 6, 7, 0), _mm256_setr_epi32(0, 1, 2, 3, 4, 6, 7, 0),
-    _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 7, 0), _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 0),
-};
-
 constexpr size_t block_capacity = 8;
+using D = hn::FixedTag<int32_t, block_capacity>;
+
+static const int32_t insert_shuffle_ctrl[8][8] = {
+    {0, 0, 1, 2, 3, 4, 5, 6}, {0, 0, 1, 2, 3, 4, 5, 6}, {0, 1, 0, 2, 3, 4, 5, 6},
+    {0, 1, 2, 0, 3, 4, 5, 6}, {0, 1, 2, 3, 0, 4, 5, 6}, {0, 1, 2, 3, 4, 0, 5, 6},
+    {0, 1, 2, 3, 4, 5, 0, 6}, {0, 1, 2, 3, 4, 5, 6, 0},
+};
+
+static const int32_t pop_shuffle_ctrl[8][8] = {
+    {1, 2, 3, 4, 5, 6, 7, 0}, {0, 2, 3, 4, 5, 6, 7, 0}, {0, 1, 3, 4, 5, 6, 7, 0},
+    {0, 1, 2, 4, 5, 6, 7, 0}, {0, 1, 2, 3, 5, 6, 7, 0}, {0, 1, 2, 3, 4, 6, 7, 0},
+    {0, 1, 2, 3, 4, 5, 7, 0}, {0, 1, 2, 3, 4, 5, 6, 0},
+};
 
 /// Instead of tracking marbles individually using a linked list, we track them
 /// in batches of max 8. This leads to better cache utilization due to having
@@ -27,8 +27,6 @@ constexpr size_t block_capacity = 8;
 /// of values from an arbitrary index in the array with the vpermd instruction
 /// (_mm256_permutevar8x32_epi32) from AVX2.
 struct MarbleBlock {
-    static_assert(block_capacity == 8);
-
     std::array<int32_t, block_capacity> values;
     uint32_t n;
 
@@ -53,20 +51,11 @@ struct MarbleBlock {
     /// Insert `value` into the given index in this block.
     void insert(const size_t index, const int32_t value)
     {
-        const __m256i v = _mm256_loadu_si256((const __m256i *)&values);
-        const __m256i perm = _mm256_permutevar8x32_epi32(v, insert_shuffle_ctrl[index]);
-        _mm256_storeu_si256((__m256i *)&values, perm);
+        const hn::Vec<D> v = hn::LoadU(D(), values.data());
+        const auto shuf = hn::SetTableIndices(D(), insert_shuffle_ctrl[index]);
+        const hn::Vec<D> perm = hn::TableLookupLanes(v, shuf);
+        hn::StoreU(perm, D(), values.data());
         values[index] = value;
-        n++;
-    }
-
-    /// Insert `value` as the first element in this block.
-    void push_front(const int32_t value)
-    {
-        const __m256i v = _mm256_loadu_si256((const __m256i *)&values);
-        const __m256i perm = _mm256_permutevar8x32_epi32(v, insert_shuffle_ctrl[0]);
-        const __m256i result = _mm256_insert_epi32(perm, value, 0);
-        _mm256_storeu_si256((__m256i *)&values, result);
         n++;
     }
 
@@ -74,9 +63,10 @@ struct MarbleBlock {
     int32_t erase(const size_t index)
     {
         const int32_t removed = values[index];
-        const __m256i v = _mm256_loadu_si256((const __m256i *)&values);
-        const __m256i perm = _mm256_permutevar8x32_epi32(v, pop_shuffle_ctrl[index]);
-        _mm256_storeu_si256((__m256i *)&values, perm);
+        const hn::Vec<D> v = hn::LoadU(D(), values.data());
+        const auto shuf = hn::SetTableIndices(D(), pop_shuffle_ctrl[index]);
+        const hn::Vec<D> perm = hn::TableLookupLanes(v, shuf);
+        hn::StoreU(perm, D(), values.data());
         n--;
         return removed;
     }
@@ -160,7 +150,7 @@ static int64_t play(MarbleBlock *blocks, int n_players, int n_marbles)
             // current index is next to last and we are full, we need to insert
             // the new marble as the first value into the next block.
             block_offset = 0;
-            next->push_front(i);
+            next->insert(0, i);
             prev = curr;
             curr = next;
             next = &curr->next();
@@ -169,7 +159,7 @@ static int64_t play(MarbleBlock *blocks, int n_players, int n_marbles)
             // into the middle of the current block. Kick out the last marble
             // of this block into the next block to make space for it.
             curr->n--;
-            next->push_front(curr->values[curr->n]);
+            next->insert(0, curr->values[curr->n]);
             block_offset = new_marble_offset;
             curr->insert(block_offset, i);
         }
