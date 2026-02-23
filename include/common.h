@@ -349,35 +349,52 @@ constexpr small_vector<T> find_numbers_small(std::string_view s)
     return result;
 }
 
-static inline std::vector<std::string_view> &
-split(std::string_view s, std::vector<std::string_view> &out, char c)
+static size_t
+split(std::string_view s, std::output_iterator<std::string_view> auto &&out, char c)
 {
-    out.clear();
-
     using D = hn::ScalableTag<uint8_t>;
-    const hn::Vec<D> vsep = hn::Set(D(), static_cast<uint8_t>(c));
+    constexpr D d;
+
+    const hn::Vec<D> vsep = hn::Set(d, static_cast<uint8_t>(c));
+    size_t count = 0;
 
     const char *p = s.data();
     const char *q = p + s.size();
     const char *curr_field_start = p;
 
     auto handle_chunk = [&](hn::Vec<D> vchars) {
-        uint64_t mask = hn::BitsFromMask(D(), hn::Eq(vchars, vsep));
+        uint64_t mask = hn::BitsFromMask(d, hn::Eq(vchars, vsep));
         for (; mask != 0; mask &= mask - 1) {
             int offset = std::countr_zero(mask);
-            out.emplace_back(curr_field_start, p + offset);
+            *out++ = std::string_view(curr_field_start, p + offset - curr_field_start);
+            count++;
             curr_field_start = p + offset + 1;
         }
     };
 
-    for (; static_cast<size_t>(q - p) >= hn::Lanes(D()); p += hn::Lanes(D()))
-        handle_chunk(hn::LoadU(D(), reinterpret_cast<const uint8_t *>(p)));
-    if (size_t tail = q - p)
-        handle_chunk(hn::LoadN(D(), reinterpret_cast<const uint8_t *>(p), tail));
+    for (; static_cast<size_t>(q - p) >= hn::Lanes(d); p += hn::Lanes(d))
+        handle_chunk(hn::LoadU(d, reinterpret_cast<const uint8_t *>(p)));
+    if (p != q) {
+        std::array<uint8_t, hn::MaxLanes(d)> buffer{};
+        memcpy(buffer.data(), p, q - p);
+        handle_chunk(hn::LoadU(d, buffer.data()));
+    }
 
-    if (curr_field_start != q)
-        out.emplace_back(curr_field_start, q);
+    if (curr_field_start != q) {
+        *out++ = std::string_view(curr_field_start, q - curr_field_start);
+        count++;
+    }
 
+    return count;
+}
+
+static inline std::vector<std::string_view> &
+split(std::string_view s, std::vector<std::string_view> &out, char c)
+{
+    out.clear();
+    out.resize(std::ranges::count(s, c) + 1);
+    size_t n = split(s, out.begin(), c);
+    out.resize(n);
     return out;
 }
 
