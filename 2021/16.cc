@@ -1,3 +1,4 @@
+#include "bitmanip.h"
 #include "common.h"
 
 namespace aoc_2021_16 {
@@ -19,7 +20,7 @@ constexpr size_t read_bits(std::string_view &buf)
     if constexpr (N >= 4) {
         uint32_t v;
         memcpy(&v, buf.data(), 4);
-        size_t hi = _pext_u32(std::byteswap(v), 0x01010101);
+        size_t hi = pext_u32(std::byteswap(v), 0x01010101);
         buf.remove_prefix(4);
         if constexpr (N > 4)
             return hi << (N - 4) | read_bits<N - 4>(buf);

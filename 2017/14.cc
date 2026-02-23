@@ -1,3 +1,4 @@
+#include "bitmanip.h"
 #include "common.h"
 #include "knot_hash.h"
 #include "thread_pool.h"
@@ -23,7 +24,7 @@ void run(std::string_view buf)
             used_squares += std::popcount(hash_u64[0]) + std::popcount(hash_u64[1]);
 
             for (int j = 0; j < 16; ++j) {
-                auto dep = _pdep_u64(hash[j], uint64_t(0x0101010101010101));
+                auto dep = pdep_u64(hash[j], uint64_t(0x0101010101010101));
                 auto dep_rev = std::byteswap(dep);
                 std::memcpy(&grid(i, 8 * j), &dep_rev, 8);
             }

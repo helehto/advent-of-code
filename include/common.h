@@ -1,10 +1,10 @@
 #pragma once
 
+#include "bitmanip.h"
 #include "inplace_vector.h"
 #include "macros.h"
 #include "small_vector.h"
 #include <algorithm>
-#include <bit>
 #include <cassert>
 #include <charconv>
 #include <cmath>
@@ -23,7 +23,6 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include <x86intrin.h>
 
 // Define this as a shorthand globally, we assume -march=native and only use
 // static dispatch anyway.
@@ -133,13 +132,13 @@ struct std::hash<Vec2<T>> {
     size_t operator()(const Vec2<T> &p) const noexcept
     {
         if constexpr (sizeof(T) == 1) {
-            return _mm_crc32_u64(0, std::bit_cast<uint16_t>(p));
+            return crc32_u64(0, std::bit_cast<uint16_t>(p));
         } else if constexpr (sizeof(T) == 2) {
-            return _mm_crc32_u64(0, std::bit_cast<uint32_t>(p));
+            return crc32_u64(0, std::bit_cast<uint32_t>(p));
         } else if constexpr (sizeof(T) == 4) {
-            return _mm_crc32_u64(0, std::bit_cast<uint64_t>(p));
+            return crc32_u64(0, std::bit_cast<uint64_t>(p));
         } else if constexpr (sizeof(T) == 8) {
-            return _mm_crc32_u64(_mm_crc32_u64(0, p.x), p.y);
+            return crc32_u64(crc32_u64(0, p.x), p.y);
         } else {
             static_assert(false);
         }
@@ -223,15 +222,6 @@ constexpr int digit_count_base10(uint64_t n)
     const int extra = (n >= next_power_of_10[lzcnt]);
 
     return floor_log10_2exp[lzcnt] + extra;
-}
-
-/// Compute the next lexicographic permutation of the bits in `v`.
-///
-/// Taken from <https://graphics.stanford.edu/~seander/bithacks.html>.
-constexpr size_t next_bit_permutation(size_t v)
-{
-    const auto t = v | (v - 1);
-    return (t + 1) | (((~t & -~t) - 1) >> (std::countr_zero(v) + 1));
 }
 
 /// Compute the modular inverse of `a` modulo `m`.
@@ -811,7 +801,7 @@ private:
     {
         T u;
         std::memcpy(&u, p, sizeof(T));
-        crc = _mm_crc32_u64(crc, u);
+        crc = crc32_u64(crc, u);
         p += sizeof(T);
     }
 
@@ -826,7 +816,7 @@ private:
             alignas(8) std::array<std::byte, 8> tail{};
             for (size_t j = 0; n--; ++j)
                 tail[j] = *p++;
-            result = _mm_crc32_u64(result, std::bit_cast<uint64_t>(tail));
+            result = crc32_u64(result, std::bit_cast<uint64_t>(tail));
         }
 
         return result;
@@ -854,17 +844,17 @@ public:
     static size_t operator()(std::integral auto value) noexcept
     {
         static_assert(sizeof(value) <= 8);
-        return _mm_crc32_u64(0, static_cast<uint64_t>(value));
+        return crc32_u64(0, static_cast<uint64_t>(value));
     }
 
     static size_t operator()(const float value) noexcept
     {
-        return _mm_crc32_u64(0, std::bit_cast<uint32_t>(value));
+        return crc32_u64(0, std::bit_cast<uint32_t>(value));
     }
 
     static size_t operator()(const double value) noexcept
     {
-        return _mm_crc32_u64(0, std::bit_cast<uint64_t>(value));
+        return crc32_u64(0, std::bit_cast<uint64_t>(value));
     }
 
     template <typename T, size_t Extent>

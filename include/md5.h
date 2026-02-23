@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "bitmanip.h"
 #include "common.h"
 #include <hwy/highway.h>
 

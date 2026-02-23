@@ -1,3 +1,4 @@
+#include "bitmanip.h"
 #include "common.h"
 #include "dense_map.h"
 #include "monotonic_bucket_queue.h"
@@ -9,9 +10,9 @@ struct State {
     std::array<uint16_t, 4> rooms;
 
     /// Move the top amphipod from `room` to slot `dest` in the hallway.
-    State pop_room(const int room, const int dest) const
+    constexpr State pop_room(const int room, const int dest) const
     {
-        const int shift = _tzcnt_u32(rooms[room]) & ~3;
+        const int shift = std::countr_zero(rooms[room]) & ~3;
         const uint64_t pod = (rooms[room] >> shift) & 0xf;
         State result = *this;
         result.hallway |= pod << (4 * dest);
@@ -21,10 +22,11 @@ struct State {
 
     /// Move the amphipod at slot `src` in the hallway to the first available
     /// slot in the given room.
-    State push_room(const int src, const int room, const int room_capacity) const
+    constexpr State
+    push_room(const int src, const int room, const int room_capacity) const
     {
         const uint64_t mask = UINT64_C(0b1111) << (4 * src);
-        const auto n = rooms[room] ? _tzcnt_u32(rooms[room]) : room_capacity * 4;
+        const auto n = rooms[room] ? std::countr_zero(rooms[room]) : room_capacity * 4;
         State result = *this;
         result.hallway &= ~mask;
         result.rooms[room] |= ((hallway >> (4 * src)) & 0b1111) << ((n - 4) & ~3);
@@ -45,7 +47,7 @@ constexpr uint64_t bits_between(int hi, int lo)
     return himask & ~lomask;
 }
 
-static bool has_misplaced_amphipods(const State &state, const size_t dest_room)
+constexpr bool has_misplaced_amphipods(const State &state, const size_t dest_room)
 {
     const uint32_t expected_mask = 0x8888 | (0x1111 * dest_room);
     uint32_t occupancy_mask = state.rooms[dest_room] & 0x8888;
@@ -58,11 +60,11 @@ static void hallway2room(inplace_vector<std::pair<State, int>, 64> &out,
                          const State &state,
                          int room_capacity)
 {
-    const uint64_t hallway_occupancy = _pext_u64(state.hallway, 0x8888888888888888);
+    const uint64_t hallway_occupancy = pext_u64(state.hallway, 0x8888888888888888);
 
     for (uint64_t m = hallway_occupancy; m; m &= m - 1) {
         const int stop = std::countr_zero(m);
-        const size_t dest_room = _bextr_u64(state.hallway, 4 * stop, 3);
+        const size_t dest_room = bextr_u64(state.hallway, 4 * stop, 3);
 
         // Does the room contain misplaced amphipods? If so, we can't move this
         // amphipod there yet.
@@ -73,7 +75,7 @@ static void hallway2room(inplace_vector<std::pair<State, int>, 64> &out,
         const int room_x = 2 * (dest_room + 1);
         uint64_t collision_mask = room_x < stop ? bits_between(stop - 1, room_x)
                                                 : bits_between(room_x, stop + 1);
-        uint64_t expanded_collision_mask = _pdep_u64(collision_mask, 0x8888888888888888);
+        uint64_t expanded_collision_mask = pdep_u64(collision_mask, 0x8888888888888888);
 
         if ((state.hallway & expanded_collision_mask) == 0) {
             const int slot = state.rooms[dest_room] == 0
@@ -89,7 +91,7 @@ static void hallway2room(inplace_vector<std::pair<State, int>, 64> &out,
 static void room2hallway(inplace_vector<std::pair<State, int>, 64> &out,
                          const State &state)
 {
-    const uint32_t hallway_occupancy = _pext_u64(state.hallway, 0x8888888888888888);
+    const uint32_t hallway_occupancy = pext_u64(state.hallway, 0x8888888888888888);
 
     for (size_t src_room = 0; src_room < state.rooms.size(); ++src_room) {
         // Does this room contain any misplaced amphipods? If not, no need to
@@ -99,10 +101,10 @@ static void room2hallway(inplace_vector<std::pair<State, int>, 64> &out,
 
         const int slot = std::countr_zero(state.rooms[src_room]) / 4;
         const int room_x = 2 * (src_room + 1);
-        const int weight = pow10i[_bextr_u32(state.rooms[src_room], 4 * slot, 3)];
+        const int weight = pow10i[bextr_u32(state.rooms[src_room], 4 * slot, 3)];
 
         // Generate moves to the left:
-        const uint32_t lstops = _bzhi_u32(0b11010101011, room_x);
+        const uint32_t lstops = bzhi_u32(0b11010101011, room_x);
         const uint32_t lblocked = 32 - std::countl_zero(hallway_occupancy & lstops);
         const uint32_t lmoves = lstops & (UINT32_MAX << lblocked);
 
@@ -110,7 +112,7 @@ static void room2hallway(inplace_vector<std::pair<State, int>, 64> &out,
         const uint32_t rmask = UINT32_MAX << (room_x + 1);
         const uint32_t rstops = 0b11010101011 & rmask;
         const uint32_t rblocked = std::countr_zero(hallway_occupancy & rstops);
-        const uint32_t rmoves = _bzhi_u32(rstops, rblocked);
+        const uint32_t rmoves = bzhi_u32(rstops, rblocked);
 
         for (uint32_t m = lmoves | rmoves; m; m &= m - 1) {
             const int stop = std::countr_zero(m);

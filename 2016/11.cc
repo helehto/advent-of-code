@@ -1,3 +1,4 @@
+#include "bitmanip.h"
 #include "common.h"
 #include "dense_set.h"
 
@@ -13,11 +14,11 @@ struct FloorItems {
     };
 
     /// Check whether this combination of items is safe to leave on a floor.
-    bool safe() const
+    constexpr bool safe() const
     {
         // Check all potential items at once using a bit of SWAR:
         constexpr uint64_t ones = 0x0101010101010101;
-        const auto danger = _pdep_u64(microchip_mask & ~generator_mask, ones) * 0xff;
+        const auto danger = pdep_u64(microchip_mask & ~generator_mask, ones) * 0xff;
         return (danger & (generator_mask * ones) & ~0x80402010'08040201) == 0;
     }
 };
@@ -172,7 +173,7 @@ void run(std::string_view buf)
                 const uint32_t items = state.items[state.floor].combined;
                 const int item_count = std::popcount(items);
                 for (int m = 0b11; m < (1 << item_count); m = next_bit_permutation(m))
-                    queue_move(dir, _pdep_u32(m, items));
+                    queue_move(dir, pdep_u32(m, items));
             };
 
             if (state.floor > min_floor) {

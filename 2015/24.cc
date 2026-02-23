@@ -1,3 +1,4 @@
+#include "bitmanip.h"
 #include "common.h"
 
 namespace aoc_2015_24 {

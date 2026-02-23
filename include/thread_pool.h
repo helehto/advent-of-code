@@ -404,6 +404,7 @@ private:
 
         T load(size_t index) const noexcept
         {
+#ifdef __AVX__
             if constexpr (sizeof(T) == 16) {
                 // On platforms with AVX, aligned 16-byte loads/stores are
                 // atomic on all relevant platforms.
@@ -420,9 +421,10 @@ private:
                 T item;
                 _mm_storeu_si128(reinterpret_cast<__m128i *>(&item), x);
                 return item;
-            } else {
-                return std::atomic_ref<T>(items[index]).load(std::memory_order_relaxed);
             }
+#endif
+
+            return std::atomic_ref<T>(items[index]).load(std::memory_order_relaxed);
         }
 
         T load_unmasked(size_type index) const noexcept
@@ -432,6 +434,7 @@ private:
 
         void store(size_t index, const T &item) noexcept
         {
+#ifdef __AVX__
             if constexpr (sizeof(T) == 16) {
                 // See the comment in load(). The same reasoning applies here;
                 // additionally, libatomic executes an mfence after the store
@@ -440,9 +443,11 @@ private:
                 // stores/fences.
                 __m128i x = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&item));
                 asm("vmovdqa %1, %0" : "=m"(items[index]) : "x"(x));
-            } else {
-                std::atomic_ref<T>(items[index]).store(item, std::memory_order_relaxed);
+                return;
             }
+#endif
+
+            std::atomic_ref<T>(items[index]).store(item, std::memory_order_relaxed);
         }
     };
 

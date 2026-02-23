@@ -1,3 +1,4 @@
+#include "bitmanip.h"
 #include "common.h"
 #include "thread_pool.h"
 

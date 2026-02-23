@@ -131,6 +131,7 @@ test(
     executable(
         'aoc-tests',
         'tests/small_vector.cc',
+        'tests/test_bitmanip.cc',
         cpp_args: [
             cpp_args,
             '-mno-avx512f',

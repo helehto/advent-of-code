@@ -1,6 +1,6 @@
+#include "bitmanip.h"
 #include "common.h"
 #include "dense_map.h"
-#include <bit>
 
 namespace aoc_2020_14 {
 
@@ -62,7 +62,7 @@ void run(std::string_view buf)
                 const auto popcount = std::popcount(maskx);
                 const uint64_t max_addr = uint64_t(1) << popcount;
                 for (uint64_t a = 0; a < max_addr; a++) {
-                    auto result = (addr & ~maskx) | _pdep_u64(a, maskx);
+                    auto result = (addr & ~maskx) | pdep_u64(a, maskx);
                     if (auto [it, ok] = memory.emplace(result, value); !ok) {
                         sum -= it->second;
                         it->second = value;

@@ -1,3 +1,4 @@
+#include "bitmanip.h"
 #include "common.h"
 
 namespace aoc_2017_21 {
@@ -143,7 +144,7 @@ void run(std::string_view buf)
                 // Figure out which rule to apply by merging the 2x2 bytes with
                 // values 0x00 or 0x80 into a 4-bit value (0-15) using pext.
                 const uint32_t block = at16(i, j) | at16(i + 1, j) << 16;
-                const auto rule = rules_2x2[_pext_u32(block, 0x80808080)];
+                const auto rule = rules_2x2[pext_u32(block, 0x80808080)];
 
                 // Write the three output rows according to the output rule,
                 // while preserving the first byte of the previous output
@@ -178,20 +179,20 @@ void run(std::string_view buf)
                 memcpy(&row0, &grid(i + 0, j), sizeof(row0));
                 memcpy(&row1, &grid(i + 1, j), sizeof(row1));
                 memcpy(&row2, &grid(i + 2, j), sizeof(row2));
-                uint64_t mask0 = _pext_u64(row0, 0x808080);
+                uint64_t mask0 = pext_u64(row0, 0x808080);
                 // Since all bytes in row1 is either 0x00 or 0x80, or'ing the
                 // pext mask with 7 always inserts three zeroes, shifting the
                 // output value to the left by 3 for free.
-                uint64_t mask12 = _pext_u64(row1 | static_cast<uint64_t>(row2) << 32,
-                                            0x00808080'00808080 | 7);
+                uint64_t mask12 = pext_u64(row1 | static_cast<uint64_t>(row2) << 32,
+                                           0x00808080'00808080 | 7);
                 int rule = rules_3x3[mask0 | mask12];
 
                 // Expand the output rule to four rows of four 0x00 or 0x80
                 // bytes using pdep.
-                const uint32_t r0 = _pdep_u32(rule, 0x80808080);
-                const uint32_t r1 = _pdep_u32(rule >> 4, 0x80808080);
-                const uint32_t r2 = _pdep_u32(rule >> 8, 0x80808080);
-                const uint32_t r3 = _pdep_u32(rule >> 12, 0x80808080);
+                const uint32_t r0 = pdep_u32(rule, 0x80808080);
+                const uint32_t r1 = pdep_u32(rule >> 4, 0x80808080);
+                const uint32_t r2 = pdep_u32(rule >> 8, 0x80808080);
+                const uint32_t r3 = pdep_u32(rule >> 12, 0x80808080);
                 memcpy(&grid(ii + 0, jj), &r0, sizeof(r0));
                 memcpy(&grid(ii + 1, jj), &r1, sizeof(r1));
                 memcpy(&grid(ii + 2, jj), &r2, sizeof(r2));
