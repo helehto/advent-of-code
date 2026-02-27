@@ -1,7 +1,7 @@
 #include "common.h"
 #include "md5.h"
 #include "thread_pool.h"
-#include <mutex>
+#include <hwy/highway.h>
 
 namespace aoc_2016_5 {
 
@@ -84,17 +84,17 @@ static void search(State &state, std::string_view prefix, size_t start, size_t s
 {
     md5::State md5(prefix);
 
-    for (size_t n = 8 * start; !state.done(n); n += 8 * stride) {
-        const hn::Vec<md5::D> hashes = md5.run(n).a;
-        const uint32_t mask5 = md5::leading_zero_mask<5>(hashes);
+    for (size_t n = md5::lanes() * start; !state.done(n); n += md5::lanes() * stride) {
+        const hn::Vec<md5::D> hashes = md5.run(n).a();
+        const uint64_t mask5 = md5::leading_zero_mask<5>(hashes);
 
         if (mask5 == 0)
             continue;
 
-        alignas(32) std::array<uint32_t, 8> hashes_u32;
+        HWY_ALIGN_MAX std::array<uint32_t, md5::max_lanes> hashes_u32;
         hn::Store(hashes, md5::D(), hashes_u32.data());
 
-        for (uint32_t m = mask5; m; m &= m - 1) {
+        for (auto m = mask5; m; m &= m - 1) {
             const auto bit = std::countr_zero(m);
             const auto h1 = (hashes_u32[bit] >> 16) & 0xf;
             const auto h2 = (hashes_u32[bit] >> 28) & 0xf;

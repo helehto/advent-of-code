@@ -7,166 +7,113 @@
 
 namespace md5 {
 
-using D = hn::FixedTag<uint32_t, 8>;
+using D = hn::ScalableTag<uint32_t>;
 using VecT = hn::Vec<D>;
 constexpr D d;
+constexpr size_t max_lanes = hn::MaxLanes(D());
 
-inline std::array<uint32_t, 8> mm256_u32x8(const VecT v)
+inline size_t lanes()
 {
-    std::array<uint32_t, 8> result;
-    hn::StoreU(v, d, result.data());
-    return result;
+    return hn::Lanes(d);
 }
 
-/// Format a 32-bit integer as 8 hex digits.
-inline void format_u32_hex(char *out, const uint32_t h)
-{
-    uint64_t v = h;
+// Fixed by the MD5 algorithm.
+constexpr size_t words_per_block = 16;
+constexpr size_t bytes_per_block = words_per_block * sizeof(uint32_t);
 
-    // Swap the nibbles. (To see why, note that endianness affects the byte
-    // order, not the order of nibbles within each byte; e.g. for 0x4d we want
-    // to output '4' followed by 'd', i.e. the *second* nibble first.)
-    v = ((v & 0x0f0f0f0f) << 4) | ((v & 0xf0f0f0f0) >> 4);
+struct HWY_ALIGN_MAX Result {
+    // Vectors of a, b, c, d stored one after another.
+    HWY_ALIGN_MAX uint32_t data[4 * max_lanes];
 
-    // Expand each nibble to a full byte in the range 0x00-0x0f.
-    v = ((v & 0xffff0000) << 16) | (v & 0x0000ffff);
-    v = ((v & 0x0000ff00'0000ff00) << 8) | (v & 0x000000ff'000000ff);
-    v = ((v & 0x00f000f0'00f000f0) << 4) | (v & 0x000f000f'000f000f);
+    VecT a() const { return hn::Load(D(), data + 0 * lanes()); }
+    VecT b() const { return hn::Load(D(), data + 1 * lanes()); }
+    VecT c() const { return hn::Load(D(), data + 2 * lanes()); }
+    VecT d() const { return hn::Load(D(), data + 3 * lanes()); }
 
-    // Add 0x30 (ASCII '0') to each byte.
-    const uint64_t ascii_digits0 = v + 0x30303030'30303030;
+    void set_a(VecT v) { hn::Store(v, D(), data + 0 * lanes()); }
+    void set_b(VecT v) { hn::Store(v, D(), data + 1 * lanes()); }
+    void set_c(VecT v) { hn::Store(v, D(), data + 2 * lanes()); }
+    void set_d(VecT v) { hn::Store(v, D(), data + 3 * lanes()); }
 
-    // Nibbles between 0-9 are correct, but a-f need to be fixed up. Identify
-    // these by adding 6, which causes them to carry into the next nibble.
-    const uint64_t carries4 = v + 0x06060606'06060606;
-    const uint64_t carries0 = (carries4 & 0x10101010'10101010) >> 4;
-
-    // Add 0x27 (ASCII 'a' - 10 - 0x30) to the nibbles that need to be
-    // fixed up, i.e. the ones that carried.
-    const uint64_t ascii_hex_digits = ascii_digits0 + carries0 * 0x27;
-
-    memcpy(out, &ascii_hex_digits, sizeof(ascii_hex_digits));
-}
-
-struct alignas(32) Result {
-    VecT a;
-    VecT b;
-    VecT c;
-    VecT d;
-
-    std::array<std::array<uint32_t, 8>, 4> to_arrays() const
+    static inline std::array<uint32_t, max_lanes> to_array(const VecT v)
     {
-        return {mm256_u32x8(a), mm256_u32x8(b), mm256_u32x8(c), mm256_u32x8(d)};
-    }
-
-    std::array<std::array<char, 32>, 8> to_hex() const
-    {
-        const std::array<uint32_t, 8> aa = mm256_u32x8(a);
-        const std::array<uint32_t, 8> bb = mm256_u32x8(b);
-        const std::array<uint32_t, 8> cc = mm256_u32x8(c);
-        const std::array<uint32_t, 8> dd = mm256_u32x8(d);
-
-        std::array<std::array<char, 32>, 8> result;
-        for (size_t i = 0; i < 8; i++) {
-            char *p = result[i].data();
-            format_u32_hex(p, aa[i]);
-            format_u32_hex(p + 8, bb[i]);
-            format_u32_hex(p + 16, cc[i]);
-            format_u32_hex(p + 24, dd[i]);
-        }
-
+        std::array<uint32_t, max_lanes> result;
+        hn::StoreU(v, D(), result.data());
         return result;
     }
-};
 
-struct alignas(32) Block8x8x64 {
-    char data[512];
-};
-
-struct alignas(32) Block32x16x8 {
-    uint32_t data[16 * 8];
-
-    // Returns a reference to the `i`:th character of the `m`:th message in
-    // this block.
-    char &at(size_t m, size_t i)
+    std::array<std::array<uint32_t, max_lanes>, 4> to_arrays() const
     {
-        DEBUG_ASSERT(m < 8);
-        DEBUG_ASSERT(i < 64);
-        return reinterpret_cast<char *>(data)[32 * (i / 4) + 4 * m + i % 4];
+        return {to_array(a()), to_array(b()), to_array(c()), to_array(d())};
     }
 };
 
-// Reshuffles `input` which contains eight 64-byte blocks laid out one after
-// another into interleaved 4-byte words from each block.
-inline Block32x16x8 permute_input(const Block8x8x64 &input)
+/// 64-byte blocks laid out sequentially one after another; as many blocks as
+/// we (potentially) have SIMD lanes.
+struct alignas(32) SequentialBlocks {
+    char data[bytes_per_block * max_lanes];
+};
+
+/// Interleaved 4-byte words from 64-byte blocks. This is the format fed into
+/// the core hash_block() function to compute multiple hashes in parallel.
+struct alignas(32) InterleavedBlocks {
+    uint32_t data[words_per_block * max_lanes];
+};
+
+// Interleave 4-byte words from 64-byte blocks laid out one after in memory.
+inline InterleavedBlocks interleave(const SequentialBlocks &input)
 {
-    Block32x16x8 result;
+    InterleavedBlocks result;
+    const size_t lanes = ::md5::lanes();
 
     // GCC does a decent job of vectorizing this into a bunch of shuffles
     // (vpermi2d and vpermt2d); doing it by hand is unlikely to yield any
     // significant speedup.
     auto *input32 = reinterpret_cast<const uint32_t *>(&input.data);
-    for (int i = 0; i < 16; i++)
-        for (int j = 0; j < 8; j++)
-            result.data[8 * i + j] = input32[16 * j + i];
+    for (size_t i = 0; i < words_per_block; i++)
+        for (size_t j = 0; j < lanes; j++)
+            result.data[lanes * i + j] = input32[words_per_block * j + i];
 
     return result;
 }
 
 // Prepare the final messages blocks by inserting the block lengths into the
 // `messages`, assuming that the messages are already padded with zero bits.
-inline void prepare_final_blocks(Block8x8x64 &__restrict messages,
-                                 const uint32_t (&__restrict length_bytes)[8])
+inline void prepare_final_blocks(SequentialBlocks &HWY_RESTRICT messages,
+                                 const uint32_t *HWY_RESTRICT length_bytes)
 {
-    for (int i = 0; i < 8; i++) {
+    for (size_t i = 0; i < lanes(); i++) {
         // The buffer is assumed to be padded and the length of each message is
         // non-decreasing, so all we need to do is to insert the 1 bit (0x80)
         // and add the length in bits.
-        messages.data[64 * i + length_bytes[i]] = 0x80;
+        messages.data[bytes_per_block * i + length_bytes[i]] = 0x80;
 
         // The message is never going to be more than 65536 bits.
-        messages.data[64 * i + 56] = (length_bytes[i] << 3) & 0xff;
-        messages.data[64 * i + 57] = (length_bytes[i] >> 5) & 0xff;
+        messages.data[bytes_per_block * i + 56] = (length_bytes[i] << 3) & 0xff;
+        messages.data[bytes_per_block * i + 57] = (length_bytes[i] >> 5) & 0xff;
     }
 }
 
 // Prepare the final messages blocks by inserting the block lengths into the
 // `messages`, assuming that the messages are already padded with zero bits.
-inline void prepare_final_blocks(Block32x16x8 &__restrict messages,
-                                 const uint32_t (&__restrict length_bytes)[8])
-{
-    for (int m = 0; m < 8; m++) {
-        // The buffer is assumed to be padded and the length of each message is
-        // non-decreasing, so all we need to do is to insert the 1 bit (0x80)
-        // and add the length in bits.
-        messages.at(m, length_bytes[m]) = 0x80;
-
-        // The message is never going to be more than 65536 bits.
-        messages.at(m, 56) = (length_bytes[m] << 3) & 0xff;
-        messages.at(m, 57) = (length_bytes[m] >> 5) & 0xff;
-    }
-}
-
-// Prepare the final messages blocks by inserting the block lengths into the
-// `messages`, assuming that the messages are already padded with zero bits.
-inline void prepare_final_blocks(Block8x8x64 &__restrict messages,
+inline void prepare_final_blocks(SequentialBlocks &HWY_RESTRICT messages,
                                  std::optional<size_t> x80_offset,
-                                 const uint32_t (&__restrict length_bytes)[8])
+                                 const uint32_t *HWY_RESTRICT length_bytes)
 {
-    for (int i = 0; i < 8; i++) {
+    for (size_t i = 0; i < lanes(); i++) {
         if (x80_offset)
-            messages.data[64 * i + *x80_offset] = 0x80;
+            messages.data[bytes_per_block * i + *x80_offset] = 0x80;
 
         // The message is never going to be more than 65536 bits.
-        messages.data[64 * i + 56] = (length_bytes[i] << 3) & 0xff;
-        messages.data[64 * i + 57] = (length_bytes[i] >> 5) & 0xff;
+        messages.data[bytes_per_block * i + 56] = (length_bytes[i] << 3) & 0xff;
+        messages.data[bytes_per_block * i + 57] = (length_bytes[i] >> 5) & 0xff;
     }
 }
 
 // Hash eight blocks simultaneously. The return values is an array where index
 // `k` contains the `k`:th 32-bit word of the eight resulting hashes.
 inline Result
-hash_block(const Block32x16x8 &__restrict M, VecT a0, VecT b0, VecT c0, VecT d0)
+hash_block(const InterleavedBlocks &HWY_RESTRICT M, VecT a0, VecT b0, VecT c0, VecT d0)
 {
     VecT A(a0);
     VecT B(b0);
@@ -182,7 +129,7 @@ hash_block(const Block32x16x8 &__restrict M, VecT a0, VecT b0, VecT c0, VecT d0)
     do {                                                                                 \
         a += f(b, c, d);                                                                 \
         a += hn::Set(hn::DFromV<decltype(a)>(), K[k]);                                   \
-        a += hn::Load(hn::DFromV<decltype(a)>(), &M.data[8 * (j)]);                      \
+        a += hn::LoadU(hn::DFromV<decltype(a)>(), &M.data[lanes() * (j)]);               \
         a = hn::RotateLeft<shift>(a);                                                    \
         a += b;                                                                          \
     } while (0)
@@ -239,10 +186,15 @@ hash_block(const Block32x16x8 &__restrict M, VecT a0, VecT b0, VecT c0, VecT d0)
 #undef I
 #undef QUARTER_ROUND
 
-    return Result{a0 + A, b0 + B, c0 + C, d0 + D};
+    Result r;
+    r.set_a(A + a0);
+    r.set_b(B + b0);
+    r.set_c(C + c0);
+    r.set_d(D + d0);
+    return r;
 }
 
-inline Result hash_block(const Block32x16x8 &__restrict M)
+inline Result hash_block(const InterleavedBlocks &HWY_RESTRICT M)
 {
     const VecT a0 = hn::Set(d, 0x67452301);
     const VecT b0 = hn::Set(d, 0xefcdab89);
@@ -251,18 +203,18 @@ inline Result hash_block(const Block32x16x8 &__restrict M)
     return hash_block(M, a0, b0, c0, d0);
 }
 
-inline Result
-hash_block(const Block8x8x64 &__restrict chunks, VecT a0, VecT b0, VecT c0, VecT d0)
+inline Result hash_block(
+    const SequentialBlocks &HWY_RESTRICT chunks, VecT a0, VecT b0, VecT c0, VecT d0)
 {
     // The input in `chunks` is eight 64-byte blocks laid out one after
     // another. The MD5 core loop expects memory to contain interleaved 4-byte
     // words from each block, so reshuffle the original input into that format.
-    Block32x16x8 M = permute_input(chunks);
+    InterleavedBlocks M = interleave(chunks);
 
     return hash_block(M, a0, b0, c0, d0);
 }
 
-inline Result hash_block(const Block8x8x64 &__restrict chunks)
+inline Result hash_block(const SequentialBlocks &HWY_RESTRICT chunks)
 {
     const VecT a0 = hn::Set(d, 0x67452301);
     const VecT b0 = hn::Set(d, 0xefcdab89);
@@ -314,11 +266,11 @@ inline Result hash_block(const Block8x8x64 &__restrict chunks)
 namespace detail {
 
 template <size_t N>
-constexpr static uint32_t make_leading_zero_mask()
+consteval uint64_t make_leading_zero_mask()
 {
-    uint32_t result = (1 << (4 * (N & ~1))) - 1;
+    uint64_t result = (UINT64_C(1) << (4 * (N & ~1))) - 1;
     if (N & 1)
-        result |= 0xf << (4 * N);
+        result |= UINT64_C(0xf) << (4 * N);
     return result;
 }
 static_assert(make_leading_zero_mask<5>() == 0xf0ffff);
@@ -336,14 +288,14 @@ inline uint32_t leading_zero_mask(const hn::Vec<D> &hashes)
 }
 
 struct State {
-    Block8x8x64 messages{};
+    SequentialBlocks messages{};
     std::string_view prefix;
 
     State(std::string_view pfx)
         : prefix(pfx)
     {
-        for (int i = 0; i < 512; i += 64)
-            memcpy(&messages.data[i], prefix.data(), prefix.size());
+        for (size_t i = 0; i < lanes(); ++i)
+            memcpy(&messages.data[i * bytes_per_block], prefix.data(), prefix.size());
     }
 
     /// Compute eight MD5 hashes with [block, block+1, ..., block+7] appended
@@ -351,9 +303,9 @@ struct State {
     /// the block number must never decrease between calls to this method.
     Result run(const int block)
     {
-        uint32_t lengths[8];
+        uint32_t lengths[max_lanes];
 
-        for (int i = 0; i < 8; i++) {
+        for (size_t i = 0; i < lanes(); i++) {
             char *p = messages.data + 64 * i;
             char *q = to_chars(p + prefix.size(), block + i);
             lengths[i] = q - p;

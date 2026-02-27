@@ -14,7 +14,7 @@ hash_search(std::string_view s, int n, int stride, std::atomic_int &limit)
     md5::State md5(s);
 
     for (; n < limit.load(); n += stride) {
-        const hn::Vec<md5::D> hashes = md5.run(n).a;
+        const md5::VecT hashes = md5.run(n).a();
 
         if (uint32_t eqmask5 = md5::leading_zero_mask<5>(hashes))
             part1 = std::min(part1, n + std::countr_zero(eqmask5));
@@ -38,7 +38,8 @@ void run(std::string_view buf)
     std::atomic_int limit = INT_MAX;
 
     pool.for_each_thread([&](size_t i) {
-        auto [a, b] = hash_search(buf, 8 * i, 8 * pool.num_threads(), limit);
+        const size_t N = md5::lanes();
+        auto [a, b] = hash_search(buf, N * i, N * pool.num_threads(), limit);
         atomic_store_min(part1, a);
         atomic_store_min(part2, b);
     });
