@@ -11,20 +11,41 @@ using D = hn::FixedTag<uint32_t, 8>;
 using VecT = hn::Vec<D>;
 constexpr D d;
 
-inline VecT swap_nibbles(const VecT v)
-{
-    const VecT mask_hi = hn::Set(d, 0xf0f0f0f0);
-    const VecT mask_lo = hn::Set(d, 0x0f0f0f0f);
-    const VecT result_lo = hn::ShiftRight<4>(v & mask_hi);
-    const VecT result_hi = hn::ShiftLeft<4>(v & mask_lo);
-    return result_lo | result_hi;
-}
-
 inline std::array<uint32_t, 8> mm256_u32x8(const VecT v)
 {
     std::array<uint32_t, 8> result;
     hn::StoreU(v, d, result.data());
     return result;
+}
+
+/// Format a 32-bit integer as 8 hex digits.
+inline void format_u32_hex(char *out, const uint32_t h)
+{
+    uint64_t v = h;
+
+    // Swap the nibbles. (To see why, note that endianness affects the byte
+    // order, not the order of nibbles within each byte; e.g. for 0x4d we want
+    // to output '4' followed by 'd', i.e. the *second* nibble first.)
+    v = ((v & 0x0f0f0f0f) << 4) | ((v & 0xf0f0f0f0) >> 4);
+
+    // Expand each nibble to a full byte in the range 0x00-0x0f.
+    v = ((v & 0xffff0000) << 16) | (v & 0x0000ffff);
+    v = ((v & 0x0000ff00'0000ff00) << 8) | (v & 0x000000ff'000000ff);
+    v = ((v & 0x00f000f0'00f000f0) << 4) | (v & 0x000f000f'000f000f);
+
+    // Add 0x30 (ASCII '0') to each byte.
+    const uint64_t ascii_digits0 = v + 0x30303030'30303030;
+
+    // Nibbles between 0-9 are correct, but a-f need to be fixed up. Identify
+    // these by adding 6, which causes them to carry into the next nibble.
+    const uint64_t carries4 = v + 0x06060606'06060606;
+    const uint64_t carries0 = (carries4 & 0x10101010'10101010) >> 4;
+
+    // Add 0x27 (ASCII 'a' - 10 - 0x30) to the nibbles that need to be
+    // fixed up, i.e. the ones that carried.
+    const uint64_t ascii_hex_digits = ascii_digits0 + carries0 * 0x27;
+
+    memcpy(out, &ascii_hex_digits, sizeof(ascii_hex_digits));
 }
 
 struct alignas(32) Result {
@@ -40,47 +61,18 @@ struct alignas(32) Result {
 
     std::array<std::array<char, 32>, 8> to_hex() const
     {
-        alignas(32) static constexpr uint8_t hex_chars[] = {
-            '0', '1', '2', '3', '4', '5', '6', '7',
-            '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
-        };
-
-        using D8 = hn::FixedTag<uint8_t, 16>;
-        using D64 = hn::FixedTag<uint64_t, 2>;
-
-        const hn::Vec<D8> vhexchars = hn::Load(D8(), hex_chars);
-
-        auto output_u32 = [&](char *p, const uint32_t h) {
-            // Expand each nibble to a full byte in the range 0x00-0x0f so that
-            // it can be used as a lookup index in TableLookupBytes() below.
-            const uint64_t bytes = _pdep_u64(h, 0x0f0f0f0f0f0f0f0f);
-            const hn::Vec<D64> vbytes =
-                hn::InsertLane(hn::Zero(D64()), 0, bytes); // FIXME: ugh
-            const hn::Vec<D8> indices = hn::BitCast(D8(), vbytes);
-
-            // Map each byte to its corresponding hex character.
-            const hn::Vec<D8> output = hn::TableLookupBytes(vhexchars, indices);
-
-            uint64_t out64 = hn::ExtractLane(hn::BitCast(D64(), output), 0);
-            memcpy(p, &out64, sizeof(out64));
-        };
-
-        // First, swap the nibbles in all bytes. (To see why, note that
-        // endianness affects the byte order, *not* the order of nibbles within
-        // each byte; e.g. for 0x4d we want to output '4' followed by 'd', i.e.
-        // the *second* nibble first.)
-        const std::array<uint32_t, 8> aa = mm256_u32x8(swap_nibbles(a));
-        const std::array<uint32_t, 8> bb = mm256_u32x8(swap_nibbles(b));
-        const std::array<uint32_t, 8> cc = mm256_u32x8(swap_nibbles(c));
-        const std::array<uint32_t, 8> dd = mm256_u32x8(swap_nibbles(d));
+        const std::array<uint32_t, 8> aa = mm256_u32x8(a);
+        const std::array<uint32_t, 8> bb = mm256_u32x8(b);
+        const std::array<uint32_t, 8> cc = mm256_u32x8(c);
+        const std::array<uint32_t, 8> dd = mm256_u32x8(d);
 
         std::array<std::array<char, 32>, 8> result;
         for (size_t i = 0; i < 8; i++) {
             char *p = result[i].data();
-            output_u32(p, aa[i]);
-            output_u32(p + 8, bb[i]);
-            output_u32(p + 16, cc[i]);
-            output_u32(p + 24, dd[i]);
+            format_u32_hex(p, aa[i]);
+            format_u32_hex(p + 8, bb[i]);
+            format_u32_hex(p + 16, cc[i]);
+            format_u32_hex(p + 24, dd[i]);
         }
 
         return result;
