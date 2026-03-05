@@ -292,19 +292,13 @@ public:
     }
     static constexpr void shrink_to_fit() noexcept {}
 
-    constexpr void resize(const size_type count)
+    constexpr void resize(const size_type count, const T &value = T{})
     {
         ASSERT(count <= Capacity);
-        destroy_range(count, n_);
-        construct_range(0, count);
-        n_ = count;
-    }
-
-    constexpr void resize(const size_type count, const T &value)
-    {
-        ASSERT(count <= Capacity);
-        destroy_range(count, n_);
-        construct_range(0, count, value);
+        if (count < n_)
+            destroy_range(count, n_);
+        else
+            construct_range(0, count, value);
         n_ = count;
     }
 
