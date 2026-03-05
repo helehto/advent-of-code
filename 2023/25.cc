@@ -99,10 +99,6 @@ static Graph parse_input(std::string_view buf)
     return g;
 }
 
-struct CrcHasher {
-    size_t operator()(uint32_t k) const noexcept { return _mm_crc32_u32(0, k); }
-};
-
 static void dijkstra(Graph &g,
                      uint16_t start,
                      uint16_t target,
