@@ -138,8 +138,7 @@ private:
     std::atomic_uint32_t state_ = 0;
 
     // Mostly read-only:
-    alignas(64);
-    std::unique_ptr<std::thread[]> threads_;
+    alignas(64) std::unique_ptr<std::thread[]> threads_;
     size_t n_threads_;
 
     /// Acquire the thread pool lock.
