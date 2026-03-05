@@ -44,8 +44,6 @@ struct Tile {
         switch (rot & 3) {
         case 0:
             return *this;
-            new_edges = edges;
-            break;
         case 1:
             new_edges[U] = bitrev10[edges[L]];
             new_edges[R] = edges[U];
