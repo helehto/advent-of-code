@@ -299,8 +299,9 @@ constexpr void find_numbers_impl(std::string_view s, auto &&sink)
 
         if constexpr (std::is_signed_v<T>) {
             if (first != s.data() && first[-1] == '-') {
-                DEBUG_ASSERT(!__builtin_sub_overflow_p(0, value, T{}));
-                value = -value;
+                [[maybe_unused]] int neg_overflow;
+                neg_overflow = __builtin_sub_overflow(0, value, &value);
+                DEBUG_ASSERT(!neg_overflow);
             }
         }
 
