@@ -7,7 +7,7 @@ namespace aoc_2018_5 {
 static size_t react(char *scratch, std::string_view input)
 {
     size_t i = 1;
-    scratch[0] = '\0';
+    scratch[i] = '\0';
 
     for (char c : input) {
         size_t mask = ((scratch[i] ^ 0x20) == c) ? SIZE_MAX : 0;
