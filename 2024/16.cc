@@ -39,7 +39,7 @@ void run(std::string_view buf)
     // direction).
     std::vector<std::array<int32_t, 4>> dist(grid.size());
     for (auto &d : dist)
-        d.fill(INT32_MAX);
+        d.fill(INT32_MAX - 1000);
     auto dist_of = [&](const State &u) -> int32_t & { return dist[u.index][u.dir]; };
 
     // The fact that turning costs so much more than taking a step means that
