@@ -29,8 +29,8 @@ void run(std::string_view buf)
     const size_t v_fft = dict.at("fft");
     const size_t v_dac = dict.at("dac");
 
-    std::vector<small_vector<uint16_t>> out_edges(dict.size() + 1);
-    std::vector<small_vector<uint16_t>> in_edges(dict.size() + 1);
+    std::vector<small_vector<uint16_t>> out_edges(dict.size());
+    std::vector<small_vector<uint16_t>> in_edges(dict.size());
     for (std::string_view line : lines) {
         split(line, tokens, ' ');
         auto u = name2index(tokens[0].substr(0, tokens[0].size() - 1));
