@@ -90,10 +90,9 @@ cpp_args = [
     # is completely opt-in:
     get_option('glibcxx_debug') ? '-D_GLIBCXX_DEBUG' : [],
 
-    # AVX-512 breaks Valgrind. Disable it for debug builds, where we might want
-    # to use it, but not in release builds where we want the compiler to
-    # autovectorize stuff as well as it can.
-    get_option('buildtype') == 'debug' ? '-mno-avx512f' : [],
+    # AVX-512 breaks Valgrind: <https://bugs.kde.org/show_bug.cgi?id=383010>.
+    # Make it togglable.
+    get_option('avx512').disabled() ? '-mno-avx512f' : [],
 ]
 
 link_args = [

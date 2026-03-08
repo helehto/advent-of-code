@@ -1,2 +1,3 @@
+option('avx512', type: 'feature', value: 'auto')
 option('glibcxx_debug', type: 'boolean', value: false)
 option('uberpedantic', type: 'boolean', value: false)
