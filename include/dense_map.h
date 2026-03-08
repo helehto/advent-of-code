@@ -65,7 +65,10 @@ compound_allocate(std::span<const std::pair<size_t, size_t>> fields, Pointers...
     ASSERT(sizeof...(ptrs) == fields.size());
 
     // Compute the total allocation size needed.
-    size_t allocation_size = fields[0].second - 1;
+    size_t max_align = 0;
+    for (auto [_, align] : fields)
+        max_align = std::max(max_align, align);
+    size_t allocation_size = max_align - 1;
     for (auto [field_size, align] : fields) {
         allocation_size = (allocation_size + align - 1) & -align;
         allocation_size += field_size;
