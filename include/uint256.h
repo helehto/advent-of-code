@@ -19,7 +19,7 @@ struct uint256 {
     uint256(uint64_t v) noexcept
     {
         const __m128i v128 = _mm_cvtsi64_si128(v);
-        const __m256i v256 = _mm256_castsi128_si256(v128);
+        const __m256i v256 = _mm256_zextsi128_si256(v128);
         _mm256_store_si256((__m256i *)limbs.data(), v256);
     }
 
@@ -32,7 +32,7 @@ struct uint256 {
     constexpr static uint256 ones(size_t n) noexcept
     {
         DEBUG_ASSERT(n <= 256);
-        uint256 result;
+        uint256 result(0);
         for (size_t i = 0; i < n; ++i)
             result.set_bit(i);
         return result;
