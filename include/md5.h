@@ -111,8 +111,7 @@ inline void prepare_final_blocks(SequentialBlocks &HWY_RESTRICT messages,
     }
 }
 
-// Hash eight blocks simultaneously. The return values is an array where index
-// `k` contains the `k`:th 32-bit word of the eight resulting hashes.
+// Hash multiple blocks simultaneously with SIMD.
 inline Result
 hash_block(const InterleavedBlocks &HWY_RESTRICT M, VecT a0, VecT b0, VecT c0, VecT d0)
 {
@@ -207,9 +206,9 @@ inline Result hash_block(const InterleavedBlocks &HWY_RESTRICT M)
 inline Result hash_block(
     const SequentialBlocks &HWY_RESTRICT chunks, VecT a0, VecT b0, VecT c0, VecT d0)
 {
-    // The input in `chunks` is eight 64-byte blocks laid out one after
-    // another. The MD5 core loop expects memory to contain interleaved 4-byte
-    // words from each block, so reshuffle the original input into that format.
+    // The input in `chunks` is 64-byte blocks laid out one after another. The
+    // MD5 core loop expects memory to contain interleaved 4-byte words from
+    // each block, so reshuffle the original input into that format.
     InterleavedBlocks M = interleave(chunks);
 
     return hash_block(M, a0, b0, c0, d0);
@@ -279,8 +278,8 @@ static_assert(make_leading_zero_mask<6>() == 0xffffff);
 
 }
 
-/// Return a 8-bit mask with a bit set for each element in `hashes` that
-/// has at least `N` leading zeroes when written as hexadecimal.
+/// Return a mask with a bit set for each 32-bit element in `hashes` that has
+/// at least `N` leading zeroes when written as hexadecimal.
 template <size_t N>
 inline uint32_t leading_zero_mask(const hn::Vec<D> &hashes)
 {
@@ -299,7 +298,7 @@ struct State {
             memcpy(&messages.data[i * bytes_per_block], prefix.data(), prefix.size());
     }
 
-    /// Compute eight MD5 hashes with [block, block+1, ..., block+7] appended
+    /// Compute MD5 hashes with [block, block+1, ..., block+lanes-1] appended
     /// to each block. The internal buffers are not cleared between calls, so
     /// the block number must never decrease between calls to this method.
     Result run(const int block)
