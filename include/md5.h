@@ -120,9 +120,9 @@ hash_block(const InterleavedBlocks &HWY_RESTRICT M, VecT a0, VecT b0, VecT c0, V
     VecT C(c0);
     VecT D(d0);
 
-#define F(b, c, d) ((b & c) | hn::AndNot(b, d))
-#define G(b, c, d) ((d & b) | hn::AndNot(d, c))
-#define H(b, c, d) (b ^ c ^ d)
+#define F(b, c, d) hn::BitwiseIfThenElse(b, c, d)
+#define G(b, c, d) hn::BitwiseIfThenElse(d, b, c)
+#define H(b, c, d) hn::Xor3(b, c, d)
 #define I(b, c, d) (c ^ (b | hn::Not(d)))
 
 #define QUARTER_ROUND(f, a, b, c, d, j, k, shift)                                        \
