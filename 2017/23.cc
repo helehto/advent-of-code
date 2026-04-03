@@ -1,5 +1,4 @@
 #include "common.h"
-#include "inplace_vector.h"
 #include <hwy/highway.h>
 
 namespace aoc_2017_23 {

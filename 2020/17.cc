@@ -1,5 +1,4 @@
 #include "common.h"
-#include "dense_set.h"
 #include <hwy/highway.h>
 
 namespace aoc_2020_17 {

@@ -1,5 +1,4 @@
 #include "common.h"
-#include "dense_map.h"
 #include "monotonic_bucket_queue.h"
 
 namespace aoc_2018_22 {

@@ -1,5 +1,4 @@
 #include "common.h"
-#include "dense_map.h"
 
 namespace aoc_2019_3 {
 

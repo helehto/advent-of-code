@@ -715,7 +715,8 @@ public:
             small_vector<uint16_t, 64> victim_order(pool.num_threads());
             for (size_t i = 0; i < pool.num_threads(); i++)
                 victim_order[i] = static_cast<uint16_t>(i);
-            erase_swap(victim_order, thread_id);
+            victim_order[thread_id] = victim_order.back();
+            victim_order.pop_back();
 
             // Randomize the order in which each thief tries to steal work from
             // the other threads, to avoid a "convoy" of thieves hammering the

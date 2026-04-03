@@ -1,7 +1,4 @@
-#include "dense_map.h"
-#include "small_vector.h"
 #include "thread_pool.h"
-#include <atomic>
 
 struct alignas(16) WorkPackage {
     int counter;

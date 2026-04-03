@@ -3,7 +3,6 @@
 #include "monotonic_bucket_queue.h"
 #include "small_vector.h"
 #include "thread_pool.h"
-#include <atomic>
 #include <random>
 
 namespace aoc_2023_25 {

@@ -1,6 +1,5 @@
 #include "common.h"
 #include "thread_pool.h"
-#include <atomic>
 
 namespace aoc_2024_7 {
 

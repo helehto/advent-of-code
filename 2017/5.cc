@@ -1,5 +1,4 @@
 #include "common.h"
-#include "dense_set.h"
 
 namespace aoc_2017_5 {
 

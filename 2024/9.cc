@@ -1,5 +1,4 @@
 #include "common.h"
-#include "dense_map.h"
 #include <hwy/highway.h>
 
 namespace aoc_2024_9 {
