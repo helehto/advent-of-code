@@ -399,6 +399,7 @@ split(std::string_view s, std::vector<std::string_view> &out, char c)
     return out;
 }
 
+[[gnu::noinline]]
 static inline std::vector<std::string_view> split_lines(std::string_view s)
 {
     std::vector<std::string_view> lines;
