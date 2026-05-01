@@ -2,7 +2,7 @@
 
 #include "common.h"
 
-enum Opcode {
+enum Opcode : int64_t {
     OP_NOP,
     OP_CPY_IR,
     OP_CPY_RR,
@@ -15,15 +15,23 @@ enum Opcode {
     OP_ADD_RR,
     OP_MUL_RR,
     OP_TGL_R,
+    OP_HALT,
 };
+constexpr size_t NUM_OPCODES = 13;
 
 struct Instruction {
+    void *handler;
     Opcode opcode;
-    int32_t op1;
-    int32_t op2;
+    int64_t op1;
+    int64_t op2;
+};
+static_assert(sizeof(Instruction) == 32);
+
+struct Program {
+    std::vector<Instruction> instructions;
 };
 
-inline std::vector<Instruction> assemble(std::string_view buf)
+inline Program assemble(std::string_view buf)
 {
     auto lines = split_lines(buf);
 
@@ -42,79 +50,60 @@ inline std::vector<Instruction> assemble(std::string_view buf)
 
         if (tokens[0] == "cpy") {
             if (int_p(1)) {
-                result.push_back({OP_CPY_IR, imm_op(1), reg_op(2)});
+                result.push_back({nullptr, OP_CPY_IR, imm_op(1), reg_op(2)});
             } else {
-                result.push_back({OP_CPY_RR, reg_op(1), reg_op(2)});
+                result.push_back({nullptr, OP_CPY_RR, reg_op(1), reg_op(2)});
             }
         } else if (tokens[0] == "inc") {
-            result.push_back({OP_INC_R, reg_op(1)});
+            result.push_back({nullptr, OP_INC_R, reg_op(1)});
         } else if (tokens[0] == "dec") {
-            result.push_back({OP_DEC_R, reg_op(1)});
+            result.push_back({nullptr, OP_DEC_R, reg_op(1)});
         } else if (tokens[0] == "jnz") {
             if (int_p(1)) {
                 if (int_p(2)) {
-                    result.push_back({OP_JNZ_II, imm_op(1), imm_op(2)});
+                    result.push_back({nullptr, OP_JNZ_II, imm_op(1), imm_op(2)});
                 } else {
-                    result.push_back({OP_JNZ_IR, imm_op(1), reg_op(2)});
+                    result.push_back({nullptr, OP_JNZ_IR, imm_op(1), reg_op(2)});
                 }
             } else {
                 if (int_p(2)) {
-                    result.push_back({OP_JNZ_RI, reg_op(1), imm_op(2)});
+                    result.push_back({nullptr, OP_JNZ_RI, reg_op(1), imm_op(2)});
                 } else {
-                    result.push_back({OP_JNZ_RR, reg_op(1), reg_op(2)});
+                    result.push_back({nullptr, OP_JNZ_RR, reg_op(1), reg_op(2)});
                 }
             }
         } else if (tokens[0] == "tgl") {
             ASSERT(!int_p(1));
-            result.push_back({OP_TGL_R, reg_op(1)});
+            result.push_back({nullptr, OP_TGL_R, reg_op(1)});
         } else {
             ASSERT(false);
         }
     }
 
-    return result;
+    result.push_back({nullptr, OP_HALT});
+    return {std::move(result)};
 }
 
-inline void toggle_instruction(Instruction &instr)
+constexpr static auto toggle_opcode_table = [] consteval {
+    std::array<int64_t, NUM_OPCODES> tab;
+    tab.fill(-1);
+    tab[OP_JNZ_II] = OP_NOP;
+    tab[OP_JNZ_RI] = OP_NOP;
+    tab[OP_INC_R] = OP_DEC_R;
+    tab[OP_DEC_R] = OP_INC_R;
+    tab[OP_TGL_R] = OP_INC_R;
+    tab[OP_CPY_IR] = OP_JNZ_IR;
+    tab[OP_CPY_RR] = OP_JNZ_RR;
+    tab[OP_JNZ_IR] = OP_CPY_IR;
+    tab[OP_JNZ_RR] = OP_CPY_RR;
+    tab[OP_HALT] = OP_HALT;
+    return tab;
+}();
+
+static void optimize(Program &p)
 {
-    switch (instr.opcode) {
-    case OP_NOP:
-    case OP_ADD_RR:
-    case OP_MUL_RR:
-        ASSERT(false);
-        break;
+    auto &prog = p.instructions;
 
-    case OP_JNZ_II:
-    case OP_JNZ_RI:
-        instr.opcode = OP_NOP;
-        break;
-
-    case OP_INC_R:
-        instr.opcode = OP_DEC_R;
-        break;
-    case OP_TGL_R:
-    case OP_DEC_R:
-        instr.opcode = OP_INC_R;
-        break;
-
-    case OP_CPY_IR:
-        instr.opcode = OP_JNZ_IR;
-        break;
-    case OP_CPY_RR:
-        instr.opcode = OP_JNZ_RR;
-        break;
-
-    case OP_JNZ_IR:
-        instr.opcode = OP_CPY_IR;
-        break;
-    case OP_JNZ_RR:
-        instr.opcode = OP_CPY_RR;
-        break;
-    }
-}
-
-static void optimize(std::vector<Instruction> &prog)
-{
     // Peephole optimization:
     bool changed;
     do {
@@ -170,10 +159,10 @@ static void optimize(std::vector<Instruction> &prog)
                 auto inner_factor_reg = cpy2->op1;
                 auto result_reg = add->op2;
 
-                add[0] = {OP_MUL_RR, inner_factor_reg, outer_factor_reg};
-                add[2] = {OP_CPY_RR, outer_factor_reg, result_reg};
-                add[3] = {OP_CPY_IR, 0, outer_factor_reg};
-                add[4] = {OP_NOP, 0, 0};
+                add[0] = {nullptr, OP_MUL_RR, inner_factor_reg, outer_factor_reg};
+                add[2] = {nullptr, OP_CPY_RR, outer_factor_reg, result_reg};
+                add[3] = {nullptr, OP_CPY_IR, 0, outer_factor_reg};
+                add[4] = {nullptr, OP_NOP, 0, 0};
 
                 changed = true;
             }
@@ -181,39 +170,93 @@ static void optimize(std::vector<Instruction> &prog)
     } while (changed);
 }
 
-inline int run_program(std::vector<Instruction> &prog, std::array<int, 4> regs)
+inline int run_program(Program &prog, std::array<int64_t, 4> regs)
 {
-    for (size_t i = 0; i < prog.size(); ++i) {
-        auto [opcode, op1, op2] = prog[i];
-        if (opcode == OP_CPY_IR) {
-            regs[op2] = op1;
-        } else if (opcode == OP_CPY_RR) {
-            regs[op2] = regs[op1];
-        } else if (opcode == OP_INC_R) {
-            regs[op1]++;
-        } else if (opcode == OP_DEC_R) {
-            regs[op1]--;
-        } else if (opcode == OP_JNZ_II) {
-            if (op1)
-                i += op2 - 1;
-        } else if (opcode == OP_JNZ_RI) {
-            if (regs[op1])
-                i += op2 - 1;
-        } else if (opcode == OP_JNZ_IR) {
-            if (op1)
-                i += regs[op2] - 1;
-        } else if (opcode == OP_JNZ_RR) {
-            if (regs[op1])
-                i += regs[op2] - 1;
-        } else if (opcode == OP_ADD_RR) {
-            regs[op2] += regs[op1];
-        } else if (opcode == OP_MUL_RR) {
-            regs[op2] *= regs[op1];
-        } else if (opcode == OP_TGL_R) {
-            if (i + regs[op1] < prog.size())
-                toggle_instruction(prog[i + regs[op1]]);
+    static void *const dispatch_table[] = {
+        &&nop,    &&cpy_ir, &&cpy_rr, &&inc_r,  &&dec_r, &&jnz_ii, &&jnz_ri,
+        &&jnz_ir, &&jnz_rr, &&add_rr, &&mul_rr, &&tgl_r, &&halt,
+    };
+    std::span<Instruction> instrs(prog.instructions);
+
+    // Store the handler for each instruction upfront to avoid an extra memory
+    // load from `dispatch_table` for each instruction executed.
+    for (Instruction &i : instrs)
+        i.handler = dispatch_table[i.opcode];
+
+    // -1 as the first iteration starts on `nop` for the first DISPATCH().
+    Instruction *inst = instrs.data() - 1;
+    const Instruction *const end = instrs.data() + instrs.size();
+
+#define DISPATCH()                                                                       \
+    do {                                                                                 \
+        inst++;                                                                          \
+        DEBUG_ASSERT(inst >= instrs.data() && inst < end);                               \
+        /* This is never out of bounds; the last instruction is always HALT .*/          \
+        goto * inst->handler;                                                            \
+    } while (0)
+
+    while (true) {
+    nop:
+        DISPATCH();
+    cpy_ir:
+        regs[inst->op2] = inst->op1;
+        DISPATCH();
+    cpy_rr:
+        regs[inst->op2] = regs[inst->op1];
+        DISPATCH();
+    inc_r:
+        regs[inst->op1]++;
+        DISPATCH();
+    dec_r:
+        regs[inst->op1]--;
+        DISPATCH();
+    jnz_ii:
+        if (inst->op1) {
+            inst += inst->op2 - 1;
+            if (inst >= end) [[unlikely]]
+                goto halt;
         }
+        DISPATCH();
+    jnz_ri:
+        if (regs[inst->op1]) {
+            inst += inst->op2 - 1;
+            if (inst >= end) [[unlikely]]
+                goto halt;
+        }
+        DISPATCH();
+    jnz_ir:
+        if (inst->op1) {
+            inst += regs[inst->op2] - 1;
+            if (inst >= end) [[unlikely]]
+                goto halt;
+        }
+        DISPATCH();
+    jnz_rr:
+        if (regs[inst->op1]) {
+            inst += regs[inst->op2] - 1;
+            if (inst >= end) [[unlikely]]
+                goto halt;
+        }
+        DISPATCH();
+    add_rr:
+        regs[inst->op2] += regs[inst->op1];
+        DISPATCH();
+    mul_rr:
+        regs[inst->op2] *= regs[inst->op1];
+        DISPATCH();
+    tgl_r:
+        if (int64_t offset = regs[inst->op1];
+            inst >= instrs.data() && inst + offset < end) {
+            Instruction &target = inst[offset];
+            const int64_t new_opcode = toggle_opcode_table[target.opcode];
+            ASSERT(new_opcode != -1);
+            target.opcode = static_cast<Opcode>(new_opcode);
+            target.handler = dispatch_table[target.opcode];
+        }
+        DISPATCH();
+    halt:
+        return regs[0];
     }
 
-    return regs[0];
+#undef DISPATCH
 }
