@@ -10,5 +10,7 @@ export GIT_DISCOVERY_ACROSS_FILESYSTEM=1
 mkdir -p build &&
 sudo mount -t ramfs ramfs build &&
 sudo chown -R $USER: build &&
-meson setup . build -Dunity=on -Dunity_size=8
+meson setup . build &&
+cd build &&
+$(git rev-parse --show-toplevel)/attic/meson-release
 set +x
