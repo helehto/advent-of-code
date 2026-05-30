@@ -89,9 +89,8 @@ generate_fingerprints(std::span<const Point> points)
 {
     small_vector<RTInvariantPairFingerprint> result;
 
-    size_t k = 0;
     for (size_t i = 0; i < points.size(); ++i)
-        for (size_t j = i + 1; j < points.size(); ++j, ++k)
+        for (size_t j = i + 1; j < points.size(); ++j)
             result.emplace_back(i, j, points[i], points[j]);
 
     std::ranges::sort(result, λab(a < b));
