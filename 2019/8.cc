@@ -1,6 +1,6 @@
 #include "common.h"
 #include <charconv>
-#include <hwy/highway.h>
+#include <unistd.h>
 
 namespace aoc_2019_8 {
 
