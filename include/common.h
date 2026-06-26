@@ -10,6 +10,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 #include <functional>
