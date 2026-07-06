@@ -217,7 +217,7 @@ private:
         const auto mask = capacity_ - 1;
         size_t i = hash & mask;
         uint8_t expected_state = 0b11000000 | (hash & detail::state_hash_mask);
-        constexpr static size_t stride = hn::Lanes(D());
+        const size_t stride = hn::Lanes(D());
 
         // Fast path before we drop into the SIMD loop: is the very first
         // bucket we landed at empty or the key we're looking for?

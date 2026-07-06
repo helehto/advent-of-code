@@ -128,22 +128,21 @@ static int64_t part1(std::span<const Instruction> instrs)
     return prog.muls;
 }
 
-constexpr bool is_composite(int n)
+// Enough primes to support testing for compositeness up to 419² = 175561.
+HWY_ALIGN_MAX constexpr float primes[]{
+    3,   5,   7,   11,  13,  17,  19,  23,  29,  31,  37,  41,  43,  47,  53,  59,
+    61,  67,  71,  73,  79,  83,  89,  97,  101, 103, 107, 109, 113, 127, 131, 137,
+    139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227,
+    229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307, 311, 313,
+    317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409, 419};
+
+using D = hn::ScalableTag<std::remove_cvref_t<decltype(primes[0])>>;
+
+static bool is_composite(int n)
 {
     // Fast path for all even inputs.
     if ((n & 1) == 0)
         return true;
-
-    // Enough primes to support testing for compositeness up to 419² = 175561.
-    HWY_ALIGN_MAX constexpr float primes[]{
-        3,   5,   7,   11,  13,  17,  19,  23,  29,  31,  37,  41,  43,  47,  53,  59,
-        61,  67,  71,  73,  79,  83,  89,  97,  101, 103, 107, 109, 113, 127, 131, 137,
-        139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227,
-        229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307, 311, 313,
-        317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409, 419};
-
-    using D = hn::ScalableTag<float>;
-    static_assert(std::size(primes) % hn::Lanes(D()) == 0);
 
     // Trial division by multiple primes at a time (single-precision floating
     // point math is safe here since the numbers are less than 2²³). A number
@@ -178,8 +177,8 @@ static int64_t part2(std::span<const Instruction> instrs)
 
 void run(std::string_view buf)
 {
+    ASSERT(std::size(primes) % hn::Lanes(D()) == 0);
     auto instrs = assemble(split_lines(buf));
-
     fmt::print("{}\n", part1(instrs));
     fmt::print("{}\n", part2(instrs));
 }

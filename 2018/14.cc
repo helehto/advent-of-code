@@ -7,7 +7,6 @@ template <typename D>
 hn::Vec<D> prefix_sum_u8(D d, const hn::Vec<D> v)
     requires(std::same_as<hn::TFromD<D>, uint8_t>)
 {
-    static_assert(hn::Lanes(D()) <= 64);
     using D64 = hn::Repartition<uint64_t, D>;
 
     // Compute prefix sum of each group of 8 elements:
@@ -36,7 +35,7 @@ hn::Vec<D> prefix_sum_u8(D d, const hn::Vec<D> v)
     const hn::Vec<D> v16k = hn::Set(d, hn::ExtractLane(v16, 15));
     const hn::Vec<D> v32 = hn::MaskedAddOr(v16, hn::Not(hn::FirstN(d, 16)), v16, v16k);
 
-    if constexpr (hn::Lanes(D()) <= 32) {
+    if (hn::Lanes(D()) <= 32) {
         return v32;
     } else {
         // Compute prefix sum for 512-bit blocks.
@@ -54,6 +53,11 @@ void run(std::string_view buf)
 
     using D = hn::ScalableTag<uint8_t>;
     constexpr D d;
+
+    // prefix_sum_u8() currently assumes 256-bit or 512-bit vectors, so it
+    // would break for e.g. NEON (128-bit) or SVE/RVV (potentially >512-bit).
+    // Assert to avoid silent breakage.
+    ASSERT(hn::Lanes(D()) >= 32 && hn::Lanes(D()) <= 64);
 
     inplace_vector<uint8_t, 20> needle;
     for (auto k = n; k; k /= 10)

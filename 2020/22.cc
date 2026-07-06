@@ -11,7 +11,6 @@ struct Deck {
 
     using D = hn::CappedTag<uint8_t, NUM_CARDS>;
     static constexpr D d{};
-    static_assert(NUM_CARDS % hn::Lanes(d) == 0);
 
     // Array of cards, in order, with the oldest card at index 0. All valid
     // cards are grouped at the start of the array, with remaining elements set
@@ -156,6 +155,8 @@ static bool recursive_combat(Deck &&a, Deck &&b, bool is_root_game = true)
 
 void run(std::string_view buf)
 {
+    ASSERT(Deck::NUM_CARDS % hn::Lanes(Deck::d) == 0);
+
     auto sep = buf.find("\n\n");
     auto a = find_numbers<uint8_t>(buf.substr("Player x:"sv.size(), sep));
     auto b = find_numbers<uint8_t>(buf.substr(sep + "\n\nPlayer x:"sv.size()));
