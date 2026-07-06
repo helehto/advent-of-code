@@ -672,7 +672,7 @@ public:
     {
         return static_cast<float>(size_with_tombs_) / capacity_;
     }
-    float max_load_factor() const noexcept
+    constexpr static float max_load_factor() noexcept
     {
         return static_cast<float>(max_load_.first) / max_load_.second;
     }
