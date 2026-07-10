@@ -17,8 +17,12 @@ static size_t part1(std::span<const std::string_view> lines)
     }
 
     std::string_view input = lines.back();
+    std::vector<uint32_t> atom_offsets;
+    atom_offsets.reserve(input.size() / 2 + 1);
     std::vector<std::string_view> molecule;
+    molecule.reserve(input.size() / 2 + 1);
     for (size_t i = 0; i < input.size();) {
+        atom_offsets.push_back(i);
         if (i + 1 < input.size() && islower(input[i + 1])) {
             molecule.push_back(input.substr(i, 2));
             i += 2;
@@ -27,19 +31,24 @@ static size_t part1(std::span<const std::string_view> lines)
             i++;
         }
     }
+    atom_offsets.push_back(input.size());
 
     dense_set<std::string> seen;
-    seen.reserve(5 * molecule.size());
+    seen.reserve(5 * atom_offsets.size());
+    std::string tmp;
+    tmp.reserve(2 * atom_offsets.size());
 
-    for (size_t i = 0; i < molecule.size(); ++i) {
+    for (size_t i = 0; i + 1 < atom_offsets.size(); ++i) {
         auto it = recipes.find(molecule[i]);
         if (it == recipes.end())
             continue;
+
         for (std::string_view replacement : it->second) {
-            std::vector<std::string_view> tmp = molecule;
-            tmp[i] = replacement;
-            auto result = fmt::format("{}", fmt::join(tmp, ""));
-            seen.insert(std::move(result));
+            tmp.clear();
+            tmp += input.substr(0, atom_offsets[i]);
+            tmp += replacement;
+            tmp += input.substr(atom_offsets[i + 1], input.size() - atom_offsets[i + 1]);
+            seen.insert(tmp);
         }
     }
 
