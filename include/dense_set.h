@@ -38,7 +38,7 @@ public:
 
     public:
         using difference_type = std::ptrdiff_t;
-        using iterator_category = std::input_iterator_tag;
+        using iterator_category = std::forward_iterator_tag;
         using value_type = dense_set::key_type;
         using pointer = const value_type *;
         using reference = const value_type &;
@@ -58,6 +58,7 @@ public:
         const_iterator &operator++() { return void(++iter_), *this; }
         const_iterator operator++(int) { return ++*this; }
     };
+    static_assert(std::forward_iterator<const_iterator>);
 
     using iterator = const_iterator;
 

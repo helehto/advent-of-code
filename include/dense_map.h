@@ -172,6 +172,8 @@ public:
     class iterator : public iterator_base<false, iterator> {
         using iterator_base<false, iterator>::iterator_base;
     };
+    static_assert(std::forward_iterator<iterator>);
+
     class const_iterator : public iterator_base<true, const_iterator> {
         using iterator_base<true, const_iterator>::iterator_base;
 
@@ -181,6 +183,7 @@ public:
         {
         }
     };
+    static_assert(std::forward_iterator<const_iterator>);
 
 private:
     std::unique_ptr<std::byte[]> storage_;
