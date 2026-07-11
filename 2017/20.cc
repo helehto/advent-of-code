@@ -1,4 +1,5 @@
 #include "common.h"
+#include "dense_map.h"
 
 namespace aoc_2017_20 {
 
@@ -10,6 +11,8 @@ struct Particle {
 
 static int part1(std::span<const Particle> particles)
 {
+    // Long enough to be considered "long-term", but small enough to avoid
+    // overflowing (on my input, at least):
     constexpr static int64_t dt = 50'000;
 
     auto it = std::ranges::min_element(particles, {}, [&](const Particle &p) noexcept {
@@ -38,17 +41,27 @@ static int part2(std::vector<Particle> &particles)
     std::vector<Particle> next;
     next.reserve(particles.size());
 
-    auto collide = [&] {
-        std::ranges::sort(particles, {}, λx(x.p));
+    dense_map<std::array<int64_t, 3>, size_t, CrcHasher> occupied;
+    occupied.reserve(particles.size());
+    std::vector<uint32_t> pending_deletion;
+    pending_deletion.reserve(particles.size());
 
+    auto collide = [&] {
         next.clear();
-        for (auto it = particles.begin(); it != particles.end();) {
-            auto e = std::ranges::equal_range(it, particles.end(), it->p, {}, λx(x.p));
-            const auto len = std::ranges::size(e);
-            if (len == 1)
-                next.push_back(*it);
-            it += len;
+        occupied.clear();
+        pending_deletion.clear();
+
+        for (const Particle &p : particles) {
+            if (auto [it, inserted] = occupied.try_emplace(p.p, next.size()); inserted)
+                next.push_back(p);
+            else if (!std::ranges::contains(pending_deletion, it->second))
+                pending_deletion.push_back(it->second);
         }
+
+        std::ranges::sort(pending_deletion);
+        for (size_t i = pending_deletion.size(); i--;)
+            erase_swap(next, pending_deletion[i]);
+
         std::swap(particles, next);
     };
 
@@ -67,18 +80,16 @@ static int part2(std::vector<Particle> &particles)
 
 void run(std::string_view buf)
 {
-    auto lines = split_lines(buf);
+    auto nums = find_numbers<int>(buf);
+    ASSERT(nums.size() % 9 == 0);
 
-    std::vector<Particle> particles;
-    particles.reserve(lines.size());
-
-    for (std::string_view line : lines) {
-        auto nums = find_numbers_n<int, 9>(line);
-        particles.push_back(Particle{
-            .p = {nums[0], nums[1], nums[2]},
-            .v = {nums[3], nums[4], nums[5]},
-            .a = {nums[6], nums[7], nums[8]},
-        });
+    std::vector<Particle> particles(nums.size() / 9);
+    for (size_t i = 0; i < nums.size() / 9; i++) {
+        particles[i] = Particle{
+            .p = {nums[9 * i], nums[9 * i + 1], nums[9 * i + 2]},
+            .v = {nums[9 * i + 3], nums[9 * i + 4], nums[9 * i + 5]},
+            .a = {nums[9 * i + 6], nums[9 * i + 7], nums[9 * i + 8]},
+        };
     }
 
     fmt::print("{}\n", part1(particles));
