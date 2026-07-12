@@ -1,10 +1,12 @@
 #!/bin/sh
 set -eu
 ninja
-./aoc --json -i 1 '*' |
+./aoc --json -i 3 '*' |
+	tail -1 |
 	jq -r '
-		sort_by(.[2][0]) |
-		map("\(.[0])\t\(.[1])\t\(.[2][0])") |
+		map([.[0], .[1], (.[2] | min)]) |
+		sort_by(.[2]) |
+		map("\(.[0])\t\(.[1])\t\(.[2])") |
 		.[]
 	' | awk '
 		BEGIN {
