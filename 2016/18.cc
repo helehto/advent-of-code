@@ -17,6 +17,7 @@ void run(std::string_view buf)
             traps += std::popcount(cells[1]) + std::popcount(cells[0]);
             std::array<uint64_t, 2> l = cells, r = cells;
 
+#ifdef __x86_64__
             // Left and right-shift of {cells[1], cells[0]} interpreted as a
             // 128-bit integer. This sequence is about ~10% faster on my setup
             // compared to just using __uint128_t directly, despite all of the
@@ -25,6 +26,12 @@ void run(std::string_view buf)
                 : "+r"(l[0]), "+r"(l[1]), "+r"(r[1]), "+r"(r[0])
                 :
                 : "cc");
+#else
+            l[1] = (l[1] << 1) | (l[0] >> 63);
+            l[0] <<= 1;
+            r[0] = (r[0] >> 1) | (r[1] << 63);
+            r[1] >>= 1;
+#endif
 
             cells[0] = l[0] ^ r[0];
             cells[1] = (l[1] ^ r[1]) & mask;
