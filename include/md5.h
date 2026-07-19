@@ -14,6 +14,13 @@ using Vec4T = hn::Vec4<D>;
 constexpr D d;
 constexpr size_t max_lanes = hn::MaxLanes(D());
 
+/// The number of 32-bit SIMD lanes, i.e. the number of hashes that can be
+/// computed at once.
+///
+/// Note that this cannot be constexpr since hn::Lanes() is not constexpr due
+/// to SVE or RVV where the number of lanes can be set at runtime. We don't
+/// support those yet, so in practice this is constant and folded away by the
+/// compiler.
 inline size_t lanes()
 {
     return hn::Lanes(d);
@@ -39,14 +46,15 @@ inline std::array<uint32_t, max_lanes> to_array(const VecT v)
 
 /// 64-byte blocks laid out sequentially one after another; as many blocks as
 /// we (potentially) have SIMD lanes.
-struct alignas(32) SequentialBlocks {
-    char data[bytes_per_block * max_lanes];
+struct SequentialBlocks {
+    HWY_ALIGN_MAX char data[bytes_per_block * max_lanes];
 };
 
-/// Interleaved 4-byte words from 64-byte blocks. This is the format fed into
-/// the core hash_block() function to compute multiple hashes in parallel.
-struct alignas(32) InterleavedBlocks {
-    uint32_t data[words_per_block * max_lanes];
+/// Interleaved 4-byte words from 64-byte blocks, stored as little-endian. This
+/// is the format fed into the core hash_block() function to compute multiple
+/// hashes in parallel.
+struct InterleavedBlocks {
+    HWY_ALIGN_MAX uint32_t data[words_per_block * max_lanes];
 };
 
 // Interleave 4-byte words from 64-byte blocks laid out one after in memory.
@@ -58,10 +66,13 @@ inline InterleavedBlocks interleave(const SequentialBlocks &input)
     // GCC does a decent job of vectorizing this into a bunch of shuffles
     // (vpermi2d and vpermt2d); doing it by hand is unlikely to yield any
     // significant speedup.
-    auto *input32 = reinterpret_cast<const uint32_t *>(&input.data);
-    for (size_t i = 0; i < words_per_block; i++)
-        for (size_t j = 0; j < lanes; j++)
-            result.data[lanes * i + j] = input32[words_per_block * j + i];
+    static_assert(std::endian::native == std::endian::little);
+    uint32_t *dst = result.data;
+    for (size_t i = 0; i < words_per_block; i++) {
+        const char *src = input.data + 4 * i;
+        for (size_t j = 0; j < lanes; j++, src += bytes_per_block, dst++)
+            memcpy(dst, src, sizeof(uint32_t));
+    }
 
     return result;
 }
@@ -72,12 +83,15 @@ inline void prepare_final_blocks(SequentialBlocks &HWY_RESTRICT messages,
                                  const uint32_t *HWY_RESTRICT length_bytes)
 {
     for (size_t i = 0; i < lanes(); i++) {
+        DEBUG_ASSERT(length_bytes[i] < bytes_per_block);
+
         // The buffer is assumed to be padded and the length of each message is
         // non-decreasing, so all we need to do is to insert the 1 bit (0x80)
         // and add the length in bits.
         messages.data[bytes_per_block * i + length_bytes[i]] = 0x80;
 
-        // The message is never going to be more than 65536 bits.
+        // Assumes that message is never going to be more than 65536 bits, and
+        // that the rest of the length field is already zeroed.
         messages.data[bytes_per_block * i + 56] = (length_bytes[i] << 3) & 0xff;
         messages.data[bytes_per_block * i + 57] = (length_bytes[i] >> 5) & 0xff;
     }
@@ -85,15 +99,20 @@ inline void prepare_final_blocks(SequentialBlocks &HWY_RESTRICT messages,
 
 // Prepare the final messages blocks by inserting the block lengths into the
 // `messages`, assuming that the messages are already padded with zero bits.
+// The terminating 0x80 byte is inserted at the offset given by `x80_offset`,
+// if set.
 inline void prepare_final_blocks(SequentialBlocks &HWY_RESTRICT messages,
                                  std::optional<size_t> x80_offset,
                                  const uint32_t *HWY_RESTRICT length_bytes)
 {
     for (size_t i = 0; i < lanes(); i++) {
-        if (x80_offset)
+        if (x80_offset) {
+            DEBUG_ASSERT(*x80_offset < bytes_per_block);
             messages.data[bytes_per_block * i + *x80_offset] = 0x80;
+        }
 
-        // The message is never going to be more than 65536 bits.
+        // Assumes that message is never going to be more than 65536 bits, and
+        // that the rest of the length field is already zeroed.
         messages.data[bytes_per_block * i + 56] = (length_bytes[i] << 3) & 0xff;
         messages.data[bytes_per_block * i + 57] = (length_bytes[i] >> 5) & 0xff;
     }
@@ -117,7 +136,7 @@ hash_block(const InterleavedBlocks &HWY_RESTRICT M, VecT a0, VecT b0, VecT c0, V
     do {                                                                                 \
         a += f(b, c, d);                                                                 \
         a += hn::Set(hn::DFromV<decltype(a)>(), K[k]);                                   \
-        a += hn::LoadU(hn::DFromV<decltype(a)>(), &M.data[lanes() * (j)]);               \
+        a += hn::Load(hn::DFromV<decltype(a)>(), &M.data[lanes() * (j)]);                \
         a = hn::RotateLeft<shift>(a);                                                    \
         a += b;                                                                          \
     } while (0)
@@ -253,6 +272,7 @@ namespace detail {
 template <size_t N>
 consteval uint64_t make_leading_zero_mask()
 {
+    static_assert(N <= 16);
     uint64_t result = (UINT64_C(1) << (4 * (N & ~1))) - 1;
     if (N & 1)
         result |= UINT64_C(0xf) << (4 * N);
@@ -291,7 +311,7 @@ struct State {
         uint32_t lengths[max_lanes];
 
         for (size_t i = 0; i < lanes(); i++) {
-            char *p = messages.data + 64 * i;
+            char *p = messages.data + bytes_per_block * i;
             char *q = to_chars(p + prefix.size(), block + i);
             lengths[i] = q - p;
         }
