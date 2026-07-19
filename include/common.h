@@ -191,37 +191,41 @@ constexpr inline uint64_t pow10i[] = {
     /* 10^19 */ UINT64_C(10000000000000000000),
 };
 
-// For integers with `i` leading zero bits where 0 ≤ i ≤ 64, index `i` in
-// this table gives floor(log10(2 ** i)).
-constexpr std::array<uint8_t, 65> floor_log10_2exp = {
-    19, 19, 19, 19, 18, 18, 18, 17, 17, 17, 16, 16, 16, 16, 15, 15, 15,
-    14, 14, 14, 13, 13, 13, 13, 12, 12, 12, 11, 11, 11, 10, 10, 10, 10,
-    9,  9,  9,  8,  8,  8,  7,  7,  7,  7,  6,  6,  6,  5,  5,  5,  4,
-    4,  4,  4,  3,  3,  3,  2,  2,  2,  1,  1,  1,  0,  0,
-};
-
-// For integers with `i` leading zero bits where 0 ≤ i ≤ 64, index `i` in this
-// table gives the next power of 10.
-constexpr auto next_power_of_10 = [] {
-    std::array<uint64_t, 65> tab;
-    for (size_t i = 0; i < tab.size(); i++)
-        tab[i] = pow10i[floor_log10_2exp[i]];
-    return tab;
-}();
-
 /// Computes the number of digits in `n` when written in base 10.
 constexpr int digit_count_base10(uint64_t n)
 {
-    const int lzcnt = std::countl_zero(n);
+    const size_t lzcnt = std::countl_zero(n);
+
+    // For integers with `i` leading zero bits where 0 ≤ i ≤ 64, index `i` in
+    // this table gives floor(log10(2 ** i)).
+    static constexpr std::array<uint8_t, 65> floor_log10_2exp = {
+        19, 19, 19, 19, 18, 18, 18, 17, 17, 17, 16, 16, 16, 16, 15, 15, 15,
+        14, 14, 14, 13, 13, 13, 13, 12, 12, 12, 11, 11, 11, 10, 10, 10, 10,
+        9,  9,  9,  8,  8,  8,  7,  7,  7,  7,  6,  6,  6,  5,  5,  5,  4,
+        4,  4,  4,  3,  3,  3,  2,  2,  2,  1,  1,  1,  0,  0,
+    };
 
     // For adjacent powers of two where there is a power of ten between them,
-    // e.g. 64 ≤ 100 ≤ 128, we need to consult next_power_of_10 to determine
-    // whether the number of digits must be adjusted by 1. For instance: the
-    // numbers 99 and 101 both have 57 leading zero bits when written as 64-bit
-    // integers in base 2, but 101 contains an extra digit when written in base
-    // 10.
-    const int extra = (n >= next_power_of_10[lzcnt]);
+    // we may need to add an extra digit. For instance: the numbers 99 and 100
+    // both have 57 leading zero bits when written as 64-bit integers in base
+    // 2, as they both lie between 64 and and 128, but 100 contains one more
+    // digit when written in base 10.
+    //
+    // This lookup table is used to determine whether this is the case.
+    //
+    // For any integer with `i` leading zero bits where 0 ≤ i ≤ 64, index `i`
+    // in this table gives the smallest power of ten greater than it. The one
+    // exception is index 64, corresponding to the integer 0, which still has
+    // one digit when written in base 10.
+    static constexpr auto need_extra_digit = [&] consteval {
+        std::array<uint64_t, 65> tab;
+        for (size_t i = 0; i < 64; i++)
+            tab[i] = pow10i[floor_log10_2exp[i]];
+        tab[64] = 0;
+        return tab;
+    }();
 
+    const int extra = (n >= need_extra_digit[lzcnt]);
     return floor_log10_2exp[lzcnt] + extra;
 }
 
