@@ -233,11 +233,6 @@ inline Result hash_block(const SequentialBlocks &HWY_RESTRICT chunks)
         "6061626364656667686970717273747576777879"
         "8081828384858687888990919293949596979899";
 
-    if (n < 10) [[unlikely]] {
-        *p = '0' + n % 10;
-        return p + 1;
-    }
-
     // Determine the number of base 10 digits to be written. This way, we can
     // write the digits into the right place immediately and not have to
     // reverse or move them afterwards.
