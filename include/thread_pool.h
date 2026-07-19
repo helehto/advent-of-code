@@ -15,63 +15,62 @@
 #include <thread>
 #include <unistd.h>
 
+inline void futex_wake(const std::atomic_uint32_t &addr, int32_t n) noexcept
+{
+    if (syscall(SYS_futex, &addr, FUTEX_WAKE_PRIVATE, n) < 0)
+        ASSERT_MSG(false, "futex(FUTEX_WAKE_PRIVATE) failed: {}", strerror(errno));
+}
+
+inline void
+futex_wake_bitset(const std::atomic_uint32_t &addr, int32_t n, uint32_t bitset) noexcept
+{
+    if (syscall(SYS_futex, &addr, FUTEX_WAKE_BITSET_PRIVATE, n, nullptr, nullptr,
+                bitset) < 0)
+        ASSERT_MSG(false, "futex(FUTEX_WAKE_BITSET_PRIVATE) failed: {}", strerror(errno));
+}
+
+inline bool futex_wait(const std::atomic_uint32_t &addr, uint32_t expected) noexcept
+{
+    if (syscall(SYS_futex, &addr, FUTEX_WAIT_PRIVATE, expected, nullptr) < 0) {
+        ASSERT_MSG(errno == EAGAIN || errno == EINTR,
+                   "futex(FUTEX_WAIT_PRIVATE) failed: {}", strerror(errno));
+        return false;
+    }
+
+    return true;
+}
+
+inline bool futex_wait_bitset(const std::atomic_uint32_t &addr,
+                              uint32_t expected,
+                              uint32_t bitset) noexcept
+{
+    if (syscall(SYS_futex, &addr, FUTEX_WAIT_BITSET_PRIVATE, expected, nullptr, nullptr,
+                bitset) < 0) {
+        ASSERT_MSG(errno == EAGAIN || errno == EINTR,
+                   "futex(FUTEX_WAIT_BITSET_PRIVATE) failed: {}", strerror(errno));
+        return false;
+    }
+
+    return true;
+}
+
+/// Wait until the given atomic counter becomes zero, waiting on its
+/// address as a futex.
+inline void atomic_wait_zero(const std::atomic_uint32_t &counter) noexcept
+{
+    while (true) {
+        uint32_t val = counter.load(std::memory_order_acquire);
+        if (val == 0)
+            break;
+        futex_wait(counter, val);
+    }
+}
+
 /// Needlessly complex and probably horribly broken thread pool implementation
 /// that relies on manual futex management and manual type erasure instead of
 /// using std::function. (It was fun to write, at least.)
 class ThreadPool {
 private:
-    static void futex_wake(const std::atomic_uint32_t &addr, int32_t n) noexcept
-    {
-        if (syscall(SYS_futex, &addr, FUTEX_WAKE_PRIVATE, n) < 0)
-            ASSERT_MSG(false, "futex(FUTEX_WAKE_PRIVATE) failed: {}", strerror(errno));
-    }
-
-    static void futex_wake_bitset(const std::atomic_uint32_t &addr,
-                                  int32_t n,
-                                  uint32_t bitset) noexcept
-    {
-        if (syscall(SYS_futex, &addr, FUTEX_WAKE_BITSET_PRIVATE, n, nullptr, nullptr,
-                    bitset) < 0)
-            ASSERT_MSG(false, "futex(FUTEX_WAKE_BITSET_PRIVATE) failed: {}",
-                       strerror(errno));
-    }
-
-    static bool futex_wait(const std::atomic_uint32_t &addr, uint32_t expected) noexcept
-    {
-        if (syscall(SYS_futex, &addr, FUTEX_WAIT_PRIVATE, expected, nullptr) < 0) {
-            ASSERT_MSG(errno == EAGAIN || errno == EINTR,
-                       "futex(FUTEX_WAIT_PRIVATE) failed: {}", strerror(errno));
-            return false;
-        }
-
-        return true;
-    }
-
-    static bool futex_wait_bitset(const std::atomic_uint32_t &addr,
-                                  uint32_t expected,
-                                  uint32_t bitset) noexcept
-    {
-        if (syscall(SYS_futex, &addr, FUTEX_WAIT_BITSET_PRIVATE, expected, nullptr,
-                    nullptr, bitset) < 0) {
-            ASSERT_MSG(errno == EAGAIN || errno == EINTR,
-                       "futex(FUTEX_WAIT_BITSET_PRIVATE) failed: {}", strerror(errno));
-            return false;
-        }
-
-        return true;
-    }
-
-    /// Wait until the given atomic counter becomes zero.
-    static void atomic_wait_zero(const std::atomic_uint32_t &counter) noexcept
-    {
-        while (true) {
-            uint32_t val = counter.load(std::memory_order_acquire);
-            if (val == 0)
-                break;
-            futex_wait(counter, val);
-        }
-    }
-
     /// Represents a single unit of work to be executed by a worker thread.
     struct alignas(64) Task {
         enum class Type {
