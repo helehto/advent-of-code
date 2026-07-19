@@ -4,7 +4,6 @@
 #include "small_vector.h"
 #include <atomic>
 #include <cerrno>
-#include <latch>
 #include <linux/futex.h>
 #include <memory>
 #include <mutex>
@@ -706,7 +705,7 @@ public:
 
     void run(ThreadPool &pool, auto &&work_fn)
     {
-        std::latch finish_latch(n_threads);
+        std::atomic_uint32_t remaining_threads = n_threads;
 
         pool.for_each_thread([&, fn = work_fn](size_t thread_id) noexcept {
             bool is_idle = false;
@@ -766,7 +765,11 @@ public:
                 std::this_thread::yield();
             }
 
-            finish_latch.arrive_and_wait();
+            if (remaining_threads.fetch_sub(1, std::memory_order_release) == 1)
+                futex_wake(remaining_threads, INT_MAX);
+            else
+                atomic_wait_zero(remaining_threads);
+
             queue.destroy();
         });
     }
