@@ -223,7 +223,7 @@ inline Result hash_block(const SequentialBlocks &HWY_RESTRICT chunks)
     return hash_block(chunks, a0, b0, c0, d0);
 }
 
-[[gnu::noinline]] inline char *to_chars(char *p, int n)
+inline char *to_chars(char *p, int n)
 {
     // 00-99 packed into a single string.
     static constexpr const char packed_digits2[] =
