@@ -118,8 +118,20 @@ inline void prepare_final_blocks(SequentialBlocks &HWY_RESTRICT messages,
     }
 }
 
-// Hash multiple blocks simultaneously with SIMD.
-inline Vec4T
+enum class ResultType { full_result, only_a };
+
+/// Hash multiple blocks simultaneously with SIMD.
+///
+/// `NonZeroBlockMask` is a 16-bit mask corresponding to each of the 16 4-byte
+/// words in the message blocks. A set bit indicates that a word is potentially
+/// non-zero and must be loaded from memory, while a cleared bit assumes that
+/// the word is zero.
+///
+/// `ResultType` controls what is returned: either the full result (a, b, c, d)
+/// as 4 vectors, or only the `a` value as a single vector.
+template <uint16_t NonZeroBlockMask = 0xffff,
+          ResultType ResultType = ResultType::full_result>
+inline auto
 hash_block(const InterleavedBlocks &HWY_RESTRICT M, VecT a0, VecT b0, VecT c0, VecT d0)
 {
     VecT A(a0);
@@ -136,7 +148,8 @@ hash_block(const InterleavedBlocks &HWY_RESTRICT M, VecT a0, VecT b0, VecT c0, V
     do {                                                                                 \
         a += f(b, c, d);                                                                 \
         a += hn::Set(hn::DFromV<decltype(a)>(), K[k]);                                   \
-        a += hn::Load(hn::DFromV<decltype(a)>(), &M.data[lanes() * (j)]);                \
+        if constexpr (NonZeroBlockMask & (1 << (j)))                                     \
+            a += hn::Load(hn::DFromV<decltype(a)>(), &M.data[lanes() * (j)]);            \
         a = hn::RotateLeft<shift>(a);                                                    \
         a += b;                                                                          \
     } while (0)
@@ -233,21 +246,31 @@ hash_block(const InterleavedBlocks &HWY_RESTRICT M, VecT a0, VecT b0, VecT c0, V
 #undef I
 #undef QUARTER_ROUND
 
-    return hn::Create4(d, A + a0, B + b0, C + c0, D + d0);
+    if constexpr (ResultType == ResultType::only_a) {
+        return A + a0;
+    } else if constexpr (ResultType == ResultType::full_result) {
+        return hn::Create4(d, A + a0, B + b0, C + c0, D + d0);
+    } else {
+        static_assert(false);
+    }
 }
 
-inline Vec4T hash_block(const InterleavedBlocks &HWY_RESTRICT M, Vec4T state)
+template <uint16_t NonZeroBlockMask = 0xffff,
+          ResultType ResultType = ResultType::full_result>
+inline auto hash_block(const InterleavedBlocks &HWY_RESTRICT M, Vec4T state)
 {
     const VecT a0 = hn::Get4<0>(state);
     const VecT b0 = hn::Get4<1>(state);
     const VecT c0 = hn::Get4<2>(state);
     const VecT d0 = hn::Get4<3>(state);
-    return hash_block(M, a0, b0, c0, d0);
+    return hash_block<NonZeroBlockMask, ResultType>(M, a0, b0, c0, d0);
 }
 
-inline Vec4T hash_block(const InterleavedBlocks &HWY_RESTRICT M)
+template <uint16_t NonZeroBlockMask = 0xffff,
+          ResultType ResultType = ResultType::full_result>
+inline auto hash_block(const InterleavedBlocks &HWY_RESTRICT M)
 {
-    return hash_block(M, initial_state());
+    return hash_block<NonZeroBlockMask, ResultType>(M, initial_state());
 }
 
 inline Vec4T hash_block(
