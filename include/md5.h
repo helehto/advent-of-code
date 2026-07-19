@@ -156,36 +156,76 @@ hash_block(const InterleavedBlocks &HWY_RESTRICT M, VecT a0, VecT b0, VecT c0, V
     };
 
     // Quarter-round 1 (F):
-    for (int i = 0; i < 16; i += 4) {
-        QUARTER_ROUND(F, A, B, C, D, i + 0, i + 0, 7);
-        QUARTER_ROUND(F, D, A, B, C, i + 1, i + 1, 12);
-        QUARTER_ROUND(F, C, D, A, B, i + 2, i + 2, 17);
-        QUARTER_ROUND(F, B, C, D, A, i + 3, i + 3, 22);
-    }
+    QUARTER_ROUND(F, A, B, C, D, 0, 0, 7);
+    QUARTER_ROUND(F, D, A, B, C, 1, 1, 12);
+    QUARTER_ROUND(F, C, D, A, B, 2, 2, 17);
+    QUARTER_ROUND(F, B, C, D, A, 3, 3, 22);
+    QUARTER_ROUND(F, A, B, C, D, 4, 4, 7);
+    QUARTER_ROUND(F, D, A, B, C, 5, 5, 12);
+    QUARTER_ROUND(F, C, D, A, B, 6, 6, 17);
+    QUARTER_ROUND(F, B, C, D, A, 7, 7, 22);
+    QUARTER_ROUND(F, A, B, C, D, 8, 8, 7);
+    QUARTER_ROUND(F, D, A, B, C, 9, 9, 12);
+    QUARTER_ROUND(F, C, D, A, B, 10, 10, 17);
+    QUARTER_ROUND(F, B, C, D, A, 11, 11, 22);
+    QUARTER_ROUND(F, A, B, C, D, 12, 12, 7);
+    QUARTER_ROUND(F, D, A, B, C, 13, 13, 12);
+    QUARTER_ROUND(F, C, D, A, B, 14, 14, 17);
+    QUARTER_ROUND(F, B, C, D, A, 15, 15, 22);
 
     // Quarter-round 2 (G):
-    for (int i = 16; i < 32; i += 4) {
-        QUARTER_ROUND(G, A, B, C, D, (5 * (i + 0) + 1) & 15, i + 0, 5);
-        QUARTER_ROUND(G, D, A, B, C, (5 * (i + 1) + 1) & 15, i + 1, 9);
-        QUARTER_ROUND(G, C, D, A, B, (5 * (i + 2) + 1) & 15, i + 2, 14);
-        QUARTER_ROUND(G, B, C, D, A, (5 * (i + 3) + 1) & 15, i + 3, 20);
-    }
+    QUARTER_ROUND(G, A, B, C, D, 1, 16, 5);
+    QUARTER_ROUND(G, D, A, B, C, 6, 17, 9);
+    QUARTER_ROUND(G, C, D, A, B, 11, 18, 14);
+    QUARTER_ROUND(G, B, C, D, A, 0, 19, 20);
+    QUARTER_ROUND(G, A, B, C, D, 5, 20, 5);
+    QUARTER_ROUND(G, D, A, B, C, 10, 21, 9);
+    QUARTER_ROUND(G, C, D, A, B, 15, 22, 14);
+    QUARTER_ROUND(G, B, C, D, A, 4, 23, 20);
+    QUARTER_ROUND(G, A, B, C, D, 9, 24, 5);
+    QUARTER_ROUND(G, D, A, B, C, 14, 25, 9);
+    QUARTER_ROUND(G, C, D, A, B, 3, 26, 14);
+    QUARTER_ROUND(G, B, C, D, A, 8, 27, 20);
+    QUARTER_ROUND(G, A, B, C, D, 13, 28, 5);
+    QUARTER_ROUND(G, D, A, B, C, 2, 29, 9);
+    QUARTER_ROUND(G, C, D, A, B, 7, 30, 14);
+    QUARTER_ROUND(G, B, C, D, A, 12, 31, 20);
 
     // Quarter-round 3 (H):
-    for (int i = 32; i < 48; i += 4) {
-        QUARTER_ROUND(H, A, B, C, D, (3 * (i + 0) + 5) & 15, i + 0, 4);
-        QUARTER_ROUND(H, D, A, B, C, (3 * (i + 1) + 5) & 15, i + 1, 11);
-        QUARTER_ROUND(H, C, D, A, B, (3 * (i + 2) + 5) & 15, i + 2, 16);
-        QUARTER_ROUND(H, B, C, D, A, (3 * (i + 3) + 5) & 15, i + 3, 23);
-    }
+    QUARTER_ROUND(H, A, B, C, D, 5, 32, 4);
+    QUARTER_ROUND(H, D, A, B, C, 8, 33, 11);
+    QUARTER_ROUND(H, C, D, A, B, 11, 34, 16);
+    QUARTER_ROUND(H, B, C, D, A, 14, 35, 23);
+    QUARTER_ROUND(H, A, B, C, D, 1, 36, 4);
+    QUARTER_ROUND(H, D, A, B, C, 4, 37, 11);
+    QUARTER_ROUND(H, C, D, A, B, 7, 38, 16);
+    QUARTER_ROUND(H, B, C, D, A, 10, 39, 23);
+    QUARTER_ROUND(H, A, B, C, D, 13, 40, 4);
+    QUARTER_ROUND(H, D, A, B, C, 0, 41, 11);
+    QUARTER_ROUND(H, C, D, A, B, 3, 42, 16);
+    QUARTER_ROUND(H, B, C, D, A, 6, 43, 23);
+    QUARTER_ROUND(H, A, B, C, D, 9, 44, 4);
+    QUARTER_ROUND(H, D, A, B, C, 12, 45, 11);
+    QUARTER_ROUND(H, C, D, A, B, 15, 46, 16);
+    QUARTER_ROUND(H, B, C, D, A, 2, 47, 23);
 
     // Quarter-round 4 (I):
-    for (int i = 48; i < 64; i += 4) {
-        QUARTER_ROUND(I, A, B, C, D, (7 * (i + 0)) & 15, i + 0, 6);
-        QUARTER_ROUND(I, D, A, B, C, (7 * (i + 1)) & 15, i + 1, 10);
-        QUARTER_ROUND(I, C, D, A, B, (7 * (i + 2)) & 15, i + 2, 15);
-        QUARTER_ROUND(I, B, C, D, A, (7 * (i + 3)) & 15, i + 3, 21);
-    }
+    QUARTER_ROUND(I, A, B, C, D, 0, 48, 6);
+    QUARTER_ROUND(I, D, A, B, C, 7, 49, 10);
+    QUARTER_ROUND(I, C, D, A, B, 14, 50, 15);
+    QUARTER_ROUND(I, B, C, D, A, 5, 51, 21);
+    QUARTER_ROUND(I, A, B, C, D, 12, 52, 6);
+    QUARTER_ROUND(I, D, A, B, C, 3, 53, 10);
+    QUARTER_ROUND(I, C, D, A, B, 10, 54, 15);
+    QUARTER_ROUND(I, B, C, D, A, 1, 55, 21);
+    QUARTER_ROUND(I, A, B, C, D, 8, 56, 6);
+    QUARTER_ROUND(I, D, A, B, C, 15, 57, 10);
+    QUARTER_ROUND(I, C, D, A, B, 6, 58, 15);
+    QUARTER_ROUND(I, B, C, D, A, 13, 59, 21);
+    QUARTER_ROUND(I, A, B, C, D, 4, 60, 6);
+    QUARTER_ROUND(I, D, A, B, C, 11, 61, 10);
+    QUARTER_ROUND(I, C, D, A, B, 2, 62, 15);
+    QUARTER_ROUND(I, B, C, D, A, 9, 63, 21);
 
 #undef F
 #undef G
