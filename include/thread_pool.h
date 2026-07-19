@@ -56,10 +56,11 @@ inline bool futex_wait_bitset(const std::atomic_uint32_t &addr,
 
 /// Wait until the given atomic counter becomes zero, waiting on its
 /// address as a futex.
-inline void atomic_wait_zero(const std::atomic_uint32_t &counter) noexcept
+inline void atomic_wait_zero(const std::atomic_uint32_t &counter,
+                             std::memory_order order = std::memory_order_seq_cst) noexcept
 {
     while (true) {
-        uint32_t val = counter.load(std::memory_order_acquire);
+        uint32_t val = counter.load(order);
         if (val == 0)
             break;
         futex_wait(counter, val);
