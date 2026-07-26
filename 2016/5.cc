@@ -80,37 +80,46 @@ struct State {
     }
 };
 
-static void search(State &state, std::string_view prefix, size_t start, size_t stride)
+static void
+search(State &state, std::string_view prefix, std::atomic_uint64_t &next_chunk)
 {
-    md5::State md5(prefix);
+    // Fill in the string prefix (the problem input) in each message block.
+    // This will stay intact across all iterations below.
+    md5::SequentialBlocks messages{};
+    for (size_t i = 0; i < md5::lanes(); ++i)
+        std::ranges::copy(prefix, &messages.data[i * md5::bytes_per_block]);
 
-    for (size_t n = md5::lanes() * start; !state.done(n); n += md5::lanes() * stride) {
-        const hn::Vec<md5::D> hashes = hn::Get4<0>(md5.run(n));
+    auto sink = [&](md5::VecT hashes, uint64_t n) {
         const uint64_t mask5 = md5::leading_zero_mask<5>(hashes);
+        if (mask5 != 0) [[unlikely]] {
+            HWY_ALIGN_MAX std::array<uint32_t, md5::max_lanes> hashes_u32;
+            hn::Store(hashes, md5::D(), hashes_u32.data());
 
-        if (mask5 == 0)
-            continue;
-
-        HWY_ALIGN_MAX std::array<uint32_t, md5::max_lanes> hashes_u32;
-        hn::Store(hashes, md5::D(), hashes_u32.data());
-
-        for (auto m = mask5; m; m &= m - 1) {
-            const auto bit = std::countr_zero(m);
-            const auto h1 = (hashes_u32[bit] >> 16) & 0xf;
-            const auto h2 = (hashes_u32[bit] >> 28) & 0xf;
-            state.add_part1_character(n + bit, "0123456789abcdef"[h1]);
-            state.add_part2_character(n + bit, h1, "0123456789abcdef"[h2]);
+            for (auto m = mask5; m; m &= m - 1) {
+                const auto bit = std::countr_zero(m);
+                const auto h1 = (hashes_u32[bit] >> 16) & 0xf;
+                const auto h2 = (hashes_u32[bit] >> 28) & 0xf;
+                constexpr char chars[] = "0123456789abcdef";
+                state.add_part1_character(n + bit, chars[h1]);
+                state.add_part2_character(n + bit, h1, chars[h2]);
+            }
         }
-    }
+    };
+
+    uint64_t chunk_start;
+    do {
+        chunk_start = next_chunk.fetch_add(10000, std::memory_order_relaxed);
+    } while (!state.done(chunk_start) &&
+             hash_4digit_chunks(messages, chunk_start, prefix.size(), sink));
 }
 
 void run(std::string_view buf)
 {
     State state;
+    alignas(64) std::atomic_uint64_t next_chunk = 10000;
 
-    ThreadPool::get().for_each_thread([&state, buf](size_t thread_id) noexcept {
-        search(state, buf, thread_id, ThreadPool::get().num_threads());
-    });
+    ThreadPool &pool = ThreadPool::get();
+    pool.for_each_thread([&](size_t) noexcept { search(state, buf, next_chunk); });
 
     for (size_t i = 0; i < 8; ++i)
         putc(state.password1[i].character, stdout);

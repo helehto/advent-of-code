@@ -399,6 +399,8 @@ constexpr auto digits_4x = [] consteval {
     return table;
 }();
 
+/// Shared logic between 2015/4 and 2016/5.
+///
 /// Hashes 10,000 messages with a given prefix with the length `prefix_len`
 /// concatenated with a incrementing numeric prefix starting at `chunk_start`,
 /// which must be divisible by 10,000. `messages` is assumed to already be
