@@ -40,6 +40,11 @@ static void format_u32_hex(char *out, const uint32_t h)
     v = ((v & 0x0f0f0f0f) << 4) | ((v & 0xf0f0f0f0) >> 4);
 
     // Expand each nibble to a full byte in the range 0x00-0x0f.
+    //
+    // Note: using only bitwise operations and adds here lets GCC autovectorize
+    // this across the loop iterations in to_hex(). It may seem tempting to
+    // fold this into a single pext instruction on x86-64, but that makes the
+    // entire loop scalar, which slows things down.
     v = ((v & 0xffff0000) << 16) | (v & 0x0000ffff);
     v = ((v & 0x0000ff00'0000ff00) << 8) | (v & 0x000000ff'000000ff);
     v = ((v & 0x00f000f0'00f000f0) << 4) | (v & 0x000f000f'000f000f);
@@ -110,34 +115,37 @@ static int solve1(std::string_view prefix)
     }
 }
 
-/// Transpose four 4x4 blocks of 32-bit integers stored in SIMD vectors, i.e.
-/// from this:
-///
-///     I0 = [a0 a1 a2 a3 | a4 a5 a6 a7 | ...]
-///     I1 = [b0 b1 b2 b3 | b4 b5 b6 b7 | ...]
-///     I2 = [c0 c1 c2 c3 | c4 c5 c6 c7 | ...]
-///     I3 = [d0 d1 d2 d3 | d4 d5 d6 d7 | ...]
-///
-/// to this:
-///
-///     I0 = [a0 b0 c0 d0 | a4 b4 c4 d4 | ...]
-///     I1 = [a1 b1 c1 d1 | a5 b5 c5 d5 | ...]
-///     I2 = [a2 b2 c2 d2 | a6 b6 c6 d6 | ...]
-///     I3 = [a3 b3 c3 d3 | a7 b7 c7 d7 | ...]
-template <typename D>
-static void
-transpose_4x4(D d, hn::Vec<D> &I0, hn::Vec<D> &I1, hn::Vec<D> &I2, hn::Vec<D> &I3)
-    requires(std::same_as<hn::TFromD<D>, uint32_t>)
+/// Transpose a 4x4 matrix of 32-bit integers in memory.
+static void transpose32_4x4(const void *HWY_RESTRICT srcv,
+                            const size_t src_row_stride,
+                            void *HWY_RESTRICT dstv,
+                            const size_t dst_row_stride)
 {
-    using W = hn::RepartitionToWide<D>;
-    const hn::Vec<W> U0 = hn::BitCast(W(), hn::InterleaveLower(d, I0, I1));
-    const hn::Vec<W> U1 = hn::BitCast(W(), hn::InterleaveLower(d, I2, I3));
-    const hn::Vec<W> U2 = hn::BitCast(W(), hn::InterleaveUpper(d, I0, I1));
-    const hn::Vec<W> U3 = hn::BitCast(W(), hn::InterleaveUpper(d, I2, I3));
-    I0 = hn::BitCast(d, hn::InterleaveLower(W(), U0, U1));
-    I1 = hn::BitCast(d, hn::InterleaveUpper(W(), U0, U1));
-    I2 = hn::BitCast(d, hn::InterleaveLower(W(), U2, U3));
-    I3 = hn::BitCast(d, hn::InterleaveUpper(W(), U2, U3));
+    using D = hn::FixedTag<uint32_t, 4>;
+    using Wide = hn::RepartitionToWide<D>;
+    constexpr D d;
+    constexpr Wide w;
+
+    auto *HWY_RESTRICT src = static_cast<const uint32_t *>(srcv);
+    hn::Vec<D> I0 = hn::LoadU(d, src + 0 * src_row_stride);
+    hn::Vec<D> I1 = hn::LoadU(d, src + 1 * src_row_stride);
+    hn::Vec<D> I2 = hn::LoadU(d, src + 2 * src_row_stride);
+    hn::Vec<D> I3 = hn::LoadU(d, src + 3 * src_row_stride);
+
+    const hn::Vec<Wide> U0 = hn::ZipLower(w, I0, I1);
+    const hn::Vec<Wide> U1 = hn::ZipLower(w, I2, I3);
+    const hn::Vec<Wide> U2 = hn::ZipUpper(w, I0, I1);
+    const hn::Vec<Wide> U3 = hn::ZipUpper(w, I2, I3);
+    const hn::Vec<D> D0 = hn::BitCast(d, hn::InterleaveLower(w, U0, U1));
+    const hn::Vec<D> D1 = hn::BitCast(d, hn::InterleaveUpper(w, U0, U1));
+    const hn::Vec<D> D2 = hn::BitCast(d, hn::InterleaveLower(w, U2, U3));
+    const hn::Vec<D> D3 = hn::BitCast(d, hn::InterleaveUpper(w, U2, U3));
+
+    auto *HWY_RESTRICT dst = static_cast<uint32_t *>(dstv);
+    hn::StoreU(D0, d, dst + 0 * dst_row_stride);
+    hn::StoreU(D1, d, dst + 1 * dst_row_stride);
+    hn::StoreU(D2, d, dst + 2 * dst_row_stride);
+    hn::StoreU(D3, d, dst + 3 * dst_row_stride);
 }
 
 static std::array<std::array<char, 32>, md5::max_lanes>
@@ -146,32 +154,18 @@ md5_hex_stretch1(const std::array<std::array<char, 32>, md5::max_lanes> &hex)
     HWY_ALIGN_MAX md5::InterleavedBlocks messages;
     const size_t lanes = md5::lanes();
 
-    using D8 = hn::FixedTag<uint32_t, 8>;
-    using B = hn::BlockDFromD<D8>;
-
-    // TODO: This assumes that we have 256-bit vectors.
-    auto transpose_4x4_2x = [&](size_t src, size_t dst1, size_t dst2) {
-        auto *p = reinterpret_cast<const uint32_t *>(&hex[0][0]) + src;
-        hn::Vec<D8> v0 = hn::LoadU(D8(), &p[0]);
-        hn::Vec<D8> v1 = hn::LoadU(D8(), &p[8]);
-        hn::Vec<D8> v2 = hn::LoadU(D8(), &p[16]);
-        hn::Vec<D8> v3 = hn::LoadU(D8(), &p[24]);
-        transpose_4x4(D8(), v0, v1, v2, v3);
-
-        hn::Store(hn::ExtractBlock<0>(v0), B(), &messages.data[0 * lanes + dst1]);
-        hn::Store(hn::ExtractBlock<0>(v1), B(), &messages.data[1 * lanes + dst1]);
-        hn::Store(hn::ExtractBlock<0>(v2), B(), &messages.data[2 * lanes + dst1]);
-        hn::Store(hn::ExtractBlock<0>(v3), B(), &messages.data[3 * lanes + dst1]);
-        hn::Store(hn::ExtractBlock<1>(v0), B(), &messages.data[0 * lanes + dst2]);
-        hn::Store(hn::ExtractBlock<1>(v1), B(), &messages.data[1 * lanes + dst2]);
-        hn::Store(hn::ExtractBlock<1>(v2), B(), &messages.data[2 * lanes + dst2]);
-        hn::Store(hn::ExtractBlock<1>(v3), B(), &messages.data[3 * lanes + dst2]);
-    };
-
-    // Transform the 32-byte output hex strings back into interleaved 4-word
-    // blocks of ASCII characters ready to be fed into MD5 again.
-    for (size_t i = 0; i < hn::Blocks(md5::D()); ++i)
-        transpose_4x4_2x(4 * i * 8, 4 * i, 4 * i + 4 * lanes);
+    // Transform the 32-byte output hex strings back into interleaved 4-byte
+    // blocks of ASCII characters ready to be fed directly into MD5 again.
+    auto *src = reinterpret_cast<const uint32_t *>(&hex[0][0]);
+    auto *dst = reinterpret_cast<uint32_t *>(messages.data);
+    for (size_t i = 0; i < hn::Blocks(md5::D()); ++i, src += 32, dst += 4) {
+        // We could actually transpose 4 entire ASCII digests of 32 bytes at a
+        // time with 256-bit vectors rather than splitting them into two parts.
+        // That doesn't seem to be appreciably faster though, so just do it
+        // with 128-bit vectors for compatibility.
+        transpose32_4x4(src + 0, 8, dst + 0 * lanes, lanes);
+        transpose32_4x4(src + 4, 8, dst + 4 * lanes, lanes);
+    }
 
     // Insert 0x80 byte and length of of each message (256 bits).
     hn::Store(hn::Set(md5::D(), 0x80), md5::D(), &messages.data[8 * lanes]);
