@@ -59,7 +59,7 @@ static void format_u32_hex(char *out, const uint32_t h)
     memcpy(out, &ascii_hex_digits, sizeof(ascii_hex_digits));
 }
 
-static std::array<std::array<char, 32>, md5::max_lanes> to_hex(const md5::Vec4T &r)
+static std::array<std::array<char, 32>, md5::max_lanes> to_hex(md5::Vec4T r)
 {
     std::array<uint32_t, md5::max_lanes> a, b, c, d;
     hn::Store(hn::Get4<0>(r), md5::D(), a.data());
@@ -173,20 +173,12 @@ md5_hex_stretch1(const std::array<std::array<char, 32>, md5::max_lanes> &hex)
     for (size_t i = 0; i < hn::Blocks(md5::D()); ++i)
         transpose_4x4_2x(4 * i * 8, 4 * i, 4 * i + 4 * lanes);
 
-    // Insert 0x80 byte to mark the end of each message.
+    // Insert 0x80 byte and length of of each message (256 bits).
     hn::Store(hn::Set(md5::D(), 0x80), md5::D(), &messages.data[8 * lanes]);
-
-    // Insert zero-padding and the length of each message (256 bits).
-    const auto zero = hn::Zero(md5::D());
-    hn::Store(zero, md5::D(), &messages.data[9 * lanes]);
-    hn::Store(zero, md5::D(), &messages.data[10 * lanes]);
-    hn::Store(zero, md5::D(), &messages.data[11 * lanes]);
-    hn::Store(zero, md5::D(), &messages.data[12 * lanes]);
-    hn::Store(zero, md5::D(), &messages.data[13 * lanes]);
     hn::Store(hn::Set(md5::D(), 0x100), md5::D(), &messages.data[14 * lanes]);
-    hn::Store(zero, md5::D(), &messages.data[15 * lanes]);
 
-    return to_hex(md5::hash_block(messages));
+    constexpr uint16_t non_zero_mask = 0b0100'0001'1111'1111;
+    return to_hex(md5::hash_block<non_zero_mask>(messages));
 }
 
 static int solve2(std::string_view prefix)
