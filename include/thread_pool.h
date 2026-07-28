@@ -2,17 +2,36 @@
 
 #include "macros.h"
 #include "small_vector.h"
+#include <algorithm>
 #include <atomic>
 #include <cerrno>
+#include <climits>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <initializer_list>
 #include <linux/futex.h>
 #include <memory>
-#include <mutex>
+#include <optional>
 #include <random>
+#include <ranges>
 #include <sched.h>
 #include <span>
 #include <sys/syscall.h>
 #include <thread>
+#include <type_traits>
 #include <unistd.h>
+#include <vector>
+
+#ifdef __AVX__
+#include <immintrin.h>
+#endif
+
+// The futex wrappers take a reference to a std::atomic_uint32_t; the Linux
+// syscalls on the other hand take a pointer to a 32-bit word. Assert that this
+// works out in practice.
+static_assert(sizeof(std::atomic_uint32_t) == sizeof(uint32_t));
+static_assert(alignof(std::atomic_uint32_t) >= alignof(uint32_t));
 
 inline void futex_wake(const std::atomic_uint32_t &addr, int32_t n) noexcept
 {
@@ -58,6 +77,8 @@ inline bool futex_wait_bitset(const std::atomic_uint32_t &addr,
 inline void atomic_wait_zero(const std::atomic_uint32_t &counter,
                              std::memory_order order = std::memory_order_seq_cst) noexcept
 {
+    DEBUG_ASSERT(order != std::memory_order_release &&
+                 order != std::memory_order_acq_rel);
     while (true) {
         uint32_t val = counter.load(order);
         if (val == 0)
@@ -65,6 +86,10 @@ inline void atomic_wait_zero(const std::atomic_uint32_t &counter,
         futex_wait(counter, val);
     }
 }
+
+/// Whether the current thread is a worker thread and currently executing a
+/// task.
+inline thread_local bool g_executing_thread_pool_task = false;
 
 /// Needlessly complex and probably horribly broken thread pool implementation
 /// that relies on manual futex management and manual type erasure instead of
@@ -102,7 +127,9 @@ private:
             case Task::Type::for_each_thread:
                 ASSERT(work_fn.for_each_thread);
                 ASSERT(futex_word);
+                g_executing_thread_pool_task = true;
                 work_fn.for_each_thread(data.get(), thread_id);
+                g_executing_thread_pool_task = false;
                 if (futex_word->fetch_sub(1, std::memory_order_release) == 1)
                     futex_wake(*futex_word, INT_MAX);
                 break;
@@ -110,7 +137,9 @@ private:
             case Task::Type::for_each_index:
                 ASSERT(work_fn.for_each_index);
                 ASSERT(futex_word);
+                g_executing_thread_pool_task = true;
                 work_fn.for_each_index(data.get(), begin, end);
+                g_executing_thread_pool_task = false;
                 if (futex_word->fetch_sub(1, std::memory_order_release) == 1)
                     futex_wake(*futex_word, INT_MAX);
                 break;
@@ -138,7 +167,7 @@ private:
 
     // Mostly read-only:
     alignas(64) std::unique_ptr<std::thread[]> threads_;
-    size_t n_threads_;
+    size_t n_threads_ = 0;
 
     /// Acquire the thread pool lock.
     void lock() noexcept
@@ -207,10 +236,13 @@ private:
     /// Main loop for worker threads.
     void worker_loop(size_t thread_id) noexcept
     {
+        const auto n_cpus = std::thread::hardware_concurrency();
+        ASSERT(n_cpus > 0);
+
         // Pin each worker thread to a single CPU.
         cpu_set_t cpus;
         CPU_ZERO(&cpus);
-        CPU_SET(thread_id % std::thread::hardware_concurrency(), &cpus);
+        CPU_SET(thread_id % n_cpus, &cpus);
         if (sched_setaffinity(0, sizeof(cpus), &cpus) < 0)
             ASSERT_MSG(false, "sched_setaffinity() failed: {}", strerror(errno));
 
@@ -249,6 +281,8 @@ public:
 
     void start(size_t n_threads = std::thread::hardware_concurrency())
     {
+        ASSERT(n_threads > 0);
+        ASSERT(n_threads <= UINT32_MAX);
         ASSERT_MSG(!threads_, "ThreadPool::start() called when already started!");
 
         n_threads_ = n_threads;
@@ -257,10 +291,11 @@ public:
             threads_[i] = std::thread(&ThreadPool::worker_loop, this, i);
     }
 
-    template <std::ranges::contiguous_range Range,
-              std::invocable<
-                  const std::remove_reference_t<std::ranges::range_value_t<Range>> &> Fn>
+    template <std::ranges::contiguous_range Range, typename Fn>
     void for_each(Range &&r, Fn &&fn)
+        requires(
+            std::invocable<Fn, const std::decay_t<std::ranges::range_value_t<Range>> &> &&
+            std::copy_constructible<Fn>)
     {
         ASSERT_MSG(threads_, "ThreadPool::for_each() called when not started!");
         for_each_index(0zu, std::ranges::size(r),
@@ -271,10 +306,12 @@ public:
                        });
     }
 
-    template <std::ranges::contiguous_range Range,
-              std::invocable<std::span<
-                  const std::remove_reference_t<std::ranges::range_value_t<Range>>>> Fn>
+    template <std::ranges::contiguous_range Range, typename Fn>
     void for_each_slice(Range &&r, Fn &&fn)
+        requires(std::invocable<
+                     Fn,
+                     std::span<const std::decay_t<std::ranges::range_value_t<Range>>>> &&
+                 std::copy_constructible<Fn>)
     {
         ASSERT_MSG(threads_, "ThreadPool::for_each_slice() called when not started!");
         for_each_index(0zu, std::ranges::size(r),
@@ -285,9 +322,13 @@ public:
                        });
     }
 
-    template <std::invocable<size_t, size_t> Fn>
-    void for_each_index(size_t begin, size_t end, Fn &&fn)
+    template <typename FnRef, typename Fn = std::decay_t<FnRef>>
+    void for_each_index(size_t begin, size_t end, FnRef &&fn)
+        requires(std::invocable<Fn, size_t, size_t> && std::copy_constructible<Fn>)
     {
+        ASSERT_MSG(
+            !g_executing_thread_pool_task,
+            "ThreadPool::for_each_index() must not be called from a worker thread!");
         ASSERT_MSG(threads_, "ThreadPool::for_each_index() called when not started!");
         ASSERT(begin <= end);
 
@@ -321,9 +362,13 @@ public:
     /// Invoke the given function once on each worker thread. The function
     /// receives the thread ID, an integer in the range [0, num_threads()), as
     /// its only argument. Blocks until all threads have completed.
-    template <std::invocable<size_t> Fn>
-    void for_each_thread(Fn &&fn)
+    template <typename FnRef, typename Fn = std::decay_t<FnRef>>
+    void for_each_thread(FnRef &&fn)
+        requires(std::invocable<Fn, size_t> && std::copy_constructible<Fn>)
     {
+        ASSERT_MSG(
+            !g_executing_thread_pool_task,
+            "ThreadPool::for_each_thread() must not be called from a worker thread!");
         ASSERT_MSG(threads_, "ThreadPool::for_each_thread() called when not started!");
 
         std::atomic_uint32_t remaining = n_threads_;
@@ -388,18 +433,28 @@ bool atomic_store_max(std::atomic<T> &a,
 template <typename T>
 struct ChaseLevDeque {
 private:
+    static_assert(std::is_nothrow_default_constructible_v<T>);
     static_assert(std::is_nothrow_copy_assignable_v<T>);
+    static_assert(std::is_trivially_copyable_v<T>);
+    static_assert(std::is_trivially_copy_constructible_v<T>);
     static_assert(std::is_trivially_destructible_v<T>);
+    static_assert(!std::is_const_v<T>);
+    static_assert(!std::is_volatile_v<T>);
     static_assert(sizeof(T) <= 16);
-    static_assert(alignof(T) >= std::atomic_ref<T>::required_alignment);
 
-    /// 64-bit indices guarantee that the unmasked indices will not wrap.
+    /// 64-bit indices makes it practically impossible for unmasked indices to
+    /// wrap.
     using size_type = uint64_t;
 
     struct WorkQueueArray {
+        /// Wrapper for T to ensure correct alignment for std::atomic_ref<T>.
+        struct Item {
+            alignas(std::atomic_ref<T>::required_alignment) T value;
+        };
+
         std::atomic<size_type> mask; // size-1 to replace n%size with n&mask
         WorkQueueArray *next;        // linked list of unused arrays
-        mutable T items[];
+        mutable Item items[];
 
         T load(size_t index) const noexcept
         {
@@ -416,14 +471,14 @@ private:
                 // assume that AVX is available, so load using inline assembly
                 // to avoid that.
                 __m128i x;
-                asm("vmovdqa %1, %0" : "=x"(x) : "m"(items[index]));
-                T item;
-                _mm_storeu_si128(reinterpret_cast<__m128i *>(&item), x);
-                return item;
+                asm("vmovdqa %1, %0" : "=x"(x) : "m"(items[index].value));
+                T value;
+                _mm_storeu_si128(reinterpret_cast<__m128i *>(&value), x);
+                return value;
             }
 #endif
 
-            return std::atomic_ref<T>(items[index]).load(std::memory_order_relaxed);
+            return std::atomic_ref<T>(items[index].value).load(std::memory_order_relaxed);
         }
 
         T load_unmasked(size_type index) const noexcept
@@ -431,7 +486,7 @@ private:
             return load(index & mask.load(std::memory_order_relaxed));
         }
 
-        void store(size_t index, const T &item) noexcept
+        void store(size_t index, const T &value) noexcept
         {
 #ifdef __AVX__
             if constexpr (sizeof(T) == 16) {
@@ -440,13 +495,14 @@ private:
                 // (vmovdqa) which is entirely unnecessary here -- all stores
                 // to the items array are ordered properly by surrounding
                 // stores/fences.
-                __m128i x = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&item));
-                asm("vmovdqa %1, %0" : "=m"(items[index]) : "x"(x));
+                __m128i x = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&value));
+                asm("vmovdqa %1, %0" : "=m"(items[index].value) : "x"(x));
                 return;
             }
 #endif
 
-            std::atomic_ref<T>(items[index]).store(item, std::memory_order_relaxed);
+            std::atomic_ref<T>(items[index].value)
+                .store(value, std::memory_order_relaxed);
         }
     };
 
@@ -475,7 +531,8 @@ private:
     static WorkQueueArray *allocate_array(size_t size)
     {
         auto *const a = reinterpret_cast<WorkQueueArray *>(operator new(
-            sizeof(WorkQueueArray) + sizeof(std::atomic<T>) * size));
+            sizeof(WorkQueueArray) + sizeof(typename WorkQueueArray::Item) * size,
+            std::align_val_t(alignof(WorkQueueArray))));
         a->mask.store(size - 1, std::memory_order_relaxed);
         a->next = nullptr;
         return a;
@@ -566,7 +623,7 @@ public:
     }
 
     /// Push an item onto the deque. Must only be called by the owner thread.
-    void push(const T &item) noexcept
+    void push(const T &item)
     {
         const auto b = bottom.load(std::memory_order_relaxed);
         const auto t = top.load(std::memory_order_acquire);
@@ -624,7 +681,7 @@ public:
         auto *a = array.exchange(nullptr, std::memory_order_relaxed);
         while (a != nullptr) {
             auto *const next = a->next;
-            operator delete(a);
+            operator delete(a, std::align_val_t(alignof(WorkQueueArray)));
             a = next;
         }
     }
@@ -692,6 +749,11 @@ public:
     {
     }
 
+    ForkPool(const ForkPool &) = delete;
+    ForkPool &operator=(const ForkPool &) = delete;
+    ForkPool(ForkPool &&) = delete;
+    ForkPool &operator=(ForkPool &&) = delete;
+
     void push(std::initializer_list<State> initial_items) noexcept
     {
         push(std::span(initial_items));
@@ -707,12 +769,14 @@ public:
 
     void run(auto &&work_fn)
     {
+        ASSERT_MSG(!do_terminate.test(), "ForkPool is one-shot and cannot be reused.");
         std::atomic_uint32_t remaining_threads = n_threads;
 
         pool->for_each_thread([&, fn = work_fn](size_t thread_id) noexcept {
             bool is_idle = false;
             auto &queue = work_queues[thread_id];
 
+            ASSERT(n_threads <= UINT16_MAX);
             small_vector<uint16_t, 64> victim_order(n_threads);
             for (size_t i = 0; i < n_threads; i++)
                 victim_order[i] = static_cast<uint16_t>(i);

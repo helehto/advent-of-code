@@ -2,6 +2,7 @@
 #include "md5.h"
 #include "small_vector.h"
 #include "thread_pool.h"
+#include <mutex>
 
 namespace aoc_2016_14 {
 

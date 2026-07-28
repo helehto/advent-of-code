@@ -2,6 +2,7 @@
 #include "md5.h"
 #include "thread_pool.h"
 #include <hwy/highway.h>
+#include <mutex>
 
 namespace aoc_2016_5 {
 

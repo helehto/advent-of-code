@@ -2,6 +2,7 @@
 #include "inplace_vector.h"
 #include "thread_pool.h"
 #include <bitset>
+#include <mutex>
 
 namespace aoc_2024_22 {
 
