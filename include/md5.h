@@ -384,6 +384,29 @@ struct State {
     }
 };
 
+/// Table of MD5 hash functions specialized for different numbers of non-empty
+/// blocks.
+///
+/// Note that block 14 is always included since it contains the lower 32 bits
+/// of the message length. (We assume that the upper 32 bits are always zero.)
+constexpr VecT (*partial_hash_funcs[])(const InterleavedBlocks &) = {
+    nullptr,
+    hash_block<0b0100'0000'0000'0001, ResultType::only_a>,
+    hash_block<0b0100'0000'0000'0011, ResultType::only_a>,
+    hash_block<0b0100'0000'0000'0111, ResultType::only_a>,
+    hash_block<0b0100'0000'0000'1111, ResultType::only_a>,
+    hash_block<0b0100'0000'0001'1111, ResultType::only_a>,
+    hash_block<0b0100'0000'0011'1111, ResultType::only_a>,
+    hash_block<0b0100'0000'0111'1111, ResultType::only_a>,
+    hash_block<0b0100'0000'1111'1111, ResultType::only_a>,
+    hash_block<0b0100'0001'1111'1111, ResultType::only_a>,
+    hash_block<0b0100'0011'1111'1111, ResultType::only_a>,
+    hash_block<0b0100'0111'1111'1111, ResultType::only_a>,
+    hash_block<0b0100'1111'1111'1111, ResultType::only_a>,
+    hash_block<0b0101'1111'1111'1111, ResultType::only_a>,
+    hash_block<0b0111'1111'1111'1111, ResultType::only_a>,
+};
+
 /// 0000-9999 packed into a single string, plus a few extra entries wrapping
 /// around to 0000 to avoid bounds checks in hash_4digit_chunks().
 constexpr auto digits_4x = [] consteval {
@@ -421,6 +444,11 @@ inline bool hash_4digit_chunks(md5::SequentialBlocks &messages,
     const size_t suffix_len = digit_count_base10(chunk_start);
     DEBUG_ASSERT(prefix_len + suffix_len < bytes_per_block - 8 - 1);
 
+    const size_t non_empty_blocks = (prefix_len + suffix_len + 4) / 4;
+    DEBUG_ASSERT(non_empty_blocks < std::size(partial_hash_funcs));
+
+    const auto hash_fn = partial_hash_funcs[non_empty_blocks];
+
     auto suffix_ptr = [&](size_t msg) -> char * {
         DEBUG_ASSERT(msg < lanes);
         return messages.data + bytes_per_block * msg + prefix_len;
@@ -454,7 +482,7 @@ inline bool hash_4digit_chunks(md5::SequentialBlocks &messages,
         // in each message. Thinking about that gives me a headache, so let's
         // just not.
         const InterleavedBlocks blocks = interleave(messages);
-        const VecT hashes = hn::Get4<0>(hash_block(blocks));
+        const VecT hashes = hash_fn(blocks);
         const uint64_t n = chunk_start + tail;
 
         constexpr bool bool_sink = requires {
