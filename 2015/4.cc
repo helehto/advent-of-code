@@ -10,12 +10,6 @@ static void hash_search(std::string_view prefix,
                         std::atomic_uint64_t &part1,
                         std::atomic_uint64_t &part2)
 {
-    // Fill in the string prefix (the problem input) in each message block.
-    // This will stay intact across all iterations below.
-    md5::SequentialBlocks messages{};
-    for (size_t i = 0; i < md5::lanes(); ++i)
-        std::ranges::copy(prefix, &messages.data[i * md5::bytes_per_block]);
-
     auto sink = [&](md5::VecT hashes, uint64_t n) {
         uint32_t m5 = md5::leading_zero_mask<5>(hashes);
         if (m5 == 0) [[likely]]
@@ -31,6 +25,7 @@ static void hash_search(std::string_view prefix,
         return false;
     };
 
+    auto messages = md5::SequentialBlocks::splat(prefix);
     uint64_t chunk_start;
     do {
         chunk_start = next_chunk.fetch_add(10000, std::memory_order_relaxed);

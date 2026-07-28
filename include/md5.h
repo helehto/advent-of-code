@@ -48,6 +48,15 @@ inline std::array<uint32_t, max_lanes> to_array(const VecT v)
 /// we (potentially) have SIMD lanes.
 struct SequentialBlocks {
     HWY_ALIGN_MAX char data[bytes_per_block * max_lanes];
+
+    /// Return a set of blocks with each block containing string `s`.
+    static SequentialBlocks splat(std::string_view s) noexcept
+    {
+        SequentialBlocks result{};
+        for (size_t i = 0; i < lanes(); ++i)
+            memcpy(result.data + i * bytes_per_block, s.data(), s.size());
+        return result;
+    }
 };
 
 /// Interleaved 4-byte words from 64-byte blocks, stored as little-endian. This
@@ -360,10 +369,9 @@ struct State {
     std::string_view prefix;
 
     State(std::string_view pfx)
-        : prefix(pfx)
+        : messages(SequentialBlocks::splat(pfx))
+        , prefix(pfx)
     {
-        for (size_t i = 0; i < lanes(); ++i)
-            memcpy(&messages.data[i * bytes_per_block], prefix.data(), prefix.size());
     }
 
     /// Compute MD5 hashes with [block, block+1, ..., block+lanes-1] appended

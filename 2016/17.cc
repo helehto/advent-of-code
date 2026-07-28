@@ -42,9 +42,7 @@ static md5::Vec4T md5_full(std::string_view s)
     md5::Vec4T r = md5::initial_state();
 
     for (; s.size() >= 64; s.remove_prefix(64)) {
-        md5::SequentialBlocks m{};
-        for (size_t i = 0; i < 4; ++i)
-            memcpy(&m.data[i * 64], s.data(), 64);
+        auto m = md5::SequentialBlocks::splat(s.substr(0, 64));
         r = md5::hash_block(m, r);
     }
 
