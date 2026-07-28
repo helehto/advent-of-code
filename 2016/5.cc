@@ -85,7 +85,7 @@ static void search(State &state, std::string_view prefix, size_t start, size_t s
     md5::State md5(prefix);
 
     for (size_t n = md5::lanes() * start; !state.done(n); n += md5::lanes() * stride) {
-        const hn::Vec<md5::D> hashes = md5.run(n).a();
+        const hn::Vec<md5::D> hashes = hn::Get4<0>(md5.run(n));
         const uint64_t mask5 = md5::leading_zero_mask<5>(hashes);
 
         if (mask5 == 0)

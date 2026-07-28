@@ -30,27 +30,22 @@ constexpr uint32_t doors_from_hash(uint32_t u)
     return result;
 }
 
-static md5::Result md5_full(std::string_view s)
+static md5::Vec4T md5_full(std::string_view s)
 {
-    const size_t len = s.size();
     const uint32_t lengths[8] = {
-        static_cast<uint32_t>(len + 1),
-        static_cast<uint32_t>(len + 1),
-        static_cast<uint32_t>(len + 1),
-        static_cast<uint32_t>(len + 1),
+        static_cast<uint32_t>(s.size() + 1),
+        static_cast<uint32_t>(s.size() + 1),
+        static_cast<uint32_t>(s.size() + 1),
+        static_cast<uint32_t>(s.size() + 1),
     };
 
-    md5::Result r;
-    r.set_a(hn::Set(md5::D(), 0x67452301));
-    r.set_b(hn::Set(md5::D(), 0xefcdab89));
-    r.set_c(hn::Set(md5::D(), 0x98badcfe));
-    r.set_d(hn::Set(md5::D(), 0x10325476));
+    md5::Vec4T r = md5::initial_state();
 
     for (; s.size() >= 64; s.remove_prefix(64)) {
         md5::SequentialBlocks m{};
         for (size_t i = 0; i < 4; ++i)
             memcpy(&m.data[i * 64], s.data(), 64);
-        r = md5::hash_block(m, r.a(), r.b(), r.c(), r.d());
+        r = md5::hash_block(m, r);
     }
 
     md5::SequentialBlocks m{};
@@ -70,14 +65,14 @@ static md5::Result md5_full(std::string_view s)
         } else {
             x80_offset = 0;
         }
-        r = md5::hash_block(m, r.a(), r.b(), r.c(), r.d());
+        r = md5::hash_block(m, r);
         m = {};
     } else {
         x80_offset = s.size() + 1;
     }
 
     prepare_final_blocks(m, x80_offset, lengths);
-    return md5::hash_block(m, r.a(), r.b(), r.c(), r.d());
+    return md5::hash_block(m, r);
 }
 
 struct State {
@@ -111,7 +106,7 @@ struct WorkQueue {
 static inplace_vector<State, 4>
 get_neighbors(int d, Vec2i p, const std::string &str, uint32_t door_mask)
 {
-    auto h = md5_full(str).to_arrays()[0];
+    auto h = md5::to_array(hn::Get4<0>(md5_full(str)));
     inplace_vector<State, 4> result;
 
     if ((door_mask & DOOR_U_OPEN) && p.y > 0)
@@ -136,7 +131,7 @@ void run(std::string_view buf)
     all_queues[0].push(State{
         .dist = 0,
         .p = Vec2i{0, 0},
-        .door_mask = doors_from_hash(md5_full(buf).to_arrays()[0][0]),
+        .door_mask = doors_from_hash(md5::to_array(hn::Get4<0>(md5_full(buf)))[0]),
         .str = std::string(buf),
     });
 

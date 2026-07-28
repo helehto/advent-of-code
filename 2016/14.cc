@@ -59,12 +59,13 @@ static void format_u32_hex(char *out, const uint32_t h)
     memcpy(out, &ascii_hex_digits, sizeof(ascii_hex_digits));
 }
 
-static std::array<std::array<char, 32>, md5::max_lanes> to_hex(const md5::Result &r)
+static std::array<std::array<char, 32>, md5::max_lanes> to_hex(const md5::Vec4T &r)
 {
-    const std::array<uint32_t, md5::max_lanes> a = md5::Result::to_array(r.a());
-    const std::array<uint32_t, md5::max_lanes> b = md5::Result::to_array(r.b());
-    const std::array<uint32_t, md5::max_lanes> c = md5::Result::to_array(r.c());
-    const std::array<uint32_t, md5::max_lanes> d = md5::Result::to_array(r.d());
+    std::array<uint32_t, md5::max_lanes> a, b, c, d;
+    hn::Store(hn::Get4<0>(r), md5::D(), a.data());
+    hn::Store(hn::Get4<1>(r), md5::D(), b.data());
+    hn::Store(hn::Get4<2>(r), md5::D(), c.data());
+    hn::Store(hn::Get4<3>(r), md5::D(), d.data());
 
     std::array<std::array<char, 32>, md5::max_lanes> result;
     for (size_t i = 0; i < md5::lanes(); i++) {

@@ -14,7 +14,7 @@ hash_search(std::string_view s, int n, int stride, std::atomic_int &limit)
     md5::State md5(s);
 
     for (; n < limit.load(); n += stride) {
-        const md5::VecT hashes = md5.run(n).a();
+        const md5::VecT hashes = hn::Get4<0>(md5.run(n));
 
         if (uint32_t eqmask5 = md5::leading_zero_mask<5>(hashes))
             part1 = std::min(part1, n + std::countr_zero(eqmask5));

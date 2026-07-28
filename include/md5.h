@@ -10,6 +10,7 @@ namespace md5 {
 
 using D = hn::ScalableTag<uint32_t>;
 using VecT = hn::Vec<D>;
+using Vec4T = hn::Vec4<D>;
 constexpr D d;
 constexpr size_t max_lanes = hn::MaxLanes(D());
 
@@ -22,32 +23,19 @@ inline size_t lanes()
 constexpr size_t words_per_block = 16;
 constexpr size_t bytes_per_block = words_per_block * sizeof(uint32_t);
 
-struct HWY_ALIGN_MAX Result {
-    // Vectors of a, b, c, d stored one after another.
-    HWY_ALIGN_MAX uint32_t data[4 * max_lanes];
+/// Initial state of the MD5 hash function.
+inline Vec4T initial_state()
+{
+    return hn::Create4(d, hn::Set(d, 0x67452301), hn::Set(d, 0xefcdab89),
+                       hn::Set(d, 0x98badcfe), hn::Set(d, 0x10325476));
+}
 
-    VecT a() const { return hn::Load(D(), data + 0 * lanes()); }
-    VecT b() const { return hn::Load(D(), data + 1 * lanes()); }
-    VecT c() const { return hn::Load(D(), data + 2 * lanes()); }
-    VecT d() const { return hn::Load(D(), data + 3 * lanes()); }
-
-    void set_a(VecT v) { hn::Store(v, D(), data + 0 * lanes()); }
-    void set_b(VecT v) { hn::Store(v, D(), data + 1 * lanes()); }
-    void set_c(VecT v) { hn::Store(v, D(), data + 2 * lanes()); }
-    void set_d(VecT v) { hn::Store(v, D(), data + 3 * lanes()); }
-
-    static inline std::array<uint32_t, max_lanes> to_array(const VecT v)
-    {
-        std::array<uint32_t, max_lanes> result;
-        hn::StoreU(v, D(), result.data());
-        return result;
-    }
-
-    std::array<std::array<uint32_t, max_lanes>, 4> to_arrays() const
-    {
-        return {to_array(a()), to_array(b()), to_array(c()), to_array(d())};
-    }
-};
+inline std::array<uint32_t, max_lanes> to_array(const VecT v)
+{
+    std::array<uint32_t, max_lanes> result;
+    hn::StoreU(v, D(), result.data());
+    return result;
+}
 
 /// 64-byte blocks laid out sequentially one after another; as many blocks as
 /// we (potentially) have SIMD lanes.
@@ -112,7 +100,7 @@ inline void prepare_final_blocks(SequentialBlocks &HWY_RESTRICT messages,
 }
 
 // Hash multiple blocks simultaneously with SIMD.
-inline Result
+inline Vec4T
 hash_block(const InterleavedBlocks &HWY_RESTRICT M, VecT a0, VecT b0, VecT c0, VecT d0)
 {
     VecT A(a0);
@@ -186,41 +174,43 @@ hash_block(const InterleavedBlocks &HWY_RESTRICT M, VecT a0, VecT b0, VecT c0, V
 #undef I
 #undef QUARTER_ROUND
 
-    Result r;
-    r.set_a(A + a0);
-    r.set_b(B + b0);
-    r.set_c(C + c0);
-    r.set_d(D + d0);
-    return r;
+    return hn::Create4(d, A + a0, B + b0, C + c0, D + d0);
 }
 
-inline Result hash_block(const InterleavedBlocks &HWY_RESTRICT M)
+inline Vec4T hash_block(const InterleavedBlocks &HWY_RESTRICT M, Vec4T state)
 {
-    const VecT a0 = hn::Set(d, 0x67452301);
-    const VecT b0 = hn::Set(d, 0xefcdab89);
-    const VecT c0 = hn::Set(d, 0x98badcfe);
-    const VecT d0 = hn::Set(d, 0x10325476);
+    const VecT a0 = hn::Get4<0>(state);
+    const VecT b0 = hn::Get4<1>(state);
+    const VecT c0 = hn::Get4<2>(state);
+    const VecT d0 = hn::Get4<3>(state);
     return hash_block(M, a0, b0, c0, d0);
 }
 
-inline Result hash_block(
+inline Vec4T hash_block(const InterleavedBlocks &HWY_RESTRICT M)
+{
+    return hash_block(M, initial_state());
+}
+
+inline Vec4T hash_block(
     const SequentialBlocks &HWY_RESTRICT chunks, VecT a0, VecT b0, VecT c0, VecT d0)
 {
     // The input in `chunks` is 64-byte blocks laid out one after another. The
     // MD5 core loop expects memory to contain interleaved 4-byte words from
     // each block, so reshuffle the original input into that format.
     InterleavedBlocks M = interleave(chunks);
-
     return hash_block(M, a0, b0, c0, d0);
 }
 
-inline Result hash_block(const SequentialBlocks &HWY_RESTRICT chunks)
+inline Vec4T hash_block(const SequentialBlocks &HWY_RESTRICT chunks, Vec4T state)
 {
-    const VecT a0 = hn::Set(d, 0x67452301);
-    const VecT b0 = hn::Set(d, 0xefcdab89);
-    const VecT c0 = hn::Set(d, 0x98badcfe);
-    const VecT d0 = hn::Set(d, 0x10325476);
-    return hash_block(chunks, a0, b0, c0, d0);
+    InterleavedBlocks M = interleave(chunks);
+    return hash_block(M, state);
+}
+
+inline Vec4T hash_block(const SequentialBlocks &HWY_RESTRICT chunks)
+{
+    InterleavedBlocks M = interleave(chunks);
+    return hash_block(M, initial_state());
 }
 
 inline char *to_chars(char *p, int n)
@@ -296,7 +286,7 @@ struct State {
     /// Compute MD5 hashes with [block, block+1, ..., block+lanes-1] appended
     /// to each block. The internal buffers are not cleared between calls, so
     /// the block number must never decrease between calls to this method.
-    Result run(const int block)
+    Vec4T run(const int block)
     {
         uint32_t lengths[max_lanes];
 
