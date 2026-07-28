@@ -384,4 +384,89 @@ struct State {
     }
 };
 
+/// 0000-9999 packed into a single string, plus a few extra entries wrapping
+/// around to 0000 to avoid bounds checks in hash_4digit_chunks().
+constexpr auto digits_4x = [] consteval {
+    std::array<char, 4 * (10000 + max_lanes)> table;
+    for (size_t i = 0; 4 * i < table.size(); ++i) {
+        table[4 * i + 0] = '0' + i / 1000;
+        table[4 * i + 1] = '0' + (i / 100) % 10;
+        table[4 * i + 2] = '0' + (i / 10) % 10;
+        table[4 * i + 3] = '0' + i % 10;
+    }
+    for (size_t i = 4 * 10000; i < table.size(); ++i)
+        table[i] = table[i - 4 * 10000];
+    return table;
+}();
+
+/// Hashes 10,000 messages with a given prefix with the length `prefix_len`
+/// concatenated with a incrementing numeric prefix starting at `chunk_start`,
+/// which must be divisible by 10,000. `messages` is assumed to already be
+/// filled with the prefix in each block, and is modified in place.
+///
+/// The `sink` function is repeatedly called with a vector containing the first
+/// 32 bits of each hash, plus the numeric prefix of the first message in the
+/// vector. It can return `false` to stop early, in which case this function
+/// will also return `false`.
+inline bool hash_4digit_chunks(md5::SequentialBlocks &messages,
+                               const uint64_t chunk_start,
+                               const size_t prefix_len,
+                               std::invocable<VecT, uint64_t> auto &&sink)
+{
+    DEBUG_ASSERT(chunk_start % 10000 == 0);
+
+    const size_t lanes = md5::lanes();
+    const size_t suffix_len = digit_count_base10(chunk_start);
+    DEBUG_ASSERT(prefix_len + suffix_len < bytes_per_block - 8 - 1);
+
+    auto suffix_ptr = [&](size_t msg) -> char * {
+        DEBUG_ASSERT(msg < lanes);
+        return messages.data + bytes_per_block * msg + prefix_len;
+    };
+
+    // Prepare the messages, writing out everything needed to hash them except
+    // for the last four digits of each suffix.
+    std::array<uint32_t, max_lanes> lengths;
+    lengths.fill(prefix_len + suffix_len);
+    prepare_final_blocks(messages, lengths.data());
+    for (size_t i = 0; i < lanes; i++)
+        to_chars(suffix_ptr(i), chunk_start + i);
+
+    // Since we can write four digits at a time using a single 4-byte store,
+    // this inner loop updates only the last four digits of each message.
+    for (uint64_t tail = 0; tail < 10000; tail += lanes) {
+        // We tolerate `tail` being slightly larger than 9999 here since the
+        // digits_4x table contains a few extra entries wrapping around to
+        // 0000.
+        for (size_t i = 0; i < lanes; i++)
+            memcpy(suffix_ptr(i) + suffix_len - 4, &digits_4x[4 * (tail + i)], 4);
+
+        // NOTE: This still has to interleave the message blocks for each batch
+        // of messages to hash. This is likely the one remaining thing that
+        // would yield a non-trivial speedup if eliminated; it accounts for
+        // ~20% of the total runtime for 2015/4 on my machine.
+        //
+        // But in that case, all logic in this function would have to deal with
+        // the suffix potentially being split into 4-byte words at variable
+        // offsets depending on the prefix length, instead of being contiguous
+        // in each message. Thinking about that gives me a headache, so let's
+        // just not.
+        const InterleavedBlocks blocks = interleave(messages);
+        const VecT hashes = hn::Get4<0>(hash_block(blocks));
+        const uint64_t n = chunk_start + tail;
+
+        constexpr bool bool_sink = requires {
+            { sink(hashes, n) } -> std::convertible_to<bool>;
+        };
+        if constexpr (bool_sink) {
+            if (!sink(hashes, n))
+                return false;
+        } else {
+            sink(hashes, n);
+        }
+    }
+
+    return true;
+}
+
 }
