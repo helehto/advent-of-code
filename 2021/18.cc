@@ -106,7 +106,7 @@ static int part2(std::span<const small_vector<int8_t>> lines)
         for (size_t j = 0; j < lines.size(); ++j) {
             auto sum = line;
             add(sum, lines[j]);
-            atomic_store_max(max_mag, magnitude(sum.begin()).first);
+            atomic_fetch_max(&max_mag, magnitude(sum.begin()).first);
         }
     });
 

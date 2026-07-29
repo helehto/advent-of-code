@@ -40,8 +40,8 @@ void run(std::string_view buf)
                 if ((k | 0x20) != c)
                     spliced_len++;
             }
-            atomic_store_min(
-                min, react(scratch.get(), std::string_view(spliced.get(), spliced_len)));
+            atomic_fetch_min(
+                &min, react(scratch.get(), std::string_view(spliced.get(), spliced_len)));
         }
     });
 

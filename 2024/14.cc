@@ -143,7 +143,7 @@ void run(std::string_view buf)
 
         while (min_tree_step.load(std::memory_order_relaxed) > i) {
             if (has_tree(local_robots)) {
-                atomic_store_min(min_tree_step, i, std::memory_order_relaxed);
+                atomic_fetch_min(&min_tree_step, i);
                 return;
             }
 

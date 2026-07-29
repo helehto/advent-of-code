@@ -117,7 +117,7 @@ static int max_happiness(MatrixView<const int> matrix)
 
     const auto n = factorials[matrix.rows];
     ThreadPool::get().for_each_index(0, n, [&](size_t start, size_t end) {
-        atomic_store_max(result, max_happiness_between(start, end));
+        atomic_fetch_max(&result, max_happiness_between(start, end));
     });
 
     return result.load();

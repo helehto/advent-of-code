@@ -14,12 +14,12 @@ static void hash_search(std::string_view prefix,
         uint32_t m5 = md5::leading_zero_mask<5>(hashes);
         if (m5 == 0) [[likely]]
             return true;
-        atomic_store_min(part1, n + std::countr_zero(m5));
+        atomic_fetch_min(&part1, n + std::countr_zero(m5));
 
         uint32_t m6 = md5::leading_zero_mask<6>(hashes);
         if (m6 == 0) [[likely]]
             return true;
-        atomic_store_min(part2, n + std::countr_zero(m6));
+        atomic_fetch_min(&part2, n + std::countr_zero(m6));
 
         // Found both, stop searching.
         return false;

@@ -161,7 +161,7 @@ void run(std::string_view buf)
             auto [visited_mask, node_index, total_weight, ignore_slopes] = u;
             if (node_index == graph.goal_index) {
                 auto &sol = ignore_slopes ? solutions[1] : solutions[0];
-                atomic_store_max(sol, static_cast<size_t>(total_weight));
+                atomic_fetch_max(&sol, static_cast<size_t>(total_weight));
                 return;
             }
 

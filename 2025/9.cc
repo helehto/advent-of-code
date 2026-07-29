@@ -233,7 +233,7 @@ static int64_t part2(const Tiles<int32_t> &tiles)
         for (size_t j = i1 + 1; j <= j1; ++j)
             local_max = std::max(local_max, valid_rectangle_area(i1, j));
 
-        atomic_store_max(result, local_max);
+        atomic_fetch_max(&result, local_max);
     };
 
     ThreadPool &pool = ThreadPool::get();

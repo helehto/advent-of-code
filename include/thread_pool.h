@@ -396,31 +396,37 @@ public:
     }
 };
 
+/// Store `min(a, b)` into `a` atomically, returning the previous value of `a`.
+/// Memory is affected according to `order`.
 template <typename T>
-bool atomic_store_min(std::atomic<T> &a,
-                      const T b,
-                      std::memory_order order = std::memory_order_seq_cst) noexcept
+T atomic_fetch_min(std::atomic<T> *obj,
+                   typename std::atomic<T>::value_type arg,
+                   std::memory_order order = std::memory_order_seq_cst)
 {
-    auto value = a.load(order);
+    DEBUG_ASSERT(obj);
+    auto value = obj->load(std::memory_order_relaxed);
     while (true) {
-        if (value < b)
-            return false;
-        if (a.compare_exchange_weak(value, b, order, std::memory_order_relaxed))
-            return true;
+        if (arg >= value)
+            return value;
+        if (obj->compare_exchange_weak(value, arg, order, std::memory_order_relaxed))
+            return value;
     }
 }
 
+/// Store `max(a, b)` into `a` atomically, returning the previous value of `a`.
+/// Memory is affected according to `order`.
 template <typename T>
-bool atomic_store_max(std::atomic<T> &a,
-                      const T b,
-                      std::memory_order order = std::memory_order_seq_cst) noexcept
+T atomic_fetch_max(std::atomic<T> *obj,
+                   typename std::atomic<T>::value_type arg,
+                   std::memory_order order = std::memory_order_seq_cst)
 {
-    auto value = a.load(order);
+    DEBUG_ASSERT(obj);
+    auto value = obj->load(std::memory_order_relaxed);
     while (true) {
-        if (value > b)
-            return false;
-        if (a.compare_exchange_weak(value, b, order, std::memory_order_relaxed))
-            return true;
+        if (arg <= value)
+            return value;
+        if (obj->compare_exchange_weak(value, arg, order, std::memory_order_relaxed))
+            return value;
     }
 }
 

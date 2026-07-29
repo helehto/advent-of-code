@@ -127,7 +127,7 @@ void run(std::string_view buf)
 
         auto state_done = [&](const State &s) {
             if (s.boss_hp <= 0) {
-                atomic_store_min<int>(solutions[s.player_hp_decrement], s.spent);
+                atomic_fetch_min<int>(&solutions[s.player_hp_decrement], s.spent);
                 return true;
             }
             return s.player_hp <= 0;
