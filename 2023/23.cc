@@ -150,15 +150,14 @@ void run(std::string_view buf)
 
     std::array<std::atomic<size_t>, 2> solutions{};
     {
-        ThreadPool &pool = ThreadPool::get();
-        ForkPool<State> fork_pool(pool.num_threads());
+        ForkPool<State> fork_pool(ThreadPool::get());
 
         fork_pool.push({
             State{.node_index = graph.start_index, .ignore_slopes = false},
             State{.node_index = graph.start_index, .ignore_slopes = true},
         });
 
-        fork_pool.run(pool, [&](ForkPool<State>::TaskContext &ctx, const State &u) {
+        fork_pool.run([&](ForkPool<State>::TaskContext &ctx, const State &u) {
             auto [visited_mask, node_index, total_weight, ignore_slopes] = u;
             if (node_index == graph.goal_index) {
                 auto &sol = ignore_slopes ? solutions[1] : solutions[0];

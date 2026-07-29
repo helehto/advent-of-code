@@ -632,7 +632,8 @@ public:
 
 template <typename State>
 struct ForkPool {
-    alignas(64) size_t n_threads;
+    alignas(64) ThreadPool *pool;
+    size_t n_threads;
     std::vector<ChaseLevDeque<State>> work_queues;
 
     alignas(64) std::atomic<size_t> global_idle_count = 0;
@@ -684,9 +685,10 @@ public:
         small_vector_base<State> &next;
     };
 
-    ForkPool(size_t n_threads)
-        : n_threads(n_threads)
-        , work_queues(n_threads)
+    ForkPool(ThreadPool &pool)
+        : pool(&pool)
+        , n_threads(pool.num_threads())
+        , work_queues(pool.num_threads())
     {
     }
 
@@ -703,16 +705,16 @@ public:
         }
     }
 
-    void run(ThreadPool &pool, auto &&work_fn)
+    void run(auto &&work_fn)
     {
         std::atomic_uint32_t remaining_threads = n_threads;
 
-        pool.for_each_thread([&, fn = work_fn](size_t thread_id) noexcept {
+        pool->for_each_thread([&, fn = work_fn](size_t thread_id) noexcept {
             bool is_idle = false;
             auto &queue = work_queues[thread_id];
 
-            small_vector<uint16_t, 64> victim_order(pool.num_threads());
-            for (size_t i = 0; i < pool.num_threads(); i++)
+            small_vector<uint16_t, 64> victim_order(n_threads);
+            for (size_t i = 0; i < n_threads; i++)
                 victim_order[i] = static_cast<uint16_t>(i);
             victim_order[thread_id] = victim_order.back();
             victim_order.pop_back();

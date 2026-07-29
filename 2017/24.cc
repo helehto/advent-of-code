@@ -37,7 +37,7 @@ void run(std::string_view buf)
     };
 
     ThreadPool &pool = ThreadPool::get();
-    ForkPool<Entry> fork_pool(pool.num_threads());
+    ForkPool<Entry> fork_pool(pool);
     fork_pool.push({Entry{UINT64_MAX >> (64 - components.size()), 0, 0, 0}});
 
     // TODO: This is ugly as sin.
@@ -47,7 +47,7 @@ void run(std::string_view buf)
     };
     std::vector<PerThreadResult> thread_max(pool.num_threads());
 
-    fork_pool.run(pool, [&](ForkPool<Entry>::TaskContext &ctx, const Entry &e) {
+    fork_pool.run([&](ForkPool<Entry>::TaskContext &ctx, const Entry &e) {
         auto [remaining, curr, depth, weight] = e;
         weight += curr;
 

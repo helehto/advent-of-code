@@ -106,8 +106,7 @@ static size_t do_player_turn(State *__restrict__ out, const State &state)
 void run(std::string_view buf)
 {
     const auto [boss_hp, boss_damage] = find_numbers_n<uint8_t, 2>(buf);
-    ThreadPool &pool = ThreadPool::get();
-    ForkPool<State> fork_pool(pool.num_threads());
+    ForkPool<State> fork_pool(ThreadPool::get());
     std::atomic<int> solutions[2] = {INT_MAX, INT_MAX};
 
     fork_pool.push({
@@ -123,7 +122,7 @@ void run(std::string_view buf)
         },
     });
 
-    fork_pool.run(pool, [&](ForkPool<State>::TaskContext &ctx, State state) {
+    fork_pool.run([&](ForkPool<State>::TaskContext &ctx, State state) {
         DEBUG_ASSERT(state.turn < 100);
 
         auto state_done = [&](const State &s) {
