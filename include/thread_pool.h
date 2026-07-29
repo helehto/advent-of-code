@@ -324,7 +324,7 @@ public:
     template <std::invocable<size_t> Fn>
     void for_each_thread(Fn &&fn)
     {
-        ASSERT_MSG(threads_, "ThreadPool::for_each_index() called when not started!");
+        ASSERT_MSG(threads_, "ThreadPool::for_each_thread() called when not started!");
 
         std::atomic_uint32_t remaining = n_threads_;
 
