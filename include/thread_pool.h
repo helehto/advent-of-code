@@ -747,8 +747,8 @@ public:
 
                 // We are out of local work. Try to steal work from other threads.
                 for (size_t i = 0; i < 32; i++) {
-                    for (const size_t i : victim_order) {
-                        if (work_queues[i].steal(u))
+                    for (const size_t victim : victim_order) {
+                        if (work_queues[victim].steal(u))
                             goto restart_with_new_work;
                     }
                     std::this_thread::yield();
