@@ -4,6 +4,7 @@
 
 struct alignas(64) ThreadPool::Worker {
     std::jthread thread;
+    uint32_t id; // 0 .. num_threads() - 1
 };
 
 void futex_wake(const std::atomic_uint32_t &addr, int32_t n) noexcept
@@ -128,18 +129,34 @@ std::optional<ThreadPool::Task> ThreadPool::worker_wait_for_work() noexcept
     }
 }
 
-/// Main loop for worker threads.
-void ThreadPool::worker_loop(size_t thread_id) noexcept
-{
-    const auto n_cpus = std::thread::hardware_concurrency();
-    ASSERT(n_cpus > 0);
-
-    // Pin each worker thread to a single CPU.
+static const small_vector<uint16_t, 64> g_available_cpus = [] {
     cpu_set_t cpus;
-    CPU_ZERO(&cpus);
-    CPU_SET(thread_id % n_cpus, &cpus);
-    if (sched_setaffinity(0, sizeof(cpus), &cpus) < 0)
-        ASSERT_MSG(false, "sched_setaffinity() failed: {}", strerror(errno));
+    if (sched_getaffinity(0, sizeof(cpu_set_t), &cpus) < 0)
+        ASSERT_MSG(false, "sched_getaffinity() failed: {}", strerror(errno));
+
+    const size_t n = CPU_COUNT(&cpus);
+    ASSERT(n > 0);
+    ASSERT_MSG(n <= CPU_SETSIZE, "You have _way_ too many CPUs!");
+
+    small_vector<uint16_t, 64> result(n);
+    for (size_t cpu = 0, i = 0; cpu < CPU_SETSIZE; ++cpu)
+        if (CPU_ISSET(cpu, &cpus))
+            result[i++] = static_cast<uint16_t>(cpu);
+
+    return result;
+}();
+
+/// Main loop for worker threads.
+void ThreadPool::worker_loop(Worker &w) noexcept
+{
+    // Pin each worker thread to a single CPU.
+    {
+        cpu_set_t affinity;
+        CPU_ZERO(&affinity);
+        CPU_SET(g_available_cpus[w.id % g_available_cpus.size()], &affinity);
+        if (sched_setaffinity(0, sizeof(affinity), &affinity) < 0)
+            ASSERT_MSG(false, "sched_setaffinity() failed: {}", strerror(errno));
+    }
 
     while (auto task = worker_wait_for_work()) {
         uint32_t mask = ~STATE_LOCKED;
@@ -156,13 +173,18 @@ void ThreadPool::worker_loop(size_t thread_id) noexcept
 
 void ThreadPool::start(size_t n_threads)
 {
-    ASSERT(n_threads <= UINT32_MAX);
     ASSERT_MSG(!workers_, "ThreadPool::start() called when already started!");
 
-    n_threads_ = n_threads ? n_threads : std::thread::hardware_concurrency();
+    n_threads = n_threads ? n_threads : g_available_cpus.size();
+    ASSERT(n_threads <= UINT32_MAX);
+    n_threads_ = static_cast<uint32_t>(n_threads);
+
     workers_ = std::make_unique<Worker[]>(n_threads);
-    for (size_t i = 0; i < n_threads; ++i)
-        workers_[i].thread = std::jthread(&ThreadPool::worker_loop, this, i);
+    for (size_t i = 0; i < n_threads; ++i) {
+        Worker &w = workers_[i];
+        w.id = static_cast<uint32_t>(i);
+        w.thread = std::jthread(&ThreadPool::worker_loop, this, std::ref(w));
+    }
 }
 
 void ForkPoolBase::generate_victim_order(small_vector_base<uint16_t> &victim_order,

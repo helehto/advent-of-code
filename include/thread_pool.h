@@ -134,7 +134,7 @@ private:
     void lock() noexcept;
     void unlock_with_work(size_t num_threads_to_wake = INT_MAX) noexcept;
     std::optional<Task> worker_wait_for_work() noexcept;
-    void worker_loop(size_t thread_id) noexcept;
+    void worker_loop(Worker &) noexcept;
 
     ThreadPool();
     ~ThreadPool();
