@@ -1,5 +1,10 @@
 #include "thread_pool.h"
 #include <random>
+#include <thread>
+
+struct alignas(64) ThreadPool::Worker {
+    std::jthread thread;
+};
 
 void futex_wake(const std::atomic_uint32_t &addr, int32_t n) noexcept
 {
@@ -60,9 +65,6 @@ ThreadPool::~ThreadPool()
 {
     state_.fetch_or(STATE_STOPPING, std::memory_order_seq_cst);
     futex_wake_bitset(state_, INT_MAX, STATE_STOPPING);
-
-    for (size_t i = 0; i < n_threads_; ++i)
-        threads_[i].join();
 }
 
 /// Acquire the thread pool lock.
@@ -155,12 +157,12 @@ void ThreadPool::worker_loop(size_t thread_id) noexcept
 void ThreadPool::start(size_t n_threads)
 {
     ASSERT(n_threads <= UINT32_MAX);
-    ASSERT_MSG(!threads_, "ThreadPool::start() called when already started!");
+    ASSERT_MSG(!workers_, "ThreadPool::start() called when already started!");
 
     n_threads_ = n_threads ? n_threads : std::thread::hardware_concurrency();
-    threads_ = std::make_unique<std::thread[]>(n_threads);
+    workers_ = std::make_unique<Worker[]>(n_threads);
     for (size_t i = 0; i < n_threads; ++i)
-        threads_[i] = std::thread(&ThreadPool::worker_loop, this, i);
+        workers_[i].thread = std::jthread(&ThreadPool::worker_loop, this, i);
 }
 
 void ForkPoolBase::generate_victim_order(small_vector_base<uint16_t> &victim_order,

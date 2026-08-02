@@ -6,18 +6,19 @@
 #include <atomic>
 #include <cerrno>
 #include <climits>
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <initializer_list>
 #include <linux/futex.h>
 #include <memory>
+#include <new>
 #include <optional>
 #include <ranges>
 #include <sched.h>
 #include <span>
 #include <sys/syscall.h>
-#include <thread>
 #include <type_traits>
 #include <unistd.h>
 #include <vector>
@@ -120,12 +121,14 @@ private:
         STATE_HAS_WORK = 1U << 2,
     };
 
+    struct alignas(64) Worker;
+
     // Read-write by all threads:
     small_vector<Task, 32> tasks_;
     std::atomic_uint32_t state_ = 0;
 
     // Mostly read-only:
-    alignas(64) std::unique_ptr<std::thread[]> threads_;
+    alignas(64) std::unique_ptr<Worker[]> workers_;
     size_t n_threads_ = 0;
 
     void lock() noexcept;
@@ -155,7 +158,7 @@ public:
             std::invocable<Fn, const std::decay_t<std::ranges::range_value_t<Range>> &> &&
             std::copy_constructible<Fn>)
     {
-        ASSERT_MSG(threads_, "ThreadPool::for_each() called when not started!");
+        ASSERT_MSG(workers_, "ThreadPool::for_each() called when not started!");
         for_each_index(0zu, std::ranges::size(r),
                        [&r, f = std::forward<Fn>(fn)](size_t begin, size_t end) {
                            const auto *data = std::ranges::data(r);
@@ -171,7 +174,7 @@ public:
                      std::span<const std::decay_t<std::ranges::range_value_t<Range>>>> &&
                  std::copy_constructible<Fn>)
     {
-        ASSERT_MSG(threads_, "ThreadPool::for_each_slice() called when not started!");
+        ASSERT_MSG(workers_, "ThreadPool::for_each_slice() called when not started!");
         for_each_index(0zu, std::ranges::size(r),
                        [&r, f = std::forward<Fn>(fn)](size_t begin, size_t end) {
                            const auto *data = std::ranges::data(r) + begin;
@@ -187,7 +190,7 @@ public:
         ASSERT_MSG(
             !g_executing_thread_pool_task,
             "ThreadPool::for_each_index() must not be called from a worker thread!");
-        ASSERT_MSG(threads_, "ThreadPool::for_each_index() called when not started!");
+        ASSERT_MSG(workers_, "ThreadPool::for_each_index() called when not started!");
         ASSERT(begin <= end);
 
         std::atomic_uint32_t remaining = n_threads_;
@@ -227,7 +230,7 @@ public:
         ASSERT_MSG(
             !g_executing_thread_pool_task,
             "ThreadPool::for_each_thread() must not be called from a worker thread!");
-        ASSERT_MSG(threads_, "ThreadPool::for_each_thread() called when not started!");
+        ASSERT_MSG(workers_, "ThreadPool::for_each_thread() called when not started!");
 
         std::atomic_uint32_t remaining = n_threads_;
 
@@ -678,7 +681,7 @@ public:
                         if (work_queues[victim].steal(u))
                             goto restart_with_new_work;
                     }
-                    std::this_thread::yield();
+                    sched_yield();
                 }
 
                 // We failed to steal work. Become idle and check if we can terminate.
@@ -689,7 +692,7 @@ public:
                 if (try_terminate(thread_id))
                     break;
 
-                std::this_thread::yield();
+                sched_yield();
             }
 
             if (remaining_threads.fetch_sub(1, std::memory_order_release) == 1)
