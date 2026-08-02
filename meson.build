@@ -100,12 +100,7 @@ link_args = [
     cpp.get_supported_link_arguments('-fuse-ld=mold'),
 ]
 
-executable(
-    'aoc',
-    sources,
-    config_h,
-    'main.cc',
-    cpp_args: cpp_args,
+libaoc_dep = declare_dependency(
     dependencies: [
         cpp.find_library('atomic', required: false),
         dependency('eigen3', include_type: 'system'),
@@ -122,6 +117,15 @@ executable(
         ),
     ],
     include_directories: include_directories('include'),
+)
+
+executable(
+    'aoc',
+    sources,
+    config_h,
+    'main.cc',
+    cpp_args: cpp_args,
+    dependencies: libaoc_dep,
     link_args: link_args,
 )
 
@@ -134,15 +138,9 @@ test(
         'tests/test_bitmanip.cc',
         cpp_args: [
             cpp_args,
-            '-mno-avx512f',
             '-DDOCTEST_CONFIG_NO_EXCEPTIONS_BUT_WITH_ALL_ASSERTS',
         ],
-        dependencies: [
-            cpp.find_library('atomic', required: false),
-            doctest,
-            dependency('fmt'),
-        ],
-        include_directories: include_directories('include'),
+        dependencies: [libaoc_dep, doctest],
         link_args: link_args,
     ),
 )
@@ -152,15 +150,8 @@ test(
     executable(
         'test-fork-pool',
         'tests/test_fork_pool.cc',
-        cpp_args: [
-            cpp_args,
-            '-mno-avx512f',
-        ],
-        dependencies: [
-            cpp.find_library('atomic', required: false),
-            dependency('fmt'),
-        ],
-        include_directories: include_directories('include'),
+        cpp_args: cpp_args,
+        dependencies: libaoc_dep,
         link_args: link_args,
     ),
 )
