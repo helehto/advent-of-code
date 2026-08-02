@@ -100,6 +100,11 @@ link_args = [
     cpp.get_supported_link_arguments('-fuse-ld=mold'),
 ]
 
+libaoc = static_library(
+    'aoc',
+    'include/thread_pool.cc',
+    cpp_args: cpp_args,
+)
 libaoc_dep = declare_dependency(
     dependencies: [
         cpp.find_library('atomic', required: false),
@@ -117,6 +122,7 @@ libaoc_dep = declare_dependency(
         ),
     ],
     include_directories: include_directories('include'),
+    link_with: libaoc,
 )
 
 executable(
