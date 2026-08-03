@@ -45,6 +45,7 @@ struct SequentialBlocks {
     /// Return a set of blocks with each block containing string `s`.
     static SequentialBlocks splat(std::string_view s) noexcept
     {
+        ASSERT(s.size() <= bytes_per_block);
         SequentialBlocks result{};
         for (size_t i = 0; i < lanes(); ++i)
             memcpy(result.data + i * bytes_per_block, s.data(), s.size());
@@ -306,7 +307,7 @@ inline auto hash_block(const SequentialBlocks &HWY_RESTRICT chunks)
     return hash_block<NonZeroBlockMask, ResultType>(M, initial_state());
 }
 
-inline char *to_chars(char *p, int n)
+inline char *to_chars(char *p, uint64_t n)
 {
     // 00-99 packed into a single string.
     static constexpr const char packed_digits2[] =
@@ -400,7 +401,7 @@ struct State {
 ///
 /// Note that block 14 is always included since it contains the lower 32 bits
 /// of the message length. (We assume that the upper 32 bits are always zero.)
-constexpr VecT (*partial_hash_funcs[])(const InterleavedBlocks &) = {
+constexpr VecT (*partial_hash_funcs[])(const SequentialBlocks &) = {
     nullptr,
     hash_block<0b0100'0000'0000'0001, ResultType::only_a>,
     hash_block<0b0100'0000'0000'0011, ResultType::only_a>,
@@ -436,12 +437,12 @@ constexpr auto digits_4x = [] consteval {
 /// Shared logic between 2015/4 and 2016/5.
 ///
 /// Hashes 10,000 messages with a given prefix with the length `prefix_len`
-/// concatenated with a incrementing numeric prefix starting at `chunk_start`,
+/// concatenated with a incrementing numeric suffix starting at `chunk_start`,
 /// which must be divisible by 10,000. `messages` is assumed to already be
 /// filled with the prefix in each block, and is modified in place.
 ///
 /// The `sink` function is repeatedly called with a vector containing the first
-/// 32 bits of each hash, plus the numeric prefix of the first message in the
+/// 32 bits of each hash, plus the numeric suffix of the first message in the
 /// vector. It can return `false` to stop early, in which case this function
 /// will also return `false`.
 inline bool hash_4digit_chunks(md5::SequentialBlocks &messages,
@@ -452,35 +453,55 @@ inline bool hash_4digit_chunks(md5::SequentialBlocks &messages,
     DEBUG_ASSERT(chunk_start % 10000 == 0);
 
     const size_t lanes = md5::lanes();
-    const size_t suffix_len = digit_count_base10(chunk_start);
+    uint64_t tail = 0;
+    std::array<uint32_t, max_lanes> lengths;
+
+    if (chunk_start == 0) [[unlikely]] {
+        // The first 1,000 messages have a 1-3 digit suffix, so we cannot write
+        // it out 4 digits at a time. Handle these the slow but simple way by
+        // writing out the full suffix and length for each message.
+        for (; tail < 1000; tail += lanes) {
+            char *p = messages.data + prefix_len;
+            for (size_t i = 0; i < lanes; i++, p += bytes_per_block) {
+                lengths[i] = prefix_len + digit_count_base10(tail + i);
+                to_chars(p, tail + i);
+            }
+            prepare_final_blocks(messages, lengths);
+
+            const auto hashes = hash_block<0x7fff, ResultType::only_a>(messages);
+            if (!sink(hashes, tail))
+                return false;
+        }
+    }
+
+    const size_t suffix_len = std::max(4, digit_count_base10(chunk_start));
     DEBUG_ASSERT(prefix_len + suffix_len < bytes_per_block - 8 - 1);
+
+    // Prepare the messages beforehand, writing out everything needed to hash
+    // them except for the suffix since the 10,000 messages in the same chunk
+    // have the same length by construction.
+    {
+        lengths.fill(prefix_len + suffix_len);
+        prepare_final_blocks(messages, lengths);
+        char *p = messages.data + prefix_len;
+        for (size_t i = 0; i < lanes; i++, p += bytes_per_block)
+            to_chars(p, chunk_start + tail + i);
+    }
 
     const size_t non_empty_blocks = (prefix_len + suffix_len + 4) / 4;
     DEBUG_ASSERT(non_empty_blocks < std::size(partial_hash_funcs));
 
     const auto hash_fn = partial_hash_funcs[non_empty_blocks];
 
-    auto suffix_ptr = [&](size_t msg) -> char * {
-        DEBUG_ASSERT(msg < lanes);
-        return messages.data + bytes_per_block * msg + prefix_len;
-    };
-
-    // Prepare the messages, writing out everything needed to hash them except
-    // for the last four digits of each suffix.
-    std::array<uint32_t, max_lanes> lengths;
-    lengths.fill(prefix_len + suffix_len);
-    prepare_final_blocks(messages, lengths);
-    for (size_t i = 0; i < lanes; i++)
-        to_chars(suffix_ptr(i), chunk_start + i);
-
-    // Since we can write four digits at a time using a single 4-byte store,
-    // this inner loop updates only the last four digits of each message.
-    for (uint64_t tail = 0; tail < 10000; tail += lanes) {
-        // We tolerate `tail` being slightly larger than 9999 here since the
-        // digits_4x table contains a few extra entries wrapping around to
-        // 0000.
-        for (size_t i = 0; i < lanes; i++)
-            memcpy(suffix_ptr(i) + suffix_len - 4, &digits_4x[4 * (tail + i)], 4);
+    for (; tail < 10000; tail += lanes) {
+        // Since we can write four digits at a time using a single 4-byte
+        // store, this inner loop updates only the last four digits of each
+        // message. We tolerate `tail` being slightly larger than 9999 here
+        // since the digits_4x table contains a few extra entries wrapping
+        // around to 0000.
+        char *p = messages.data + prefix_len + suffix_len - 4;
+        for (size_t i = 0; i < lanes; i++, p += bytes_per_block)
+            memcpy(p, &digits_4x[4 * (tail + i)], 4);
 
         // NOTE: This still has to interleave the message blocks for each batch
         // of messages to hash. This is likely the one remaining thing that
@@ -492,19 +513,9 @@ inline bool hash_4digit_chunks(md5::SequentialBlocks &messages,
         // offsets depending on the prefix length, instead of being contiguous
         // in each message. Thinking about that gives me a headache, so let's
         // just not.
-        const InterleavedBlocks blocks = interleave(messages);
-        const VecT hashes = hash_fn(blocks);
-        const uint64_t n = chunk_start + tail;
-
-        constexpr bool bool_sink = requires {
-            { sink(hashes, n) } -> std::convertible_to<bool>;
-        };
-        if constexpr (bool_sink) {
-            if (!sink(hashes, n))
-                return false;
-        } else {
-            sink(hashes, n);
-        }
+        const auto hashes = hash_fn(messages);
+        if (!sink(hashes, chunk_start + tail))
+            return false;
     }
 
     return true;

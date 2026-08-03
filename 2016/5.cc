@@ -99,6 +99,7 @@ search(State &state, std::string_view prefix, std::atomic_uint64_t &next_chunk)
                 state.add_part2_character(n + bit, h1, chars[h2]);
             }
         }
+        return true;
     };
 
     auto messages = md5::SequentialBlocks::splat(prefix);
@@ -112,7 +113,7 @@ search(State &state, std::string_view prefix, std::atomic_uint64_t &next_chunk)
 void run(std::string_view buf)
 {
     State state;
-    alignas(64) std::atomic_uint64_t next_chunk = 10000;
+    alignas(64) std::atomic_uint64_t next_chunk = 0;
 
     ThreadPool &pool = ThreadPool::get();
     pool.for_each_thread([&](size_t) noexcept { search(state, buf, next_chunk); });
