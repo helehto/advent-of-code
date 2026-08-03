@@ -32,12 +32,8 @@ constexpr uint32_t doors_from_hash(uint32_t u)
 
 static md5::Vec4T md5_full(std::string_view s)
 {
-    const uint32_t lengths[8] = {
-        static_cast<uint32_t>(s.size() + 1),
-        static_cast<uint32_t>(s.size() + 1),
-        static_cast<uint32_t>(s.size() + 1),
-        static_cast<uint32_t>(s.size() + 1),
-    };
+    std::array<uint32_t, md5::max_lanes> lengths;
+    lengths.fill(s.size() + 1);
 
     md5::Vec4T r = md5::initial_state();
 
@@ -101,10 +97,17 @@ struct WorkQueue {
     }
 };
 
+static std::array<uint32_t, md5::max_lanes> to_array(const md5::VecT v)
+{
+    std::array<uint32_t, md5::max_lanes> result;
+    hn::StoreU(v, md5::D(), result.data());
+    return result;
+}
+
 static inplace_vector<State, 4>
 get_neighbors(int d, Vec2i p, const std::string &str, uint32_t door_mask)
 {
-    auto h = md5::to_array(hn::Get4<0>(md5_full(str)));
+    auto h = to_array(hn::Get4<0>(md5_full(str)));
     inplace_vector<State, 4> result;
 
     if ((door_mask & DOOR_U_OPEN) && p.y > 0)
@@ -121,15 +124,28 @@ get_neighbors(int d, Vec2i p, const std::string &str, uint32_t door_mask)
 
 void run(std::string_view buf)
 {
+    ASSERT(buf.size() < 32);
+
     ThreadPool &pool = ThreadPool::get();
 
     std::vector<WorkQueue> all_queues(pool.num_threads());
+
+    // Compute the first 32 bits of the MD5 hash of the input string. This is
+    // ugly, but then again the MD5 implementation is not exactly focused on
+    // convenience of computing single hashes...
+    const uint32_t initial_door_hash = [&] {
+        std::array<uint32_t, md5::max_lanes> lengths{static_cast<uint32_t>(buf.size())};
+        auto messages = md5::SequentialBlocks::splat(buf);
+        prepare_final_blocks(messages, lengths);
+        const md5::VecT h = md5::hash_block<0xffff, md5::ResultType::only_a>(messages);
+        return hn::ExtractLane(h, 0);
+    }();
 
     // Push the initial state as the root task.
     all_queues[0].push(State{
         .dist = 0,
         .p = Vec2i{0, 0},
-        .door_mask = doors_from_hash(md5::to_array(hn::Get4<0>(md5_full(buf)))[0]),
+        .door_mask = doors_from_hash(initial_door_hash),
         .str = std::string(buf),
     });
 

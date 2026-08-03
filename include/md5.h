@@ -37,13 +37,6 @@ inline Vec4T initial_state()
                        hn::Set(d, 0x98badcfe), hn::Set(d, 0x10325476));
 }
 
-inline std::array<uint32_t, max_lanes> to_array(const VecT v)
-{
-    std::array<uint32_t, max_lanes> result;
-    hn::StoreU(v, D(), result.data());
-    return result;
-}
-
 /// 64-byte blocks laid out sequentially one after another; as many blocks as
 /// we (potentially) have SIMD lanes.
 struct SequentialBlocks {
@@ -89,8 +82,10 @@ inline InterleavedBlocks interleave(const SequentialBlocks &input)
 // Prepare the final messages blocks by inserting the block lengths into the
 // `messages`, assuming that the messages are already padded with zero bits.
 inline void prepare_final_blocks(SequentialBlocks &HWY_RESTRICT messages,
-                                 const uint32_t *HWY_RESTRICT length_bytes)
+                                 std::span<const uint32_t> length_bytes)
 {
+    ASSERT(length_bytes.size() >= lanes());
+
     for (size_t i = 0; i < lanes(); i++) {
         DEBUG_ASSERT(length_bytes[i] < bytes_per_block);
 
@@ -112,13 +107,14 @@ inline void prepare_final_blocks(SequentialBlocks &HWY_RESTRICT messages,
 // if set.
 inline void prepare_final_blocks(SequentialBlocks &HWY_RESTRICT messages,
                                  std::optional<size_t> x80_offset,
-                                 const uint32_t *HWY_RESTRICT length_bytes)
+                                 std::span<const uint32_t> length_bytes)
 {
+    ASSERT(length_bytes.size() >= lanes());
+    ASSERT(!x80_offset || *x80_offset < bytes_per_block);
+
     for (size_t i = 0; i < lanes(); i++) {
-        if (x80_offset) {
-            DEBUG_ASSERT(*x80_offset < bytes_per_block);
+        if (x80_offset)
             messages.data[bytes_per_block * i + *x80_offset] = 0x80;
-        }
 
         // Assumes that message is never going to be more than 65536 bits, and
         // that the rest of the length field is already zeroed.
@@ -282,26 +278,32 @@ inline auto hash_block(const InterleavedBlocks &HWY_RESTRICT M)
     return hash_block<NonZeroBlockMask, ResultType>(M, initial_state());
 }
 
-inline Vec4T hash_block(
+template <uint16_t NonZeroBlockMask = 0xffff,
+          ResultType ResultType = ResultType::full_result>
+inline auto hash_block(
     const SequentialBlocks &HWY_RESTRICT chunks, VecT a0, VecT b0, VecT c0, VecT d0)
 {
     // The input in `chunks` is 64-byte blocks laid out one after another. The
     // MD5 core loop expects memory to contain interleaved 4-byte words from
     // each block, so reshuffle the original input into that format.
     InterleavedBlocks M = interleave(chunks);
-    return hash_block(M, a0, b0, c0, d0);
+    return hash_block<NonZeroBlockMask, ResultType>(M, a0, b0, c0, d0);
 }
 
-inline Vec4T hash_block(const SequentialBlocks &HWY_RESTRICT chunks, Vec4T state)
+template <uint16_t NonZeroBlockMask = 0xffff,
+          ResultType ResultType = ResultType::full_result>
+inline auto hash_block(const SequentialBlocks &HWY_RESTRICT chunks, Vec4T state)
 {
     InterleavedBlocks M = interleave(chunks);
-    return hash_block(M, state);
+    return hash_block<NonZeroBlockMask, ResultType>(M, state);
 }
 
-inline Vec4T hash_block(const SequentialBlocks &HWY_RESTRICT chunks)
+template <uint16_t NonZeroBlockMask = 0xffff,
+          ResultType ResultType = ResultType::full_result>
+inline auto hash_block(const SequentialBlocks &HWY_RESTRICT chunks)
 {
     InterleavedBlocks M = interleave(chunks);
-    return hash_block(M, initial_state());
+    return hash_block<NonZeroBlockMask, ResultType>(M, initial_state());
 }
 
 inline char *to_chars(char *p, int n)
@@ -360,6 +362,7 @@ static_assert(make_leading_zero_mask<6>() == 0xffffff);
 template <size_t N>
 inline uint32_t leading_zero_mask(const hn::Vec<D> &hashes)
 {
+    static_assert(N <= 8);
     const hn::Vec<D> mask = hn::Set(d, detail::make_leading_zero_mask<N>());
     return hn::BitsFromMask(d, hn::Eq(mask & hashes, hn::Zero(d)));
 }
@@ -466,7 +469,7 @@ inline bool hash_4digit_chunks(md5::SequentialBlocks &messages,
     // for the last four digits of each suffix.
     std::array<uint32_t, max_lanes> lengths;
     lengths.fill(prefix_len + suffix_len);
-    prepare_final_blocks(messages, lengths.data());
+    prepare_final_blocks(messages, lengths);
     for (size_t i = 0; i < lanes; i++)
         to_chars(suffix_ptr(i), chunk_start + i);
 
