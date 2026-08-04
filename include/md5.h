@@ -40,7 +40,7 @@ inline Vec4T initial_state()
 /// 64-byte blocks laid out sequentially one after another; as many blocks as
 /// we (potentially) have SIMD lanes.
 struct SequentialBlocks {
-    HWY_ALIGN_MAX char data[bytes_per_block * max_lanes];
+    HWY_ALIGN_MAX char data[max_lanes][bytes_per_block];
 
     /// Return a set of blocks with each block containing string `s`.
     static SequentialBlocks splat(std::string_view s) noexcept
@@ -48,7 +48,7 @@ struct SequentialBlocks {
         ASSERT(s.size() <= bytes_per_block);
         SequentialBlocks result{};
         for (size_t i = 0; i < lanes(); ++i)
-            memcpy(result.data + i * bytes_per_block, s.data(), s.size());
+            memcpy(result.data[i], s.data(), s.size());
         return result;
     }
 };
@@ -57,7 +57,7 @@ struct SequentialBlocks {
 /// is the format fed into the core hash_block() function to compute multiple
 /// hashes in parallel.
 struct InterleavedBlocks {
-    HWY_ALIGN_MAX uint32_t data[words_per_block * max_lanes];
+    HWY_ALIGN_MAX uint32_t data[words_per_block][max_lanes];
 };
 
 // Interleave 4-byte words from 64-byte blocks laid out one after in memory.
@@ -70,9 +70,9 @@ inline InterleavedBlocks interleave(const SequentialBlocks &input)
     // (vpermi2d and vpermt2d); doing it by hand is unlikely to yield any
     // significant speedup.
     static_assert(std::endian::native == std::endian::little);
-    uint32_t *dst = result.data;
+    auto *dst = reinterpret_cast<uint32_t *>(result.data);
     for (size_t i = 0; i < words_per_block; i++) {
-        const char *src = input.data + 4 * i;
+        auto *src = reinterpret_cast<const char *>(input.data) + 4 * i;
         for (size_t j = 0; j < lanes; j++, src += bytes_per_block, dst++)
             memcpy(dst, src, sizeof(uint32_t));
     }
@@ -93,12 +93,12 @@ inline void prepare_final_blocks(SequentialBlocks &HWY_RESTRICT messages,
         // The buffer is assumed to be padded and the length of each message is
         // non-decreasing, so all we need to do is to insert the 1 bit (0x80)
         // and add the length in bits.
-        messages.data[bytes_per_block * i + length_bytes[i]] = 0x80;
+        messages.data[i][length_bytes[i]] = 0x80;
 
         // Assumes that message is never going to be more than 65536 bits, and
         // that the rest of the length field is already zeroed.
-        messages.data[bytes_per_block * i + 56] = (length_bytes[i] << 3) & 0xff;
-        messages.data[bytes_per_block * i + 57] = (length_bytes[i] >> 5) & 0xff;
+        messages.data[i][56] = (length_bytes[i] << 3) & 0xff;
+        messages.data[i][57] = (length_bytes[i] >> 5) & 0xff;
     }
 }
 
@@ -115,12 +115,12 @@ inline void prepare_final_blocks(SequentialBlocks &HWY_RESTRICT messages,
 
     for (size_t i = 0; i < lanes(); i++) {
         if (x80_offset)
-            messages.data[bytes_per_block * i + *x80_offset] = 0x80;
+            messages.data[i][*x80_offset] = 0x80;
 
         // Assumes that message is never going to be more than 65536 bits, and
         // that the rest of the length field is already zeroed.
-        messages.data[bytes_per_block * i + 56] = (length_bytes[i] << 3) & 0xff;
-        messages.data[bytes_per_block * i + 57] = (length_bytes[i] >> 5) & 0xff;
+        messages.data[i][56] = (length_bytes[i] << 3) & 0xff;
+        messages.data[i][57] = (length_bytes[i] >> 5) & 0xff;
     }
 }
 
@@ -155,7 +155,7 @@ hash_block(const InterleavedBlocks &HWY_RESTRICT M, VecT a0, VecT b0, VecT c0, V
         a += f(b, c, d);                                                                 \
         a += hn::Set(hn::DFromV<decltype(a)>(), K[k]);                                   \
         if constexpr (NonZeroBlockMask & (1 << (j)))                                     \
-            a += hn::Load(hn::DFromV<decltype(a)>(), &M.data[lanes() * (j)]);            \
+            a += hn::Load(hn::DFromV<decltype(a)>(), M.data[j]);                         \
         a = hn::RotateLeft<shift>(a);                                                    \
         a += b;                                                                          \
     } while (0)
@@ -386,7 +386,7 @@ struct State {
         uint32_t lengths[max_lanes];
 
         for (size_t i = 0; i < lanes(); i++) {
-            char *p = messages.data + bytes_per_block * i;
+            char *p = messages.data[i];
             char *q = to_chars(p + prefix.size(), block + i);
             lengths[i] = q - p;
         }
@@ -461,10 +461,9 @@ inline bool hash_4digit_chunks(md5::SequentialBlocks &messages,
         // it out 4 digits at a time. Handle these the slow but simple way by
         // writing out the full suffix and length for each message.
         for (; tail < 1000; tail += lanes) {
-            char *p = messages.data + prefix_len;
-            for (size_t i = 0; i < lanes; i++, p += bytes_per_block) {
+            for (size_t i = 0; i < lanes; i++) {
                 lengths[i] = prefix_len + digit_count_base10(tail + i);
-                to_chars(p, tail + i);
+                to_chars(&messages.data[i][prefix_len], tail + i);
             }
             prepare_final_blocks(messages, lengths);
 
@@ -476,17 +475,15 @@ inline bool hash_4digit_chunks(md5::SequentialBlocks &messages,
 
     const size_t suffix_len = std::max(4, digit_count_base10(chunk_start));
     DEBUG_ASSERT(prefix_len + suffix_len < bytes_per_block - 8 - 1);
+    const size_t tail_offset = prefix_len + suffix_len - 4;
 
     // Prepare the messages beforehand, writing out everything needed to hash
     // them except for the suffix since the 10,000 messages in the same chunk
     // have the same length by construction.
-    {
-        lengths.fill(prefix_len + suffix_len);
-        prepare_final_blocks(messages, lengths);
-        char *p = messages.data + prefix_len;
-        for (size_t i = 0; i < lanes; i++, p += bytes_per_block)
-            to_chars(p, chunk_start + tail + i);
-    }
+    lengths.fill(prefix_len + suffix_len);
+    prepare_final_blocks(messages, lengths);
+    for (size_t i = 0; i < lanes; i++)
+        to_chars(&messages.data[i][prefix_len], chunk_start + tail + i);
 
     const size_t non_empty_blocks = (prefix_len + suffix_len + 4) / 4;
     DEBUG_ASSERT(non_empty_blocks < std::size(partial_hash_funcs));
@@ -499,9 +496,8 @@ inline bool hash_4digit_chunks(md5::SequentialBlocks &messages,
         // message. We tolerate `tail` being slightly larger than 9999 here
         // since the digits_4x table contains a few extra entries wrapping
         // around to 0000.
-        char *p = messages.data + prefix_len + suffix_len - 4;
-        for (size_t i = 0; i < lanes; i++, p += bytes_per_block)
-            memcpy(p, &digits_4x[4 * (tail + i)], 4);
+        for (size_t i = 0; i < lanes; i++)
+            memcpy(&messages.data[i][tail_offset], &digits_4x[4 * (tail + i)], 4);
 
         // NOTE: This still has to interleave the message blocks for each batch
         // of messages to hash. This is likely the one remaining thing that

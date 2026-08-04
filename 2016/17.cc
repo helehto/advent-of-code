@@ -46,8 +46,8 @@ static md5::Vec4T md5_full(std::string_view s)
     std::optional<size_t> x80_offset;
 
     for (size_t i = 0; i < 4; ++i) {
-        memcpy(&m.data[i * 64], s.data(), s.size());
-        m.data[i * 64 + s.size()] = "UDLR"[i];
+        memcpy(m.data[i], s.data(), s.size());
+        m.data[i][s.size()] = "UDLR"[i];
     }
 
     if (s.size() >= 55) {
@@ -55,7 +55,7 @@ static md5::Vec4T md5_full(std::string_view s)
         // that we might need to push the 0x80 byte into a separate block.
         if (s.size() < 63) {
             for (size_t i = 0; i < 4; ++i)
-                m.data[i * 64 + s.size() + 1] = 0x80;
+                m.data[i][s.size() + 1] = 0x80;
         } else {
             x80_offset = 0;
         }

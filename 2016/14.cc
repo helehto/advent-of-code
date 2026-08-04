@@ -169,8 +169,8 @@ md5_hex_stretch1(const std::array<std::array<char, 32>, md5::max_lanes> &hex)
     }
 
     // Insert 0x80 byte and length of of each message (256 bits).
-    hn::Store(hn::Set(md5::D(), 0x80), md5::D(), &messages.data[8 * lanes]);
-    hn::Store(hn::Set(md5::D(), 0x100), md5::D(), &messages.data[14 * lanes]);
+    hn::Store(hn::Set(md5::D(), 0x80), md5::D(), messages.data[8]);
+    hn::Store(hn::Set(md5::D(), 0x100), md5::D(), messages.data[14]);
 
     constexpr uint16_t non_zero_mask = 0b0100'0001'1111'1111;
     return to_hex(md5::hash_block<non_zero_mask>(messages));
