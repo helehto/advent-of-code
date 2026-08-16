@@ -159,17 +159,19 @@ run_problem(const Problem &p, std::string input_path, const Options &opts)
     }
 
     if (opts.stable_mode) {
-        // Run for 100 ms or two iterations to warm up, whichever is longer, to
-        // determine the batch size.
-        while (total_duration < 100'000'000 || durations.size() < 2)
+        // Run for `warmup_duration` or `warmup_iterations` iterations to warm
+        // up, whichever is longer, to determine the batch size.
+        constexpr uint64_t warmup_duration = 20'000'000; // 20 ms
+        constexpr size_t warmup_iterations = 3;
+        while (total_duration < warmup_duration || durations.size() < warmup_iterations)
             run();
 
         // Run in batches of N runs until the timing of the last N runs look
         // (somewhat) stable, or the time spent exceeds what was given in -t.
         // The batch size is chosen to be ~50 ms based on the warmup runs, or
         // at least two runs.
-        const size_t N =
-            std::max<size_t>(2, (50'000'000 * durations.size()) / total_duration);
+        const size_t N = std::max<size_t>(
+            warmup_iterations, (warmup_duration * durations.size()) / total_duration);
         size_t num_batches = 0;
 
         while (true) {
