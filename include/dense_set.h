@@ -171,16 +171,6 @@ public:
         return {it, b};
     }
 
-    // emplace() with insertion hints. As with insert(), the hint is ignored.
-    template <typename... Args>
-    std::pair<iterator, bool> emplace_hint(const_iterator, Args &&...args)
-    {
-        auto [it, b] = map_.emplace(std::piecewise_construct,
-                                    std::forward_as_tuple(std::forward<Args>(args)...),
-                                    std::tuple<>());
-        return {it, b};
-    }
-
     iterator erase(const_iterator pos) { return map_.erase(pos.iter_); }
     size_type erase(const key_type &key) { return map_.erase(key); }
 
@@ -198,16 +188,7 @@ public:
     // Hash policy.
     //-------------------------------------------------------------------------
 
-    float load_factor() const noexcept { return map_.load_factor(); }
-    float max_load_factor() const noexcept { return map_.max_load_factor(); }
-    void rehash(size_type count) { return map_.rehash(count); }
     void reserve(size_type count) { return map_.reserve(count); }
-
-    //-------------------------------------------------------------------------
-    // Observers.
-    //-------------------------------------------------------------------------
-    hasher hash_function() const { return map_.hash_function(); }
-    key_equal key_eq() const { return map_.key_eq(); }
 };
 
 namespace std {

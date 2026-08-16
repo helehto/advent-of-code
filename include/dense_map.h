@@ -10,6 +10,7 @@
 #include <initializer_list>
 #include <iterator>
 #include <memory>
+#include <ratio>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -280,7 +281,7 @@ private:
         return std::tuple(i, found, hash);
     }
 
-    constexpr static auto max_load_ = std::make_pair(3, 4);
+    using MaxLoad = std::ratio<3, 4>;
 
     void initialize_allocate(size_t new_capacity)
     {
@@ -317,7 +318,7 @@ private:
 
         std::tie(i, found) = find_bucket_with_hash_(hash, key);
         if (!found) {
-            if (max_load_.second * (size_with_tombs_ + 1) >= capacity_ * max_load_.first)
+            if (MaxLoad::den * (size_with_tombs_ + 1) >= capacity_ * MaxLoad::num)
                 [[unlikely]] {
                 rehash(2 * capacity_);
                 i = std::get<0>(find_bucket_with_hash_(hash, key));
@@ -361,6 +362,8 @@ private:
 
     [[gnu::cold, gnu::noinline]] void rehash(size_type count)
     {
+        // NB: Rehashing is always going to be glacially slow compared to other
+        // operations, so we move it out of line from hot paths.
         dense_map new_set(internal_tag{}, count, hash_, equal_);
         for (auto &elem : *this)
             new_set.insert(std::move(elem));
@@ -386,7 +389,7 @@ public:
               const KeyEqual &equal = KeyEqual()) noexcept
         : dense_map(internal_tag{},
                     bucket_count ? std::bit_ceil(static_cast<size_type>(
-                                       2 * bucket_count / max_load_factor()))
+                                       2 * MaxLoad::den * bucket_count / MaxLoad::num))
                                  : 16,
                     hash,
                     equal)
@@ -415,7 +418,8 @@ public:
     dense_map(dense_map &&other) noexcept
         : storage_(std::exchange(other.storage_, nullptr))
         , buckets_(std::exchange(other.buckets_, nullptr))
-        , states_(std::exchange(other.states_, nullptr))
+        , states_(std::exchange(other.states_,
+                                const_cast<uint8_t *>(detail::empty_map_states.data())))
         , capacity_(std::exchange(other.capacity_, 0))
         , size_(std::exchange(other.size_, 0))
         , size_with_tombs_(std::exchange(other.size_with_tombs_, 0))
@@ -458,6 +462,9 @@ public:
 
     ~dense_map() = default;
 
+    // The default compiler-generator destructor above is fine if the value
+    // type is trivially destructible. If not, we need to explicitly destroy
+    // occupied buckets since they are placement new'd into existence.
     ~dense_map() noexcept(noexcept(std::is_nothrow_destructible_v<value_type>))
         requires(!std::is_trivially_destructible_v<value_type>)
     {
@@ -541,13 +548,6 @@ public:
 
     template <typename... Args>
     std::pair<iterator, bool> emplace(Args &&...args)
-    {
-        return do_insert_(value_type(std::forward<Args>(args)...));
-    }
-
-    // emplace() with insertion hints. As with insert(), the hint is ignored.
-    template <typename... Args>
-    std::pair<iterator, bool> emplace_hint(const_iterator, Args &&...args)
     {
         return do_insert_(value_type(std::forward<Args>(args)...));
     }
@@ -671,20 +671,11 @@ public:
     // Hash policy.
     //-------------------------------------------------------------------------
 
-    float load_factor() const noexcept
-    {
-        return static_cast<float>(size_with_tombs_) / capacity_;
-    }
-    constexpr static float max_load_factor() noexcept
-    {
-        return static_cast<float>(max_load_.first) / max_load_.second;
-    }
-
     void reserve(size_type count)
     {
         DEBUG_ASSERT(count <= UINT32_MAX);
 
-        auto desired_bucket_count = std::ceil(count / max_load_factor());
+        auto desired_bucket_count = std::ceil(MaxLoad::den * count / MaxLoad::num);
         if (desired_bucket_count >= capacity_) {
             dense_map new_set(desired_bucket_count, hash_, equal_);
             for (auto &elem : *this)
@@ -692,17 +683,11 @@ public:
             swap(new_set);
         }
     }
-
-    //-------------------------------------------------------------------------
-    // Observers.
-    //-------------------------------------------------------------------------
-    hasher hash_function() const { return hash_; }
-    key_equal key_eq() const { return equal_; }
 };
 
-template <typename Key, class Hash, class KeyEqual>
-void swap(dense_map<Key, Hash, KeyEqual> &a,
-          dense_map<Key, Hash, KeyEqual> &b) noexcept(noexcept(a.swap(b)))
+template <typename Key, typename T, class Hash, class KeyEqual>
+void swap(dense_map<Key, T, Hash, KeyEqual> &a,
+          dense_map<Key, T, Hash, KeyEqual> &b) noexcept(noexcept(a.swap(b)))
 {
     a.swap(b);
 }
