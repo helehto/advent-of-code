@@ -22,7 +22,7 @@ constexpr D d;
 
 // NOTE: The code is dependent on the states having these specific values.
 // clang-format off
-enum class bucket_state : uint8_t {
+enum class SlotState : uint8_t {
     empty     = 0b00000000,
     tombstone = 0b01000000,
     sentinel  = 0b10000000,
@@ -33,7 +33,7 @@ enum class bucket_state : uint8_t {
 constexpr static uint8_t state_hash_mask = 0b00111111;
 
 [[gnu::noinline]]
-inline size_t find_occupied(const uint8_t *states, size_t i)
+inline size_t next_occupied_slot_index(const uint8_t *states, size_t i)
 {
     for (;; i += hn::Lanes(d)) {
         using DS = hn::RebindToSigned<D>;
@@ -44,7 +44,7 @@ inline size_t find_occupied(const uint8_t *states, size_t i)
 }
 
 template <typename T>
-struct bucket {
+struct Slot {
     alignas(T) char buffer[sizeof(T)];
     T &data() { return *reinterpret_cast<T *>(buffer); }
     const T &data() const { return *reinterpret_cast<const T *>(buffer); }
@@ -93,11 +93,11 @@ compound_allocate(std::span<const std::pair<size_t, size_t>> fields, Pointers...
 }
 
 /// Array of sentinel states used for empty maps. Some operations, e.g.
-/// iterators, expected the array of bucket states to be non-null, and rather
-/// than introducing null checks everywhere, the states_ member points here.
+/// iterators, expect the array of slot states to be non-null, and rather than
+/// introducing null checks everywhere, the states_ member points here.
 constexpr auto empty_map_states = [] {
     std::array<uint8_t, hn::MaxLanes(D())> a;
-    a.fill(static_cast<uint8_t>(bucket_state::sentinel));
+    a.fill(static_cast<uint8_t>(SlotState::sentinel));
     return a;
 }();
 
@@ -119,8 +119,8 @@ public:
     using const_reference = const value_type &;
 
 private:
-    using bucket = detail::bucket<value_type>;
-    using bucket_state = detail::bucket_state;
+    using Slot = detail::Slot<value_type>;
+    using SlotState = detail::SlotState;
 
     template <bool IsConst, typename Derived>
     class iterator_base {
@@ -159,11 +159,11 @@ private:
             DEBUG_ASSERT(set_ == other.set_);
             return index_ != other.index_;
         }
-        reference operator*() const { return set_->buckets_[index_].data(); }
-        pointer operator->() const { return &set_->buckets_[index_].data(); }
+        reference operator*() const { return set_->slots_[index_].data(); }
+        pointer operator->() const { return &set_->slots_[index_].data(); }
         Derived &operator++()
         {
-            index_ = detail::find_occupied(set_->states_, index_ + 1);
+            index_ = detail::next_occupied_slot_index(set_->states_, index_ + 1);
             return static_cast<Derived &>(*this);
         }
         Derived operator++(int) { return ++Derived(*this); }
@@ -188,7 +188,7 @@ public:
 
 private:
     std::unique_ptr<std::byte[]> storage_;
-    bucket *buckets_;
+    Slot *slots_;
     uint8_t *states_;
     uint32_t capacity_;
     uint32_t size_;
@@ -196,26 +196,34 @@ private:
     [[no_unique_address]] hasher hash_;
     [[no_unique_address]] key_equal equal_;
 
-    bucket_state state_of(size_t i) const
+    SlotState state_of(size_t i) const
     {
-        return static_cast<bucket_state>(states_[i] & ~detail::state_hash_mask);
+        return static_cast<SlotState>(states_[i] & ~detail::state_hash_mask);
     }
 
-    void set_state_of(size_t i, bucket_state state, uint8_t hash_bits = 0)
+    void set_state_of(size_t i, SlotState state, uint8_t hash_bits = 0)
     {
         states_[i] = static_cast<uint8_t>(state) | hash_bits;
     }
 
-    size_t find_occupied_(size_t i) const { return detail::find_occupied(states_, i); }
+    size_t find_occupied_slot(size_t i) const
+    {
+        return detail::next_occupied_slot_index(states_, i);
+    }
 
-    std::tuple<size_t, bool> find_bucket_with_hash_(const size_t hash,
-                                                    const Key &key) const
+    struct FindSlotResult {
+        size_t index;
+        size_t hash;
+        bool found;
+    };
+
+    FindSlotResult find_slot_with_hash(const size_t hash, const Key &key) const
     {
         using detail::D;
 
         if (capacity_ == 0) [[unlikely]] {
             // We cannot find the corresponding in an empty map, by definition.
-            return {0, false};
+            return {0, hash, false};
         }
 
         const auto mask = capacity_ - 1;
@@ -224,13 +232,13 @@ private:
         const size_t stride = hn::Lanes(D());
 
         // Fast path before we drop into the SIMD loop: is the very first
-        // bucket we landed at empty or the key we're looking for?
+        // slot we landed at empty or the key we're looking for?
         if (states_[i] == 0)
-            return {i, false};
-        if (states_[i] == expected_state && equal_(buckets_[i].data().first, key))
-            return {i, true};
+            return {i, hash, false};
+        if (states_[i] == expected_state && equal_(slots_[i].data().first, key))
+            return {i, hash, true};
 
-        // No, unfortunately not. Skip it and start checking buckets en masse.
+        // No, unfortunately not. Skip it and start checking slots en masse.
         i = (i + 1) & mask;
 
         const hn::Vec<D> vexpected_state = hn::Set(D(), expected_state);
@@ -238,9 +246,9 @@ private:
 
         for (;; i = (i + stride < capacity_) ? i + stride : 0) {
             // Note that if we are near the end of the table, this load will
-            // also fetch a bunch of sentinel bucket states past the logical
+            // also fetch a bunch of sentinel slot states past the logical
             // end of the state array. These will never match anything, so we
-            // are effectively checking fewer than hn::Lanes(D()) buckets in
+            // are effectively checking fewer than hn::Lanes(D()) slots in
             // that case.
             const hn::Vec<D> v = hn::LoadU(D(), states_ + i);
             const hn::Mask<D> match = hn::Eq(v, vexpected_state);
@@ -249,36 +257,35 @@ private:
             uint64_t match_mask = hn::BitsFromMask(D(), match);
             uint64_t empty_mask = hn::BitsFromMask(D(), empty);
 
-            // We want to stop at the first empty bucket; mask out any matches
+            // We want to stop at the first empty slot; mask out any matches
             // that occur after it.
             match_mask &= empty_mask ^ (empty_mask - 1);
 
             // At this point, `match_mask` has one bit set for each candidate
-            // bucket; that is, buckets that are occupied and whose hash have
+            // slot; that is, slots that are occupied and whose hash have
             // the same lowest 6 bits as the hash of the key we are searching
             // for. Often there will be at most one bit set in this mask, but
             // in the worst case we may have some false positives, so we need
             // to check all of them.
             for (; match_mask != 0; match_mask &= match_mask - 1) {
                 int offset = std::countr_zero(match_mask);
-                if (equal_(buckets_[i + offset].data().first, key))
-                    return {i + offset, true};
+                if (equal_(slots_[i + offset].data().first, key))
+                    return {i + offset, hash, true};
             }
 
-            // At this point, none of the candidate buckets we checked matched
-            // the key. If there is *any* empty bucket in this group, we know
+            // At this point, none of the candidate slots we checked matched
+            // the key. If there is *any* empty slot in this group, we know
             // the key does not exist in this probe chain, since we would have
             // stopped there with a linear search.
             if (empty_mask != 0)
-                return {i + std::countr_zero(empty_mask), false};
+                return {i + std::countr_zero(empty_mask), hash, false};
         }
     }
 
-    std::tuple<size_t, bool, size_t> find_bucket_(const Key &key) const
+    FindSlotResult find_slot(const Key &key) const
     {
         const size_t hash = hash_(key);
-        auto [i, found] = find_bucket_with_hash_(hash, key);
-        return std::tuple(i, found, hash);
+        return find_slot_with_hash(hash, key);
     }
 
     using MaxLoad = std::ratio<3, 4>;
@@ -286,23 +293,22 @@ private:
     void initialize_allocate(size_t new_capacity)
     {
         const std::pair<size_t, size_t> fields[] = {
-            {sizeof(bucket) * new_capacity, alignof(bucket)},
-            {sizeof(bucket_state) * (new_capacity + hn::Lanes(detail::D())), 128},
+            {sizeof(Slot) * new_capacity, alignof(Slot)},
+            {sizeof(SlotState) * (new_capacity + hn::Lanes(detail::D())), 128},
         };
-        storage_ = detail::compound_allocate(fields, &buckets_, &states_);
+        storage_ = detail::compound_allocate(fields, &slots_, &states_);
 
         capacity_ = new_capacity;
         memset(states_, 0, capacity_);
         for (size_t i = 0; i < hn::Lanes(detail::D()); i++)
-            set_state_of(capacity_ + i, bucket_state::occupied);
+            set_state_of(capacity_ + i, SlotState::occupied);
     }
 
     template <typename ConstructFn>
     std::pair<iterator, bool> do_insert_helper_(const key_type &key,
                                                 ConstructFn &&construct)
     {
-        size_t i;
-        bool found = false;
+        FindSlotResult slot;
         const size_t hash = hash_(key);
 
         // For an empty map, the key is obviously not present, and there are
@@ -312,24 +318,25 @@ private:
         if (capacity_ == 0) [[unlikely]] {
             constexpr size_t new_capacity = 16;
             initialize_allocate(new_capacity);
-            i = hash & (new_capacity - 1);
+            slot.found = false;
+            slot.index = hash & (new_capacity - 1);
             goto insert_key;
         }
 
-        std::tie(i, found) = find_bucket_with_hash_(hash, key);
-        if (!found) {
+        slot = find_slot_with_hash(hash, key);
+        if (!slot.found) {
             if (MaxLoad::den * (size_with_tombs_ + 1) >= capacity_ * MaxLoad::num)
                 [[unlikely]] {
                 rehash(2 * capacity_);
-                i = std::get<0>(find_bucket_with_hash_(hash, key));
+                slot.index = find_slot_with_hash(hash, key).index;
             }
         insert_key:
-            construct(buckets_[i].buffer);
-            set_state_of(i, bucket_state::occupied, hash & detail::state_hash_mask);
+            construct(slots_[slot.index].buffer);
+            set_state_of(slot.index, SlotState::occupied, hash & detail::state_hash_mask);
             size_++;
             size_with_tombs_++;
         }
-        return {iterator(this, i), !found};
+        return {iterator(this, slot.index), !slot.found};
     }
 
     std::pair<iterator, bool> do_insert_(const value_type &value)
@@ -348,16 +355,16 @@ private:
     struct internal_tag {};
 
     dense_map(internal_tag,
-              size_type bucket_count,
+              size_type slot_count,
               const Hash &hash = Hash(),
               const KeyEqual &equal = KeyEqual())
-        : capacity_(bucket_count)
+        : capacity_(slot_count)
         , size_(0)
         , size_with_tombs_(0)
         , hash_(hash)
         , equal_(equal)
     {
-        initialize_allocate(bucket_count);
+        initialize_allocate(slot_count);
     }
 
     [[gnu::cold, gnu::noinline]] void rehash(size_type count)
@@ -376,7 +383,7 @@ public:
     //-------------------------------------------------------------------------
 
     dense_map() noexcept
-        : buckets_(nullptr)
+        : slots_(nullptr)
         , states_(const_cast<uint8_t *>(detail::empty_map_states.data()))
         , capacity_(0)
         , size_(0)
@@ -384,17 +391,17 @@ public:
     {
     }
 
-    dense_map(size_type bucket_count,
+    dense_map(size_type slot_count,
               const Hash &hash = Hash(),
               const KeyEqual &equal = KeyEqual()) noexcept
         : dense_map(internal_tag{},
-                    bucket_count ? std::bit_ceil(static_cast<size_type>(
-                                       2 * MaxLoad::den * bucket_count / MaxLoad::num))
-                                 : 16,
+                    slot_count ? std::bit_ceil(static_cast<size_type>(
+                                     2 * MaxLoad::den * slot_count / MaxLoad::num))
+                               : 16,
                     hash,
                     equal)
     {
-        DEBUG_ASSERT(bucket_count <= UINT32_MAX);
+        DEBUG_ASSERT(slot_count <= UINT32_MAX);
     }
 
     dense_map(const dense_map &other) noexcept(
@@ -417,7 +424,7 @@ public:
 
     dense_map(dense_map &&other) noexcept
         : storage_(std::exchange(other.storage_, nullptr))
-        , buckets_(std::exchange(other.buckets_, nullptr))
+        , slots_(std::exchange(other.slots_, nullptr))
         , states_(std::exchange(other.states_,
                                 const_cast<uint8_t *>(detail::empty_map_states.data())))
         , capacity_(std::exchange(other.capacity_, 0))
@@ -437,24 +444,24 @@ public:
     template <typename InputIt>
     dense_map(InputIt begin,
               InputIt end,
-              size_type bucket_count = 16,
+              size_type slot_count = 16,
               const Hash &hash = Hash(),
               const KeyEqual &equal =
                   KeyEqual()) noexcept(std::is_nothrow_copy_constructible_v<value_type>)
-        : dense_map(bucket_count, hash, equal)
+        : dense_map(slot_count, hash, equal)
     {
         for (; begin != end; ++begin)
             insert(*begin);
     }
 
     dense_map(std::initializer_list<value_type> list,
-              size_type bucket_count = 16,
+              size_type slot_count = 16,
               const Hash &hash = Hash(),
               const KeyEqual &equal =
                   KeyEqual()) noexcept(std::is_nothrow_copy_constructible_v<value_type>)
         : dense_map(list.begin(),
                     list.end(),
-                    std::max<size_type>(bucket_count, list.size()),
+                    std::max<size_type>(slot_count, list.size()),
                     hash,
                     equal)
     {
@@ -464,14 +471,14 @@ public:
 
     // The default compiler-generator destructor above is fine if the value
     // type is trivially destructible. If not, we need to explicitly destroy
-    // occupied buckets since they are placement new'd into existence.
+    // occupied slots since they are placement new'd into existence.
     ~dense_map() noexcept(noexcept(std::is_nothrow_destructible_v<value_type>))
         requires(!std::is_trivially_destructible_v<value_type>)
     {
-        // TODO: Better way to iterate all occupied buckets?
+        // TODO: Better way to iterate all occupied slots?
         for (size_t i = 0; i < capacity_; ++i) {
-            if (state_of(i) == bucket_state::occupied)
-                buckets_[i].data().~value_type();
+            if (state_of(i) == SlotState::occupied)
+                slots_[i].data().~value_type();
         }
     }
 
@@ -480,8 +487,8 @@ public:
     // TODO: Less stupid way to find the first element
     //-------------------------------------------------------------------------
 
-    iterator begin() noexcept { return {this, find_occupied_(0)}; }
-    const_iterator begin() const noexcept { return {this, find_occupied_(0)}; }
+    iterator begin() noexcept { return {this, find_occupied_slot(0)}; }
+    const_iterator begin() const noexcept { return {this, find_occupied_slot(0)}; }
     const_iterator cbegin() const noexcept { return begin(); }
 
     iterator end() noexcept { return {this, capacity_}; }
@@ -501,11 +508,11 @@ public:
 
     void clear() noexcept
     {
-        // TODO: Better way to iterate all occupied buckets?
+        // TODO: Better way to iterate all occupied slots?
         if constexpr (!std::is_trivially_destructible_v<value_type>) {
             for (size_t i = 0; i < capacity_; ++i) {
-                if (state_of(i) == bucket_state::occupied)
-                    buckets_[i].data().~value_type();
+                if (state_of(i) == SlotState::occupied)
+                    slots_[i].data().~value_type();
             }
         }
         memset(states_, 0, capacity_);
@@ -586,21 +593,21 @@ public:
     iterator erase(const_iterator pos)
     {
         DEBUG_ASSERT(pos.set_ == this);
-        DEBUG_ASSERT(state_of(pos.index_) == bucket_state::occupied);
+        DEBUG_ASSERT(state_of(pos.index_) == SlotState::occupied);
 
-        buckets_[pos.index_].data().~value_type();
-        set_state_of(pos.index_, bucket_state::tombstone);
+        slots_[pos.index_].data().~value_type();
+        set_state_of(pos.index_, SlotState::tombstone);
         size_--;
 
-        // Find the next occupied bucket.
-        return {this, find_occupied_(pos.index_ + 1)};
+        // Find the next occupied slot.
+        return {this, find_occupied_slot(pos.index_ + 1)};
     }
 
     size_type erase(const key_type &key)
     {
-        if (const auto [i, found, _] = find_bucket_(key); found) {
-            buckets_[i].data().~value_type();
-            set_state_of(i, bucket_state::tombstone);
+        if (const auto slot = find_slot(key); slot.found) {
+            slots_[slot.index].data().~value_type();
+            set_state_of(slot.index, SlotState::tombstone);
             size_--;
             return 1;
         }
@@ -611,7 +618,7 @@ public:
     {
         using std::swap;
         swap(storage_, other.storage_);
-        swap(buckets_, other.buckets_);
+        swap(slots_, other.slots_);
         swap(states_, other.states_);
         swap(capacity_, other.capacity_);
         swap(size_, other.size_);
@@ -626,42 +633,42 @@ public:
 
     T &at(const key_type &key)
     {
-        const auto [i, found, _] = find_bucket_(key);
+        const FindSlotResult slot = find_slot(key);
         if constexpr (fmt::is_formattable<key_type>::value) {
-            ASSERT_MSG(found, "Key '{}' not found!", key);
+            ASSERT_MSG(slot.found, "Key '{}' not found!", key);
         } else {
-            ASSERT(found);
+            ASSERT(slot.found);
         }
-        return buckets_[i].data().second;
+        return slots_[slot.index].data().second;
     }
 
     const T &at(const key_type &key) const
     {
-        const auto [i, found, _] = find_bucket_(key);
+        const FindSlotResult slot = find_slot(key);
         if constexpr (fmt::is_formattable<key_type>::value) {
-            ASSERT_MSG(found, "Key '{}' not found!", key);
+            ASSERT_MSG(slot.found, "Key '{}' not found!", key);
         } else {
-            ASSERT(found);
+            ASSERT(slot.found);
         }
-        return buckets_[i].data().second;
+        return slots_[slot.index].data().second;
     }
 
     size_type count(const key_type &key) const
     {
-        const auto [i, found, _] = find_bucket_(key);
-        return found ? 1 : 0;
+        const FindSlotResult slot = find_slot(key);
+        return slot.found ? 1 : 0;
     }
 
     iterator find(const key_type &key) noexcept
     {
-        const auto [i, found, _] = find_bucket_(key);
-        return found ? iterator(this, i) : end();
+        const FindSlotResult slot = find_slot(key);
+        return slot.found ? iterator(this, slot.index) : end();
     }
 
     const_iterator find(const key_type &key) const noexcept
     {
-        const auto [i, found, _] = find_bucket_(key);
-        return found ? const_iterator(this, i) : end();
+        const FindSlotResult slot = find_slot(key);
+        return slot.found ? const_iterator(this, slot.index) : end();
     }
 
     T &operator[](const key_type &key) { return try_emplace(key).first->second; }
@@ -675,9 +682,9 @@ public:
     {
         DEBUG_ASSERT(count <= UINT32_MAX);
 
-        auto desired_bucket_count = std::ceil(MaxLoad::den * count / MaxLoad::num);
-        if (desired_bucket_count >= capacity_) {
-            dense_map new_set(desired_bucket_count, hash_, equal_);
+        auto desired_slot_count = std::ceil(MaxLoad::den * count / MaxLoad::num);
+        if (desired_slot_count >= capacity_) {
+            dense_map new_set(desired_slot_count, hash_, equal_);
             for (auto &elem : *this)
                 new_set.insert(std::move(elem));
             swap(new_set);
