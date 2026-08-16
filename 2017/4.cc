@@ -3,7 +3,7 @@
 
 namespace aoc_2017_4 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     dense_set<uint64_t> words_ordered;
     words_ordered.reserve(16);
@@ -35,8 +35,9 @@ void run(std::string_view buf)
         s1 += words.size() == words_ordered.size();
         s2 += words.size() == words_letters.size();
     }
-    fmt::print("{}\n", s1);
-    fmt::print("{}\n", s2);
+    answer.add(s1);
+    answer.add(s2);
 }
+AOC_REGISTER_SOLVER(2017, 4, run);
 
 }

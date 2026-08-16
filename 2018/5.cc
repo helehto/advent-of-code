@@ -18,14 +18,14 @@ static size_t react(char *scratch, std::string_view input)
     return i - 1;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     while (!buf.empty() && buf.back() == '\n')
         buf.remove_suffix(1);
 
     {
         auto scratch = std::make_unique_for_overwrite<char[]>(buf.size() + 1);
-        fmt::print("{}\n", react(scratch.get(), buf));
+        answer.add(react(scratch.get(), buf));
     }
 
     std::atomic<size_t> min = SIZE_MAX;
@@ -45,7 +45,8 @@ void run(std::string_view buf)
         }
     });
 
-    fmt::print("{}\n", min.load());
+    answer.add(min.load());
 }
+AOC_REGISTER_SOLVER(2018, 5, run);
 
 }

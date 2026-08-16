@@ -60,7 +60,7 @@ static uint64_t search(const char *s,
     return m(m.rows - 1, 0);
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::atomic<uint64_t> part1 = 0;
     std::atomic<uint64_t> part2 = 0;
@@ -90,7 +90,9 @@ void run(std::string_view buf)
         part2.fetch_add(local_part2, std::memory_order_relaxed);
     });
 
-    fmt::print("{}\n{}\n", part1.load(), part2.load());
+    answer.add(part1.load());
+    answer.add(part2.load());
 }
+AOC_REGISTER_SOLVER(2023, 12, run);
 
 }

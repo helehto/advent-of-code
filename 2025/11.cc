@@ -3,7 +3,7 @@
 
 namespace aoc_2025_11 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     dense_map<std::string_view, size_t> dict;
@@ -97,14 +97,15 @@ void run(std::string_view buf)
     };
 
     // Part 1
-    fmt::print("{}\n", count_paths(v_you, v_out));
+    answer.add(count_paths(v_you, v_out));
 
     // Part 2
     auto dac_index = std::ranges::find(topo_svr, v_dac) - topo_svr.begin();
     auto fft_index = std::ranges::find(topo_svr, v_fft) - topo_svr.begin();
     const size_t a = dac_index < fft_index ? v_dac : v_fft;
     const size_t b = dac_index < fft_index ? v_fft : v_dac;
-    fmt::print("{}\n", count_paths(v_svr, a) * count_paths(a, b) * count_paths(b, v_out));
+    answer.add(count_paths(v_svr, a) * count_paths(a, b) * count_paths(b, v_out));
 }
+AOC_REGISTER_SOLVER(2025, 11, run);
 
 }

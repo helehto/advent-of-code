@@ -2,7 +2,7 @@
 
 namespace aoc_2022_4 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     int a0 = 0, a1 = 0, b0 = 0, b1 = 0;
     int part1 = 0;
@@ -19,8 +19,9 @@ void run(std::string_view buf)
         part2 += a0 <= b1 && b0 <= a1;
     }
 
-    fmt::print("{}\n", part1);
-    fmt::print("{}\n", part2);
+    answer.add(part1);
+    answer.add(part2);
 }
+AOC_REGISTER_SOLVER(2022, 4, run);
 
 }

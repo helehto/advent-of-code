@@ -3,7 +3,7 @@
 
 namespace aoc_2018_21 {
 
-void run(std::string_view)
+void run(std::string_view, aoc::Answer &answer)
 {
     dense_set<int64_t> seen;
     seen.reserve(1 << 14);
@@ -25,10 +25,11 @@ void run(std::string_view)
         }
 
         if (seen.empty())
-            fmt::print("{}\n", n);
+            answer.add(n);
     } while (seen.emplace(n).second);
 
-    fmt::print("{}\n", n_prev);
+    answer.add(n_prev);
 }
+AOC_REGISTER_SOLVER(2018, 21, run);
 
 }

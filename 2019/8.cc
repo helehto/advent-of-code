@@ -8,12 +8,13 @@ constexpr size_t layer_cols = 25;
 constexpr size_t layer_rows = 6;
 constexpr size_t layer_size = layer_cols * layer_rows;
 
-static char *part1(char *out, const uint8_t *input, size_t num_layers)
+static std::string_view part1(char *out, const uint8_t *input, size_t num_layers)
 {
     // TODO: Don't assume that we have 256-bit vectors.
     using D = hn::FixedTag<uint8_t, 32>;
     constexpr D d;
 
+    char *start = out;
     int min0 = INT_MAX;
     int product = 0;
     for (size_t i = 0; i < num_layers; i++) {
@@ -55,12 +56,12 @@ static char *part1(char *out, const uint8_t *input, size_t num_layers)
     }
 
     out = std::to_chars(out, out + 4096, product).ptr;
-    *out++ = '\n';
-    return out;
+    return std::string_view(start, out - start);
 }
 
-static char *part2(char *out, const char *input, size_t num_layers)
+static std::string_view part2(char *out, const char *input, size_t num_layers)
 {
+    char *start = out;
     alignas(64) std::array<uint8_t, layer_size> image;
     image.fill('2');
     std::string_view sv(input, num_layers * layer_size);
@@ -72,23 +73,23 @@ static char *part2(char *out, const char *input, size_t num_layers)
     }
 
     for (size_t i = 0; i < layer_rows; i++) {
+        if (i)
+            *out++ = '\n';
         auto *p = image.data() + i * layer_cols;
         for (size_t i = 0; i < layer_cols; i++)
             *out++ = *p++ != '0' ? '#' : ' ';
-        *out++ = '\n';
     }
-    return out;
+
+    return std::string_view(start, out - start);
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     size_t num_layers = buf.size() / layer_size;
-
-    char output_buffer[4096];
-    char *p = output_buffer;
-    p = part1(p, reinterpret_cast<const uint8_t *>(buf.data()), num_layers);
-    p = part2(p, buf.data(), num_layers);
-    write(1, output_buffer, p - output_buffer);
+    char out[4096];
+    answer.add(part1(out, reinterpret_cast<const uint8_t *>(buf.data()), num_layers));
+    answer.add(part2(out, buf.data(), num_layers));
 }
+AOC_REGISTER_SOLVER(2019, 8, run);
 
 }

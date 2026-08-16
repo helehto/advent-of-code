@@ -34,31 +34,37 @@ static int64_t step(const int64_t a, std::span<const int> prog)
     }
 }
 
-static bool search(std::span<const int> prog, const ssize_t i, const int64_t a = 0)
+static bool search(std::span<const int> prog,
+                   const ssize_t i,
+                   aoc::Answer &answer,
+                   const int64_t a = 0)
 {
     if (i < 0) {
-        fmt::print("\n{}\n", a);
+        answer.add(a);
         return true;
     }
 
     for (size_t k = 0; k < 8; ++k) {
-        if (step(a << 3 | k, prog) == prog[i] && search(prog, i - 1, a << 3 | k))
+        if (step(a << 3 | k, prog) == prog[i] && search(prog, i - 1, answer, a << 3 | k))
             return true;
     }
 
     return false;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<int> nums;
     find_numbers(buf, nums);
     std::span<const int> prog(nums.begin() + 3, nums.end());
 
     int64_t a = nums[0];
+    std::string part1;
     for (const char *sep = ""; a > 0; a >>= 3, sep = ",")
-        fmt::print("{}{}", sep, step(a, prog));
-    search(prog, prog.size() - 1);
+        fmt::format_to(std::back_inserter(part1), "{}{}", sep, step(a, prog));
+    answer.add(std::move(part1));
+    search(prog, prog.size() - 1, answer);
 }
+AOC_REGISTER_SOLVER(2024, 17, run);
 
 }

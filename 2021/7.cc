@@ -72,13 +72,14 @@ int part2(std::span<int> crabs)
     return std::min(cost2(crabs, ceilf(goal)), cost2(crabs, floorf(goal)));
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto crabs = find_numbers<int>(buf);
     std::sort(begin(crabs), end(crabs));
 
-    printf("%d\n", part1(crabs));
-    printf("%d\n", part2(crabs));
+    answer.add(part1(crabs));
+    answer.add(part2(crabs));
 }
+AOC_REGISTER_SOLVER(2021, 7, run);
 
 }

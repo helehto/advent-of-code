@@ -151,7 +151,7 @@ constexpr Input parse_input(std::string_view s)
     return Input{a, s.size()};
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     ASSERT(buf.size() % 2 == 1);
     const Input inp = parse_input(buf);
@@ -159,18 +159,21 @@ void run(std::string_view buf)
     auto solve = [&](size_t n) {
         const auto output_size = n >> std::countr_zero(n);
         const auto input_bits_per_output_bit = n / output_size;
+        std::string result;
+        result.reserve(output_size);
 
         for (size_t k = 0; k < output_size; ++k) {
             const size_t start_bit = k * input_bits_per_output_bit;
             const size_t end_bit = std::min(n, (k + 1) * input_bits_per_output_bit);
             const bool parity = blocks_parity(inp, start_bit, end_bit);
-            fputc(parity ? '0' : '1', stdout);
+            result.push_back(parity ? '0' : '1');
         }
-        fputc('\n', stdout);
+        return result;
     };
 
-    solve(272);
-    solve(35651584);
+    answer.add(solve(272));
+    answer.add(solve(35651584));
 }
+AOC_REGISTER_SOLVER(2016, 16, run);
 
 }

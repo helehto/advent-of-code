@@ -41,13 +41,14 @@ constexpr uint64_t solve(std::span<const uint8_t> nums, uint64_t target)
     return subset_product(nums, *result_mask);
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto nums = find_numbers_small<uint8_t>(buf);
     ASSERT(nums.size() < 64);
     auto sum = std::ranges::fold_left(nums, 0, λxy(x + y));
-    fmt::print("{}\n", solve(nums, sum / 3));
-    fmt::print("{}\n", solve(nums, sum / 4));
+    answer.add(solve(nums, sum / 3));
+    answer.add(solve(nums, sum / 4));
 }
+AOC_REGISTER_SOLVER(2015, 24, run);
 
 }

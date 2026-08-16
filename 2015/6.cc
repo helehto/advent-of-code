@@ -116,7 +116,7 @@ handle_slice(const CompressedInput &input, const ssize_t full_y0, const ssize_t 
     return {n_lights, total_brightness};
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     const auto input = parse_input(buf);
     int n_lights = 0;
@@ -136,7 +136,9 @@ void run(std::string_view buf)
         std::atomic_ref(total_brightness).fetch_add(tb, std::memory_order_relaxed);
     });
 
-    fmt::print("{}\n{}\n", n_lights, total_brightness);
+    answer.add(n_lights);
+    answer.add(total_brightness);
 }
+AOC_REGISTER_SOLVER(2015, 6, run);
 
 }

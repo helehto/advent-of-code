@@ -5,7 +5,7 @@
 
 namespace aoc_2024_22 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<int> seeds = find_numbers<int>(buf);
     constexpr int N = 2000;
@@ -61,7 +61,9 @@ void run(std::string_view buf)
         secrets_sum += local_secrets_sum;
     });
 
-    fmt::print("{}\n{}\n", secrets_sum, std::ranges::max(sequence_sum));
+    answer.add(secrets_sum);
+    answer.add(std::ranges::max(sequence_sum));
 }
+AOC_REGISTER_SOLVER(2024, 22, run);
 
 }

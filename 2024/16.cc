@@ -12,7 +12,7 @@ struct alignas(4) State {
     }
 };
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
@@ -172,8 +172,9 @@ void run(std::string_view buf)
             queue.push_back(turnr);
     }
 
-    fmt::print("{}\n", lowest.value());
-    fmt::print("{}\n", std::ranges::count(visited, true));
+    answer.add(lowest.value());
+    answer.add(std::ranges::count(visited, true));
 }
+AOC_REGISTER_SOLVER(2024, 16, run);
 
 }

@@ -34,7 +34,7 @@ static int64_t trailhead_score(MatrixView<const char> grid,
     return score;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
@@ -51,8 +51,9 @@ void run(std::string_view buf)
         }
     }
 
-    fmt::print("{}\n", s1);
-    fmt::print("{}\n", s2);
+    answer.add(s1);
+    answer.add(s2);
 }
+AOC_REGISTER_SOLVER(2024, 10, run);
 
 }

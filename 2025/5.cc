@@ -2,7 +2,7 @@
 
 namespace aoc_2025_5 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     const auto lines = split_lines(buf);
 
@@ -40,13 +40,14 @@ void run(std::string_view buf)
         auto it = std::ranges::upper_bound(merged, ing, {}, λa(a.second));
         available_fresh += (it != merged.end() && it->first <= ing && ing < it->second);
     }
-    fmt::print("{}\n", available_fresh);
+    answer.add(available_fresh);
 
     // Part 2:
     uint64_t total_fresh = 0;
     for (const auto &[a, b] : merged)
         total_fresh += b - a;
-    fmt::print("{}\n", total_fresh);
+    answer.add(total_fresh);
 }
+AOC_REGISTER_SOLVER(2025, 5, run);
 
 }

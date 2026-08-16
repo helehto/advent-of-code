@@ -44,7 +44,7 @@ static int cmp(const char *a, const char *b)
     return 0;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     alignas(8) std::array<char, 8> pass{};
     memcpy(pass.data(), buf.data(), 6);
@@ -64,8 +64,9 @@ void run(std::string_view buf)
         n2 += is_valid_2(pass.data());
         increment(pass.data());
     }
-    fmt::print("{}\n", n1);
-    fmt::print("{}\n", n2);
+    answer.add(n1);
+    answer.add(n2);
 }
+AOC_REGISTER_SOLVER(2019, 4, run);
 
 }

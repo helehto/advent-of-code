@@ -55,7 +55,7 @@ static void search(std::span<const std::vector<Range>> tables,
     }
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto seeds = find_numbers<uint64_t>(lines.front());
@@ -74,12 +74,13 @@ void run(std::string_view buf)
     uint64_t part1 = UINT64_MAX;
     for (auto seed : seeds)
         search(tables, 0, seed, seed + 1, part1);
-    fmt::print("{}\n", part1);
+    answer.add(part1);
 
     uint64_t part2 = UINT64_MAX;
     for (size_t i = 0; i < seeds.size(); i += 2)
         search(tables, 0, seeds[i], seeds[i] + seeds[i + 1], part2);
-    fmt::print("{}\n", part2);
+    answer.add(part2);
 }
+AOC_REGISTER_SOLVER(2023, 5, run);
 
 }

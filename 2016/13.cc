@@ -3,7 +3,7 @@
 
 namespace aoc_2016_13 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto [n] = find_numbers_n<int, 1>(buf);
 
@@ -18,7 +18,7 @@ void run(std::string_view buf)
         auto [d, u] = queue[i];
 
         if (u == Vec2i{31, 39}) {
-            fmt::print("{}\n", d);
+            answer.add(d);
             break;
         }
         if (d <= 50)
@@ -36,7 +36,8 @@ void run(std::string_view buf)
         }
     }
 
-    fmt::print("{}\n", visited_in_50_steps.size());
+    answer.add(visited_in_50_steps.size());
 }
+AOC_REGISTER_SOLVER(2016, 13, run);
 
 }

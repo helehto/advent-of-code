@@ -176,18 +176,19 @@ static int solve(const Input &input)
     return values[gate_index.at("a")];
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     Input input = parse_input(buf);
 
     auto a = solve(input);
-    fmt::print("{}\n", a);
+    answer.add(a);
 
     input.gates[input.gate_index.at("b")] = Gate{
         .op1 = a,
         .type = GateType::passthru,
     };
-    fmt::print("{}\n", solve(input));
+    answer.add(solve(input));
 }
+AOC_REGISTER_SOLVER(2015, 7, run);
 
 }

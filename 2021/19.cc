@@ -207,7 +207,7 @@ get_transform(std::span<const Point> c0,
     ASSERT_MSG(false, "Did not find transform from overlapping scanners!?");
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -261,7 +261,7 @@ void run(std::string_view buf)
     dense_set<Point, CrcHasher> all_points;
     for (size_t i = 0; i < clusters.size(); ++i)
         all_points.insert(clusters[i].begin(), clusters[i].end());
-    fmt::print("{}\n", all_points.size());
+    answer.add(all_points.size());
 
     int max_manhattan = INT_MIN;
     for (size_t i = 0; i < scanners.size(); ++i) {
@@ -272,7 +272,8 @@ void run(std::string_view buf)
             max_manhattan = std::max(max_manhattan, dx + dy + dz);
         }
     }
-    fmt::print("{}\n", max_manhattan);
+    answer.add(max_manhattan);
 }
+AOC_REGISTER_SOLVER(2021, 19, run);
 
 }

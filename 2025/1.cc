@@ -11,7 +11,7 @@ constexpr auto modulo_table = [] consteval {
     return result;
 }();
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     int k = 50;
     int part1 = 0;
@@ -44,7 +44,9 @@ void run(std::string_view buf)
         }
     }
 
-    fmt::print("{}\n{}\n", part1, part2);
+    answer.add(part1);
+    answer.add(part2);
 }
+AOC_REGISTER_SOLVER(2025, 1, run);
 
 }

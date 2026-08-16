@@ -3,7 +3,7 @@
 
 namespace aoc_2018_6 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     std::vector<int> xs;
@@ -55,7 +55,7 @@ void run(std::string_view buf)
         cell_count[k] = -1;
     for (int k : closest_grid.col(closest_grid.cols - 1))
         cell_count[k] = -1;
-    fmt::print("{}\n", std::ranges::max(cell_count));
+    answer.add(std::ranges::max(cell_count));
 
     int region_size = 0;
     for (int x = 0; x < max_x; x++) {
@@ -67,7 +67,8 @@ void run(std::string_view buf)
                 region_size++;
         }
     }
-    fmt::print("{}\n", region_size);
+    answer.add(region_size);
 }
+AOC_REGISTER_SOLVER(2018, 6, run);
 
 }

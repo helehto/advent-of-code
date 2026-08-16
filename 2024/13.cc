@@ -2,7 +2,7 @@
 
 namespace aoc_2024_13 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<int> nums;
     find_numbers(buf, nums);
@@ -27,8 +27,9 @@ void run(std::string_view buf)
         }
     }
 
-    fmt::print("{}\n", s[0]);
-    fmt::print("{}\n", s[1]);
+    answer.add(s[0]);
+    answer.add(s[1]);
 }
+AOC_REGISTER_SOLVER(2024, 13, run);
 
 }

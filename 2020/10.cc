@@ -3,7 +3,7 @@
 
 namespace aoc_2020_10 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     small_vector<int, 128> joltages;
@@ -20,7 +20,7 @@ void run(std::string_view buf)
         v1 += (joltages[i] - joltages[i - 1] == 1);
         v3 += (joltages[i] - joltages[i - 1] == 3);
     }
-    fmt::print("{}\n", v1 * v3);
+    answer.add(v1 * v3);
 
     dense_map<int, uint64_t> combinations{{joltages.back(), 1}};
     combinations.reserve(4 * lines.size());
@@ -28,7 +28,8 @@ void run(std::string_view buf)
         const size_t n = joltages[i];
         combinations[n] = combinations[n + 1] + combinations[n + 2] + combinations[n + 3];
     }
-    fmt::print("{}\n", combinations[0]);
+    answer.add(combinations[0]);
 }
+AOC_REGISTER_SOLVER(2020, 10, run);
 
 }

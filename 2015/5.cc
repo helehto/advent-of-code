@@ -52,7 +52,7 @@ static bool part2(std::string_view s)
     return has_repeated && has_pair;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     int count1 = 0;
     int count2 = 0;
@@ -62,8 +62,9 @@ void run(std::string_view buf)
         count2 += part2(s);
     }
 
-    fmt::print("{}\n", count1);
-    fmt::print("{}\n", count2);
+    answer.add(count1);
+    answer.add(count2);
 }
+AOC_REGISTER_SOLVER(2015, 5, run);
 
 }

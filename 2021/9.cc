@@ -74,12 +74,13 @@ static int part2(MatrixView<const char> g)
     return sizes[0] * sizes[1] * sizes[2];
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines).padded(1, '~');
-    fmt::print("{}\n", part1(grid));
-    fmt::print("{}\n", part2(grid));
+    answer.add(part1(grid));
+    answer.add(part2(grid));
 }
+AOC_REGISTER_SOLVER(2021, 9, run);
 
 }

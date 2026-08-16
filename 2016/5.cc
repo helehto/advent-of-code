@@ -58,7 +58,7 @@ static void search(std::mutex &mutex,
     } while (!done(chunk_start));
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::atomic_uint64_t next_chunk = 0;
     std::mutex mutex;
@@ -69,8 +69,9 @@ void run(std::string_view buf)
     ThreadPool::get().for_each_thread(
         [&](size_t) noexcept { search(mutex, p1, p2, buf, next_chunk); });
 
-    std::string s1(begin(p1), end(p1)), s2(begin(p2), end(p2));
-    fmt::print("{}\n{}\n", s1, s2);
+    answer.add(std::string(begin(p1), end(p1)));
+    answer.add(std::string(begin(p2), end(p2)));
 }
+AOC_REGISTER_SOLVER(2016, 5, run);
 
 }

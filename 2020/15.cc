@@ -2,7 +2,7 @@
 
 namespace aoc_2020_15 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     small_vector<uint32_t> init;
     find_numbers(buf, init);
@@ -78,11 +78,12 @@ void run(std::string_view buf)
     uint32_t turn = init.size();
     for (; turn < 2020; turn++)
         last = step(turn, last);
-    fmt::print("{}\n", last);
+    answer.add(last);
 
     for (; turn < 30'000'000; turn++)
         last = step(turn, last);
-    fmt::print("{}\n", last);
+    answer.add(last);
 }
+AOC_REGISTER_SOLVER(2020, 15, run);
 
 }

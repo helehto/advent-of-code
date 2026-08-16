@@ -8,7 +8,7 @@ struct Outcome {
     int b;
 };
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<std::vector<Outcome>> games;
     std::vector<std::string_view> tmp;
@@ -51,7 +51,7 @@ void run(std::string_view buf)
     next:
         id++;
     }
-    fmt::print("{}\n", sum);
+    answer.add(sum);
 
     int power_sum = 0;
     for (auto &game : games) {
@@ -63,7 +63,8 @@ void run(std::string_view buf)
         }
         power_sum += maxr * maxg * maxb;
     }
-    fmt::print("{}\n", power_sum);
+    answer.add(power_sum);
 }
+AOC_REGISTER_SOLVER(2023, 2, run);
 
 }

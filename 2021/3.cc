@@ -11,7 +11,7 @@ static int most_common_bit(std::span<uint16_t> xs, size_t bit)
     return 2 * sum >= xs.size();
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<uint16_t> xs;
     size_t bit_length = 0;
@@ -31,7 +31,7 @@ void run(std::string_view buf)
         gamma = gamma << 1 | b;
         epsilon = epsilon << 1 | (1 - b);
     }
-    fmt::print("{}\n", gamma * epsilon);
+    answer.add(gamma * epsilon);
 
     std::vector<uint16_t> candidates(xs);
 
@@ -50,7 +50,8 @@ void run(std::string_view buf)
     }
     co2_rating = candidates.front();
 
-    fmt::print("{}\n", oxygen_rating * co2_rating);
+    answer.add(oxygen_rating * co2_rating);
 }
+AOC_REGISTER_SOLVER(2021, 3, run);
 
 }

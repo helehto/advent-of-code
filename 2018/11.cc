@@ -16,7 +16,7 @@ static Matrix<int> generate_grid(int serial_number, size_t size)
     return grid;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     const auto [serial_number] = find_numbers_n<int, 1>(lines[0]);
@@ -83,9 +83,11 @@ void run(std::string_view buf)
     };
 
     auto [x1, y1, _] = search(3, 3);
-    fmt::print("{},{}\n", x1, y1);
+    answer.add_formatted("{},{}", x1, y1);
+
     auto [x2, y2, n2] = search(1, 300);
-    fmt::print("{},{},{}\n", x2, y2, n2);
+    answer.add_formatted("{},{},{}", x2, y2, n2);
 }
+AOC_REGISTER_SOLVER(2018, 11, run);
 
 }

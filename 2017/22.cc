@@ -127,11 +127,12 @@ constexpr auto dir2linear = [] consteval {
     return n_states[WEAKENED];
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto [cells, start] = parse_input(buf);
-    fmt::print("{}\n", part1(cells, start));
-    fmt::print("{}\n", part2(cells, start));
+    answer.add(part1(cells, start));
+    answer.add(part2(cells, start));
 }
+AOC_REGISTER_SOLVER(2017, 22, run);
 
 }

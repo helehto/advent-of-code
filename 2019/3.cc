@@ -2,7 +2,7 @@
 
 namespace aoc_2019_3 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -75,8 +75,9 @@ void run(std::string_view buf)
         }
     }
 
-    fmt::print("{}\n", min_dist);
-    fmt::print("{}\n", min_combined_steps);
+    answer.add(min_dist);
+    answer.add(min_combined_steps);
 }
+AOC_REGISTER_SOLVER(2019, 3, run);
 
 }

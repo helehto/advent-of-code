@@ -58,11 +58,12 @@ static int solve(MatrixView<const int> dist, Compare comp)
     return cost;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     const auto dist = get_distance_matrix(buf);
-    fmt::print("{}\n", solve(dist, std::less<>()));
-    fmt::print("{}\n", solve(dist, std::greater<>()));
+    answer.add(solve(dist, λab(a < b)));
+    answer.add(solve(dist, λab(a > b)));
 }
+AOC_REGISTER_SOLVER(2015, 9, run);
 
 }

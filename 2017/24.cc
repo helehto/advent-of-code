@@ -3,7 +3,7 @@
 
 namespace aoc_2017_24 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     ASSERT(lines.size() < 64);
@@ -62,8 +62,9 @@ void run(std::string_view buf)
         }
     });
 
-    fmt::print("{}\n", std::ranges::max(thread_max, {}, λa(a.part1)).part1);
-    fmt::print("{}\n", std::ranges::max(thread_max, {}, λa(a.part2)).part2.weight);
+    answer.add(std::ranges::max(thread_max, {}, λa(a.part1)).part1);
+    answer.add(std::ranges::max(thread_max, {}, λa(a.part2)).part2.weight);
 }
+AOC_REGISTER_SOLVER(2017, 24, run);
 
 }

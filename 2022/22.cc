@@ -175,7 +175,7 @@ static std::vector<Move> parse_moves(const std::string_view &s)
     return moves;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -196,8 +196,9 @@ void run(std::string_view buf)
 
     auto moves = parse_moves(lines.back());
 
-    fmt::print("{}\n", part1(map, moves));
-    fmt::print("{}\n", part2(map, moves));
+    answer.add(part1(map, moves));
+    answer.add(part2(map, moves));
 }
+AOC_REGISTER_SOLVER(2022, 22, run);
 
 }

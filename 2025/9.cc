@@ -242,11 +242,12 @@ static int64_t part2(const Tiles<int32_t> &tiles)
     return result.load();
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     Tiles tiles = parse_input(buf);
-    fmt::print("{}\n", part1(tiles));
-    fmt::print("{}\n", part2(tiles));
+    answer.add(part1(tiles));
+    answer.add(part2(tiles));
 }
+AOC_REGISTER_SOLVER(2025, 9, run);
 
 }

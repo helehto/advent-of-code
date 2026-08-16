@@ -2,7 +2,7 @@
 
 namespace aoc_2017_12 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -43,18 +43,19 @@ void run(std::string_view buf)
     };
 
     flood(0);
-    fmt::print("{}\n", std::ranges::count(visited, true));
+    answer.add(std::ranges::count(visited, true));
 
     size_t last_index = 0;
     for (int groups = 1;; ++groups) {
         auto it = std::find(visited.begin() + last_index, visited.end(), false);
         if (it == visited.end()) {
-            fmt::print("{}\n", groups);
+            answer.add(groups);
             break;
         }
         last_index = std::distance(visited.begin(), it);
         flood(last_index);
     }
 }
+AOC_REGISTER_SOLVER(2017, 12, run);
 
 }

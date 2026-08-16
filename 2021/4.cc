@@ -52,7 +52,7 @@ static int unmarked_sum(const Board &b)
     return sum;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     std::vector<int> called;
@@ -87,9 +87,9 @@ void run(std::string_view buf)
 
             if (mark(b, n)) {
                 if (boards.size() == 100) {
-                    fmt::print("{}\n", n * unmarked_sum(b));
+                    answer.add(n * unmarked_sum(b));
                 } else if (boards.size() == 1) {
-                    fmt::print("{}\n", n * unmarked_sum(boards[0]));
+                    answer.add(n * unmarked_sum(boards[0]));
                     return;
                 }
                 boards[i] = boards.back();
@@ -100,5 +100,6 @@ void run(std::string_view buf)
         }
     }
 }
+AOC_REGISTER_SOLVER(2021, 4, run);
 
 }

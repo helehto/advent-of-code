@@ -155,7 +155,7 @@ static int flood(Graph &g, uint32_t start)
     return std::ranges::count(visited, true);
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     ThreadPool &pool = ThreadPool::get();
     auto g = parse_input(buf);
@@ -210,7 +210,8 @@ void run(std::string_view buf)
     }
 
     auto nodes = flood(g, uu);
-    fmt::print("{}\n", nodes * (g.size() - nodes));
+    answer.add(nodes * (g.size() - nodes));
 }
+AOC_REGISTER_SOLVER(2023, 25, run);
 
 }

@@ -2,7 +2,7 @@
 
 namespace aoc_2024_5 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -37,7 +37,9 @@ void run(std::string_view buf)
         n[incorrect_order] += nums[nums.size() / 2];
     }
 
-    fmt::print("{}\n{}\n", n[0], n[1]);
+    answer.add(n[0]);
+    answer.add(n[1]);
 }
+AOC_REGISTER_SOLVER(2024, 5, run);
 
 }

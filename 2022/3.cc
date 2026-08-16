@@ -16,7 +16,7 @@ static uint64_t make_mask(std::string_view s)
     return mask;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -36,8 +36,9 @@ void run(std::string_view buf)
         part2 += std::countr_zero(mask1 & mask2 & mask3) + 1;
     }
 
-    fmt::print("{}\n", part1);
-    fmt::print("{}\n", part2);
+    answer.add(part1);
+    answer.add(part2);
 }
+AOC_REGISTER_SOLVER(2022, 3, run);
 
 }

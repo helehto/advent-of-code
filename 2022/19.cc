@@ -132,7 +132,7 @@ static int fetch_mul(std::atomic<int> &value, int factor)
     return old;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<Blueprint> blueprints;
 
@@ -183,7 +183,9 @@ void run(std::string_view buf)
         }
     });
 
-    fmt::print("{}\n{}\n", part1.load(), part2.load());
+    answer.add(part1.load());
+    answer.add(part2.load());
 }
+AOC_REGISTER_SOLVER(2022, 19, run);
 
 }

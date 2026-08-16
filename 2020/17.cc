@@ -214,7 +214,7 @@ static Grid4D step_grid_4d(const Grid4D &prev)
     return next;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
@@ -244,7 +244,7 @@ void run(std::string_view buf)
         for (size_t i = 0; i < 6; ++i)
             active = step_grid_3d(active);
 
-        fmt::print("{}\n", std::ranges::count(active.all(), 1));
+        answer.add(std::ranges::count(active.all(), 1));
     }
 
     {
@@ -271,8 +271,9 @@ void run(std::string_view buf)
         for (size_t i = 0; i < 6; ++i)
             active = step_grid_4d(active);
 
-        fmt::print("{}\n", active.count_active());
+        answer.add(active.count_active());
     }
 }
+AOC_REGISTER_SOLVER(2020, 17, run);
 
 }

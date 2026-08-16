@@ -54,7 +54,7 @@ static dense_map<Vec2i, uint8_t> explore(std::string_view regex)
     return result;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     ASSERT(buf.front() == '^');
     ASSERT(buf.back() == '$');
@@ -84,8 +84,9 @@ void run(std::string_view buf)
         }
     }
 
-    fmt::print("{}\n", queue.back().first);
-    fmt::print("{}\n", long_paths);
+    answer.add(queue.back().first);
+    answer.add(long_paths);
 }
+AOC_REGISTER_SOLVER(2018, 20, run);
 
 }

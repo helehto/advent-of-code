@@ -2,7 +2,7 @@
 
 namespace aoc_2021_2 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     int x1 = 0;
     int y1 = 0;
@@ -26,8 +26,9 @@ void run(std::string_view buf)
         }
     }
 
-    fmt::print("{}\n", x1 * y1);
-    fmt::print("{}\n", x2 * y2);
+    answer.add(x1 * y1);
+    answer.add(x2 * y2);
 }
+AOC_REGISTER_SOLVER(2021, 2, run);
 
 }

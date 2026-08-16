@@ -61,7 +61,7 @@ static ScanResult scanv(MatrixView<const uint8_t> m, size_t i, size_t j)
     return {0, 0, 0, 0};
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     int part1 = 0;
@@ -119,8 +119,9 @@ void run(std::string_view buf)
         curr = next + 1;
     } while (curr < lines.size());
 
-    fmt::print("{}\n", part1);
-    fmt::print("{}\n", part2);
+    answer.add(part1);
+    answer.add(part2);
 }
+AOC_REGISTER_SOLVER(2023, 13, run);
 
 }

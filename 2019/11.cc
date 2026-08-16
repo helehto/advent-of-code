@@ -6,7 +6,7 @@ namespace aoc_2019_11 {
 
 using VM = IntcodeVM<SplitMemory<int64_t>>;
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     const auto prog = find_numbers<VM::value_type>(buf);
 
@@ -33,7 +33,7 @@ void run(std::string_view buf)
         p += d;
         vm.output.clear();
     }
-    fmt::print("{}\n", visited.size());
+    answer.add(visited.size());
 
     vm.reset(prog);
     white_panels.clear();
@@ -57,11 +57,15 @@ void run(std::string_view buf)
         max_y = std::max(max_y, p.y);
     }
 
+    std::string part2;
     for (int y = min_y; y <= max_y; y++) {
         for (int x = min_x; x <= max_x; x++)
-            fmt::print("{}", white_panels.count(Vec2i16(x, y)) ? '#' : ' ');
-        fmt::print("\n");
+            part2.push_back(white_panels.count(Vec2i16(x, y)) ? '#' : ' ');
+        part2.push_back('\n');
     }
+    part2.pop_back();
+    answer.add(part2);
 }
+AOC_REGISTER_SOLVER(2019, 11, run);
 
 }

@@ -2,7 +2,7 @@
 
 namespace aoc_2016_8 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     Matrix<char> screen(6, 50, ' ');
 
@@ -23,7 +23,9 @@ void run(std::string_view buf)
         }
     }
 
-    fmt::print("{}\n{}", std::ranges::count(screen.all(), '#'), screen);
+    answer.add(std::ranges::count(screen.all(), '#'));
+    answer.add(screen);
 }
+AOC_REGISTER_SOLVER(2016, 8, run);
 
 }

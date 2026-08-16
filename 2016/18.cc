@@ -2,7 +2,7 @@
 
 namespace aoc_2016_18 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::array<uint64_t, 2> cells{};
     for (size_t i = 0; i < buf.size(); ++i)
@@ -39,9 +39,9 @@ void run(std::string_view buf)
         return buf.size() * bound - traps;
     };
 
-    const auto s1 = f(40);
-    const auto s2 = f(400'000);
-    fmt::print("{}\n{}\n", s1, s2);
+    answer.add(f(40));
+    answer.add(f(400'000));
 }
+AOC_REGISTER_SOLVER(2016, 18, run);
 
 }

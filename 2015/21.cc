@@ -51,7 +51,7 @@ constexpr auto item_combinations_by_cost = [] {
     return result;
 }();
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto [boss_hp, boss_damage, boss_armor] = find_numbers_n<int, 3>(buf);
 
@@ -62,17 +62,18 @@ void run(std::string_view buf)
 
     for (size_t i = 0; i < item_combinations_by_cost.size(); ++i) {
         if (wins(item_combinations_by_cost[i])) {
-            fmt::print("{}\n", item_combinations_by_cost[i].cost);
+            answer.add(item_combinations_by_cost[i].cost);
             break;
         }
     }
 
     for (size_t i = item_combinations_by_cost.size(); i--;) {
         if (!wins(item_combinations_by_cost[i])) {
-            fmt::print("{}\n", item_combinations_by_cost[i].cost);
+            answer.add(item_combinations_by_cost[i].cost);
             break;
         }
     }
 }
+AOC_REGISTER_SOLVER(2015, 21, run);
 
 }

@@ -3,7 +3,7 @@
 
 namespace aoc_2017_8 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<std::string_view> toks;
     auto lines = split_lines(buf);
@@ -29,7 +29,9 @@ void run(std::string_view buf)
     }
 
     using namespace std::ranges;
-    fmt::print("{}\n", *max_element(views::values(regs)));
-    fmt::print("{}\n", peak_value);
+    answer.add(*max_element(views::values(regs)));
+    answer.add(peak_value);
 }
+AOC_REGISTER_SOLVER(2017, 8, run);
+
 }

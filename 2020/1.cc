@@ -5,14 +5,14 @@
 
 namespace aoc_2020_1 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<int> nums = find_numbers<int>(buf);
 
     dense_set<int> seen;
     for (const int num : nums) {
         if (seen.count(2020 - num)) {
-            fmt::print("{}\n", num * (2020 - num));
+            answer.add(num * (2020 - num));
             break;
         }
         seen.insert(num);
@@ -31,9 +31,11 @@ void run(std::string_view buf)
     for (const int c : nums) {
         if (auto it = pairs.find(2020 - c); it != end(pairs)) {
             const auto [a, b] = it->second;
-            fmt::print("{}\n", a * b * c);
+            answer.add(a * b * c);
             break;
         }
     }
 }
+AOC_REGISTER_SOLVER(2020, 1, run);
+
 }

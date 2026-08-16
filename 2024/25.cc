@@ -37,7 +37,7 @@ namespace aoc_2024_25 {
 constexpr uint16_t counter_bias = 0b0'010'010'010'010'010;
 constexpr uint16_t carry_bit_mask = 0b1'001'001'001'001'001;
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     inplace_vector<int16_t, 256> locks;
 
@@ -94,7 +94,8 @@ void run(std::string_view buf)
         }
     }
 
-    fmt::print("{}\n", hn::ReduceSum(d, count));
+    answer.add(hn::ReduceSum(d, count));
 }
+AOC_REGISTER_SOLVER(2024, 25, run);
 
 }

@@ -66,12 +66,13 @@ static int part2(std::span<const std::string_view> lines)
     return count;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto [total_code, total_mem] = part1(lines);
-    fmt::print("{}\n", total_code - total_mem);
-    fmt::print("{}\n", part2(lines) - total_code);
+    answer.add(total_code - total_mem);
+    answer.add(part2(lines) - total_code);
 }
+AOC_REGISTER_SOLVER(2015, 8, run);
 
 }

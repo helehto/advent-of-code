@@ -2,7 +2,7 @@
 
 namespace aoc_2016_15 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -34,10 +34,11 @@ void run(std::string_view buf)
         return x % M;
     };
 
-    fmt::print("{}\n", solve());
+    answer.add(solve());
     rhs.push_back(modulo<int>(10 - lines.size(), 11));
     moduli.push_back(11);
-    fmt::print("{}\n", solve());
+    answer.add(solve());
 }
+AOC_REGISTER_SOLVER(2016, 15, run);
 
 }

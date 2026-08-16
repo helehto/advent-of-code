@@ -33,15 +33,16 @@ static void hash_search(std::string_view prefix,
              hash_4digit_chunks(messages, chunk_start, prefix.size(), sink));
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     ThreadPool &pool = ThreadPool::get();
     alignas(64) std::atomic_uint64_t part1 = INT64_MAX;
     alignas(64) std::atomic_uint64_t part2 = INT64_MAX;
     alignas(64) std::atomic_uint64_t next_chunk = 0;
     pool.for_each_thread([&](int64_t) { hash_search(buf, next_chunk, part1, part2); });
-    fmt::print("{}\n", part1.load());
-    fmt::print("{}\n", part2.load());
+    answer.add(part1.load());
+    answer.add(part2.load());
 }
+AOC_REGISTER_SOLVER(2015, 4, run);
 
 }

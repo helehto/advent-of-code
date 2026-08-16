@@ -40,11 +40,12 @@ constexpr uint32_t run_program(std::span<const std::string_view> lines,
     return regs[1];
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
-    fmt::print("{}\n", run_program(lines, {0, 0}));
-    fmt::print("{}\n", run_program(lines, {1, 0}));
+    answer.add(run_program(lines, {0, 0}));
+    answer.add(run_program(lines, {1, 0}));
 }
+AOC_REGISTER_SOLVER(2015, 23, run);
 
 }

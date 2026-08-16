@@ -2,7 +2,7 @@
 
 namespace aoc_2016_21 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -40,7 +40,7 @@ void run(std::string_view buf)
             std::ranges::rotate(s, s.end() - n % s.size());
         }
     }
-    fmt::print("{}\n", s);
+    answer.add(s);
 
     s = "fbgdceah";
     for (size_t i = lines.size(); i--;) {
@@ -90,7 +90,8 @@ void run(std::string_view buf)
         }
     }
 
-    fmt::print("{}\n", s);
+    answer.add(s);
 }
+AOC_REGISTER_SOLVER(2016, 21, run);
 
 }

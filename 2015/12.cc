@@ -95,14 +95,12 @@ Entity Parser::parse_entity()
     }
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
-    int sum = 0;
-    for (int x : find_numbers<int>(buf))
-        sum += x;
-
-    fmt::print("{}\n", sum);
-    fmt::print("{}\n", std::get<int64_t>(Parser{buf}.parse_entity()));
+    auto nums = find_numbers<int>(buf);
+    answer.add(std::ranges::fold_left(nums, 0, λab(a + b)));
+    answer.add(std::get<int64_t>(Parser{buf}.parse_entity()));
 }
+AOC_REGISTER_SOLVER(2015, 12, run);
 
 }

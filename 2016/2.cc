@@ -58,11 +58,12 @@ static std::string part2(const std::vector<std::string_view> &lines)
     return code;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
-    fmt::print("{}\n", part1(lines));
-    fmt::print("{}\n", part2(lines));
+    answer.add(part1(lines));
+    answer.add(part2(lines));
 }
+AOC_REGISTER_SOLVER(2016, 2, run);
 
 }

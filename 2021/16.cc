@@ -159,12 +159,13 @@ constexpr int64_t eval(std::span<const Packet> packets, const size_t index = 0)
     }
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     const std::string bin = hex_to_binary(buf);
     const std::vector<Packet> packets = parse_packets(bin);
-    fmt::print("{}\n", version_sum(packets));
-    fmt::print("{}\n", eval(packets));
+    answer.add(version_sum(packets));
+    answer.add(eval(packets));
 }
+AOC_REGISTER_SOLVER(2021, 16, run);
 
 }

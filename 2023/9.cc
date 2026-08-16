@@ -29,7 +29,7 @@ static std::vector<double> lagrange_basis(int64_t k, int64_t x)
     return result;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto nums = find_numbers<int>(lines[0]);
@@ -48,8 +48,9 @@ void run(std::string_view buf)
             break;
         find_numbers(lines[i], nums);
     }
-    fmt::print("{}\n", part1);
-    fmt::print("{}\n", part2);
+    answer.add(part1);
+    answer.add(part2);
 }
+AOC_REGISTER_SOLVER(2023, 9, run);
 
 }

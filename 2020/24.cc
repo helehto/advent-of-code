@@ -121,7 +121,7 @@ static void step(Matrix<int8_t> &out,
     max_y = next_max_y;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     dense_set<Vec2i> black;
@@ -129,7 +129,7 @@ void run(std::string_view buf)
     for (std::string_view s : lines)
         if (auto [it, inserted] = black.emplace(walk(s)); !inserted)
             black.erase(it);
-    fmt::print("{}\n", black.size());
+    answer.add(black.size());
 
     auto min = INT_MAX, max = INT_MAX;
     for (const auto p : black) {
@@ -156,7 +156,8 @@ void run(std::string_view buf)
     Matrix<int8_t> next(g.rows, g.cols, 0);
     for (int i = 0; i < 100; ++i)
         step(next, g, min_x, max_x, min_y, max_y);
-    fmt::print("{}\n", std::ranges::count(g.all(), -1));
+    answer.add(std::ranges::count(g.all(), -1));
 }
+AOC_REGISTER_SOLVER(2020, 24, run);
 
 }

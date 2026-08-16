@@ -2,7 +2,7 @@
 
 namespace aoc_2025_7 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto grid = Matrix<char>::from_lines(split_lines(buf));
 
@@ -39,7 +39,7 @@ void run(std::string_view buf)
             beams.swap(new_beams);
             new_beams.clear();
         }
-        fmt::print("{}\n", splits);
+        answer.add(splits);
     }
 
     // Part 2:
@@ -58,8 +58,9 @@ void run(std::string_view buf)
         }
 
         auto total_timelines = std::ranges::fold_left(timelines, 0, λab(a + b));
-        fmt::print("{}\n", total_timelines);
+        answer.add(total_timelines);
     }
 }
+AOC_REGISTER_SOLVER(2025, 7, run);
 
 }

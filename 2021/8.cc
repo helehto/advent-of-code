@@ -3,7 +3,7 @@
 
 namespace aoc_2021_8 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::string s;
     int part1 = 0;
@@ -95,8 +95,9 @@ void run(std::string_view buf)
                  10 * mask2digit[masks[12]] + mask2digit[masks[13]];
     }
 
-    fmt::print("{}\n", part1);
-    fmt::print("{}\n", part2);
+    answer.add(part1);
+    answer.add(part2);
 }
+AOC_REGISTER_SOLVER(2021, 8, run);
 
 }

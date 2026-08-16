@@ -74,7 +74,7 @@ constexpr Matrix<uint8_t> expand(MatrixView<const uint8_t> grid)
     return result;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -84,8 +84,9 @@ void run(std::string_view buf)
 
     auto dist = std::make_unique_for_overwrite<uint16_t[]>(5 * grid.rows * 5 * grid.cols);
     MonotonicBucketQueue<uint32_t, small_vector<uint32_t>> q(10);
-    fmt::print("{}\n", solve(grid, dist.get(), q));
-    fmt::print("{}\n", solve(expanded_grid, dist.get(), q));
+    answer.add(solve(grid, dist.get(), q));
+    answer.add(solve(expanded_grid, dist.get(), q));
 }
+AOC_REGISTER_SOLVER(2021, 15, run);
 
 }

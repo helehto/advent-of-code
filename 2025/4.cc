@@ -2,7 +2,7 @@
 
 namespace aoc_2025_4 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines).padded(1, '.');
@@ -29,7 +29,7 @@ void run(std::string_view buf)
     for (const auto p : grid.ndindex<size_t>())
         if (grid(p) == '@' && num_neighbors(p) < 4)
             queue.emplace_back(p.x, p.y);
-    fmt::print("{}\n", queue.size());
+    answer.add(queue.size());
 
     int part2 = 0;
     small_vector<Vec2z> pending;
@@ -52,7 +52,8 @@ void run(std::string_view buf)
         pending.clear();
     } while (!queue.empty());
 
-    fmt::print("{}\n", part2);
+    answer.add(part2);
 }
+AOC_REGISTER_SOLVER(2025, 4, run);
 
 }

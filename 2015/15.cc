@@ -2,7 +2,7 @@
 
 namespace aoc_2015_15 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -38,8 +38,9 @@ void run(std::string_view buf)
         }
     }
 
-    fmt::print("{}\n", part1);
-    fmt::print("{}\n", part2);
+    answer.add(part1);
+    answer.add(part2);
 }
+AOC_REGISTER_SOLVER(2015, 15, run);
 
 }

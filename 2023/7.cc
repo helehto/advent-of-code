@@ -96,7 +96,7 @@ constexpr std::array<uint8_t, 256> ascii_card_value_table = [] {
     return v;
 }();
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     std::vector<std::string_view> sv;
@@ -118,7 +118,7 @@ void run(std::string_view buf)
         hands.push_back(hand);
         i++;
     }
-    fmt::print("{}\n", total_winnings(hands));
+    answer.add(total_winnings(hands));
 
     for (size_t i = 0; auto &h : hands) {
         // Clear jacks/jokers to 0 so that they get compared lower than anything else.
@@ -133,7 +133,8 @@ void run(std::string_view buf)
         h.cards_and_eval |= evaluate_hand_with_jokers(counts[i]) << 20;
         i++;
     }
-    fmt::print("{}\n", total_winnings(std::move(hands)));
+    answer.add(total_winnings(std::move(hands)));
 }
+AOC_REGISTER_SOLVER(2023, 7, run);
 
 }

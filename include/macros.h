@@ -15,6 +15,7 @@
 #define GLUE_(x, y) x##y
 #define GLUE(x, y) GLUE_(x, y)
 #define GLUE3(x, y, z) GLUE(GLUE(x, y), z)
+#define GLUE4(x, y, z, w) GLUE(GLUE(GLUE(x, y), z), w)
 
 /// Assertion macro which is always active, regardless of whether NDEBUG is
 /// defined.

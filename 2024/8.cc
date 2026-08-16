@@ -3,7 +3,7 @@
 
 namespace aoc_2024_8 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
@@ -39,8 +39,9 @@ void run(std::string_view buf)
         }
     }
 
-    fmt::print("{}\n", std::ranges::count(antinodes1.all(), '#'));
-    fmt::print("{}\n", std::ranges::count(antinodes2.all(), '#'));
+    answer.add(std::ranges::count(antinodes1.all(), '#'));
+    answer.add(std::ranges::count(antinodes2.all(), '#'));
 }
+AOC_REGISTER_SOLVER(2024, 8, run);
 
 }

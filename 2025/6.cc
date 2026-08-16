@@ -2,7 +2,7 @@
 
 namespace aoc_2025_6 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     // Find the byte offset for each row. (Use find() here to avoid looking at
     // a single character at time; my input is ~18 KiB.)
@@ -82,6 +82,9 @@ void run(std::string_view buf)
         part2 += fold(read_column2(j), op);
     }
 
-    fmt::print("{}\n{}\n", part1, part2);
+    answer.add(part1);
+    answer.add(part2);
 }
+AOC_REGISTER_SOLVER(2025, 6, run);
+
 }

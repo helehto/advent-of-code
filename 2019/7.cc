@@ -56,12 +56,13 @@ static int part2(std::array<VM, 5> &amplifiers, std::span<const VM::value_type> 
     return max_thruster_value;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     const auto prog = find_numbers<VM::value_type>(buf);
     std::array<VM, 5> amplifiers;
-    fmt::print("{}\n", part1(amplifiers, prog));
-    fmt::print("{}\n", part2(amplifiers, prog));
+    answer.add(part1(amplifiers, prog));
+    answer.add(part2(amplifiers, prog));
 }
+AOC_REGISTER_SOLVER(2019, 7, run);
 
 }

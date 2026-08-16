@@ -13,16 +13,17 @@ static void move_crates(std::string &src, std::string &dst, int n, bool reverse)
     src.erase(src.begin(), src.begin() + n);
 }
 
-static void print_crates(std::span<std::string> crates)
+static std::string get_crates(std::span<std::string> crates)
 {
+    std::string result;
     for (auto &s : crates) {
         if (!s.empty())
-            putc(s.front(), stdout);
+            result += s.front();
     }
-    putc('\n', stdout);
+    return result;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     size_t i = 0;
@@ -46,8 +47,9 @@ void run(std::string_view buf)
         move_crates(crates2[from], crates2[to], crate, false);
     }
 
-    print_crates(crates1);
-    print_crates(crates2);
+    answer.add(get_crates(crates1));
+    answer.add(get_crates(crates2));
 }
+AOC_REGISTER_SOLVER(2022, 5, run);
 
 }

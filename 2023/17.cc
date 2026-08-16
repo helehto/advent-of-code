@@ -102,7 +102,7 @@ static int dijkstra(const uint8_t *grid,
     ASSERT_MSG(false, "Path not found!");
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto grid = Matrix<uint8_t>::from_lines(lines, λx(x - '0'));
@@ -126,9 +126,10 @@ void run(std::string_view buf)
         Vertex{static_cast<uint16_t>(n_pad * grid.cols + n_pad), E}.to_u32(),
     };
     std::vector<uint32_t> dist(1 << 20, INT_MAX);
-    fmt::print("{}\n", dijkstra<0, 3>(grid.data(), grid.cols, start, dist, goal));
+    answer.add(dijkstra<0, 3>(grid.data(), grid.cols, start, dist, goal));
     std::ranges::fill(dist, INT_MAX);
-    fmt::print("{}\n", dijkstra<4, 10>(grid.data(), grid.cols, start, dist, goal));
+    answer.add(dijkstra<4, 10>(grid.data(), grid.cols, start, dist, goal));
 }
+AOC_REGISTER_SOLVER(2023, 17, run);
 
 }

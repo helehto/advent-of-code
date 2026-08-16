@@ -193,13 +193,14 @@ static int64_t play(MarbleBlock *blocks, int n_players, int n_marbles)
     return std::ranges::max(scores);
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto [n_players, n_marbles] = find_numbers_n<int, 2>(buf);
     const auto num_blocks = (100 * n_marbles + 1 + 7) / 8;
     auto blocks = std::make_unique_for_overwrite<MarbleBlock[]>(num_blocks);
-    fmt::print("{}\n", play(blocks.get(), n_players, n_marbles));
-    fmt::print("{}\n", play(blocks.get(), n_players, 100 * n_marbles));
+    answer.add(play(blocks.get(), n_players, n_marbles));
+    answer.add(play(blocks.get(), n_players, 100 * n_marbles));
 }
+AOC_REGISTER_SOLVER(2018, 9, run);
 
 }

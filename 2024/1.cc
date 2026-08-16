@@ -25,7 +25,7 @@ static int part2(std::span<const int> l, std::span<const int> r)
     return result;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -41,8 +41,9 @@ void run(std::string_view buf)
     std::ranges::sort(l);
     std::ranges::sort(r);
 
-    fmt::print("{}\n", part1(l, r));
-    fmt::print("{}\n", part2(l, r));
+    answer.add(part1(l, r));
+    answer.add(part2(l, r));
 }
+AOC_REGISTER_SOLVER(2024, 1, run);
 
 }

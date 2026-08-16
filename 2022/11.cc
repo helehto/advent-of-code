@@ -56,6 +56,7 @@ static int64_t run(std::vector<Monkey> monkeys)
     for (size_t i = 0; i < monkeys.size(); ++i)
         indices.push_back(i);
     std::ranges::sort(indices, λab(a > b), λx(monkeys[x].inspections));
+    ASSERT(indices.size() >= 2);
     return monkeys[indices[0]].inspections * monkeys[indices[1]].inspections;
 }
 
@@ -106,11 +107,12 @@ static std::vector<Monkey> parse_monkeys(std::string_view buf)
     return monkeys;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto monkeys = parse_monkeys(buf);
-    fmt::print("{}\n", run<20, 3>(monkeys));
-    fmt::print("{}\n", run<10000, 1>(std::move(monkeys)));
+    answer.add(run<20, 3>(monkeys));
+    answer.add(run<10000, 1>(std::move(monkeys)));
 }
+AOC_REGISTER_SOLVER(2022, 11, run);
 
 }

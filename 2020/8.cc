@@ -32,7 +32,7 @@ std::pair<int, bool> run(std::span<const Instruction> prog)
     return {acc, pc >= prog.size()};
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -54,17 +54,18 @@ void run(std::string_view buf)
     }
 
     // Part 1:
-    fmt::print("{}\n", run(prog).first);
+    answer.add(run(prog).first);
 
     // Part 2:
     for (size_t i = 0; i < prog.size(); i++) {
         prog[i].op ^= 1;
         if (auto [acc, terminated] = run(prog); terminated) {
-            fmt::print("{}\n", acc);
+            answer.add(acc);
             break;
         }
         prog[i].op ^= 1;
     }
 }
+AOC_REGISTER_SOLVER(2020, 8, run);
 
 }

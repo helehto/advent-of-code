@@ -206,13 +206,14 @@ static Matrix<char> construct_grid(VM &vm, std::span<const int64_t> prog)
     return g;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto prog = find_numbers<VM::value_type>(buf);
     VM vm;
     Matrix<char> g = construct_grid(vm, prog);
-    fmt::print("{}\n", part1(g));
-    fmt::print("{}\n", part2(g, vm, prog));
+    answer.add(part1(g));
+    answer.add(part2(g, vm, prog));
 }
+AOC_REGISTER_SOLVER(2019, 17, run);
 
 }

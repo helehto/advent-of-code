@@ -175,21 +175,22 @@ static int64_t press_button(State &state, Circuit &circuit)
     return 0;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto circuit = parse_input(buf);
 
     State state;
     for (; state.presses <= 1000; state.presses++)
         press_button(state, circuit);
-    fmt::print("{}\n", state.pulses[0] * state.pulses[1]);
+    answer.add(state.pulses[0] * state.pulses[1]);
 
     for (;; state.presses++) {
         if (auto cycle_length = press_button(state, circuit)) {
-            fmt::print("{}\n", cycle_length);
+            answer.add(cycle_length);
             break;
         }
     }
 }
+AOC_REGISTER_SOLVER(2023, 20, run);
 
 }

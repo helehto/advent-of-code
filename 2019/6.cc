@@ -4,7 +4,7 @@
 
 namespace aoc_2019_6 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -38,7 +38,7 @@ void run(std::string_view buf)
         for (int16_t v : directed_edges[u])
             queue.emplace_back(v, depth + 1);
     }
-    fmt::print("{}\n", part1);
+    answer.add(part1);
 
     const int16_t you = name_to_id.at("YOU");
     const int16_t san = name_to_id.at("SAN");
@@ -48,7 +48,7 @@ void run(std::string_view buf)
         auto [u, depth] = queue[i];
         visited[u] = true;
         if (u == san) {
-            fmt::print("{}\n", depth - 2);
+            answer.add(depth - 2);
             break;
         }
         for (int16_t v : undirected_edges[u]) {
@@ -58,5 +58,6 @@ void run(std::string_view buf)
         }
     }
 }
+AOC_REGISTER_SOLVER(2019, 6, run);
 
 }

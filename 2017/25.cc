@@ -145,7 +145,7 @@ static size_t assemble_turing_machine(uint8_t *out, std::span<const State> state
     return as.out - out;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto [n] = find_numbers_n<int, 1>(lines[1]);
@@ -185,7 +185,8 @@ void run(std::string_view buf)
 
     simulate(tape.data() + tape.size() / 2, n + 1);
     munmap(buffer, getpagesize());
-    fmt::print("{}\n", std::ranges::count(tape, 1));
+    answer.add(std::ranges::count(tape, 1));
 }
+AOC_REGISTER_SOLVER(2017, 25, run);
 
 }

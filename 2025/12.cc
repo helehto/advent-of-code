@@ -2,7 +2,7 @@
 
 namespace aoc_2025_12 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     const auto lines = split_lines(buf);
 
@@ -17,7 +17,8 @@ void run(std::string_view buf)
         solution += need_space <= (w / 3) * (h / 3);
     }
 
-    fmt::print("{}\n", solution);
+    answer.add(solution);
 }
+AOC_REGISTER_SOLVER(2025, 12, run);
 
 }

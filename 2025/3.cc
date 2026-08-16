@@ -30,7 +30,7 @@ constexpr size_t max_joltage(std::string_view s, size_t n)
     return result;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<std::string_view> lines = split_lines(buf);
     ThreadPool &pool = ThreadPool::get();
@@ -48,7 +48,9 @@ void run(std::string_view buf)
         part2.fetch_add(s2, std::memory_order_relaxed);
     });
 
-    fmt::print("{}\n{}\n", part1.load(), part2.load());
+    answer.add(part1.load());
+    answer.add(part2.load());
 }
+AOC_REGISTER_SOLVER(2025, 3, run);
 
 }

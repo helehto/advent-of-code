@@ -4,7 +4,7 @@
 
 namespace aoc_2020_7 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<std::string_view> bags;
     using Edge = std::pair<std::string_view, int>;
@@ -40,7 +40,7 @@ void run(std::string_view buf)
                     queue.push_back(u);
             }
         }
-        fmt::print("{}\n", visited.size() - 1);
+        answer.add(visited.size() - 1);
     }
 
     // Part 2:
@@ -58,8 +58,9 @@ void run(std::string_view buf)
                 }
             }
         }
-        fmt::print("{}\n", sum_weight - 1);
+        answer.add(sum_weight - 1);
     }
 }
+AOC_REGISTER_SOLVER(2020, 7, run);
 
 }

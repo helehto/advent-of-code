@@ -61,7 +61,7 @@ constexpr size_t total_load(MatrixView<const char> grid)
     return total;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines).padded(1, '#');
@@ -92,14 +92,15 @@ void run(std::string_view buf)
     {
         auto g = grid;
         roll(g, segments[N], g.cols);
-        fmt::print("{}\n", total_load(g));
+        answer.add(total_load(g));
     }
 
     // Part 2:
     {
         auto g = find_cycle(std::move(grid), 1'000'000'000, segments);
-        fmt::print("{}\n", total_load(g));
+        answer.add(total_load(g));
     }
 }
+AOC_REGISTER_SOLVER(2023, 14, run);
 
 }

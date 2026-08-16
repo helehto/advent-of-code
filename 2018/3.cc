@@ -3,7 +3,7 @@
 
 namespace aoc_2018_3 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -32,7 +32,7 @@ void run(std::string_view buf)
     int n_disputed = 0;
     for (auto p : grid.ndindex())
         n_disputed += grid(p) > 1;
-    fmt::print("{}\n", n_disputed);
+    answer.add(n_disputed);
 
     for (size_t i = 0; i < claims.size(); ++i) {
         bool overlap = false;
@@ -46,10 +46,11 @@ void run(std::string_view buf)
         }
 
         if (!overlap) {
-            fmt::print("{}\n", i + 1);
+            answer.add(i + 1);
             return;
         }
     }
 }
+AOC_REGISTER_SOLVER(2018, 3, run);
 
 }

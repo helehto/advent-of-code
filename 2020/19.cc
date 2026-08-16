@@ -82,7 +82,7 @@ static bool match(std::string_view s, std::span<const Rule> rules)
     return match(s, rules, initial_rule_seq);
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto separator = std::ranges::find(lines, "");
@@ -105,11 +105,12 @@ void run(std::string_view buf)
         return matching_strings.load();
     };
 
-    fmt::print("{}\n", count());
+    answer.add(count());
 
     rules[8] = Rule{RULE_ALT, {{42}, {42, 8}}};
     rules[11] = Rule{RULE_ALT, {{42, 31}, {42, 11, 31}}};
-    fmt::print("{}\n", count());
+    answer.add(count());
 }
+AOC_REGISTER_SOLVER(2020, 19, run);
 
 }

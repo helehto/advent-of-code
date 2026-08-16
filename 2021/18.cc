@@ -114,7 +114,7 @@ static int part2(std::span<const small_vector<int8_t>> lines)
     return max_mag.load(std::memory_order_relaxed);
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -123,8 +123,9 @@ void run(std::string_view buf)
     for (std::string_view line : lines)
         input.push_back(parse_line(line));
 
-    fmt::print("{}\n", part1(input));
-    fmt::print("{}\n", part2(input));
+    answer.add(part1(input));
+    answer.add(part2(input));
 }
+AOC_REGISTER_SOLVER(2021, 18, run);
 
 }

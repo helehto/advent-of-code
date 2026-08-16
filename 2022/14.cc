@@ -116,11 +116,12 @@ static int solve(Cave cave, bool abyss)
     return at_rest;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     Cave cave = make_cave(buf);
-    fmt::print("{}\n", solve(cave, true));
-    fmt::print("{}\n", solve(std::move(cave), false));
+    answer.add(solve(cave, true));
+    answer.add(solve(std::move(cave), false));
 }
+AOC_REGISTER_SOLVER(2022, 14, run);
 
 }

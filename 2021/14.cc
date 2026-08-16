@@ -9,7 +9,7 @@ auto increment_count(dense_map<std::string, int> &map, const std::string &key)
         it->second++;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     std::string_view tpl = lines[0];
@@ -47,11 +47,12 @@ void run(std::string_view buf)
                 max = std::max(max, count);
             }
 
-            fmt::print("{}\n", max - min + 1);
+            answer.add(max - min + 1);
         }
 
         bigrams.swap(new_bigrams);
     }
 }
+AOC_REGISTER_SOLVER(2021, 14, run);
 
 }

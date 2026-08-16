@@ -2,7 +2,7 @@
 
 namespace aoc_2015_2 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<std::array<int, 3>> input;
 
@@ -17,8 +17,9 @@ void run(std::string_view buf)
         std::sort(begin(a), end(a));
         part2 += 2 * a[0] + 2 * a[1] + l * w * h;
     }
-    fmt::print("{}\n", part1);
-    fmt::print("{}\n", part2);
+    answer.add(part1);
+    answer.add(part2);
 }
+AOC_REGISTER_SOLVER(2015, 2, run);
 
 }

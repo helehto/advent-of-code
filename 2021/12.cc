@@ -46,7 +46,7 @@ static void search(SearchParameters &sp,
     }
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     dense_map<std::string, uint8_t> name_to_index;
     int current_index = 0;
@@ -97,14 +97,15 @@ void run(std::string_view buf)
     {
         SearchParameters sp{neighbors, start_index, end_index, big_mask};
         search<false>(sp, sp.start_index, UINT64_C(1) << sp.start_index);
-        fmt::print("{}\n", sp.count);
+        answer.add(sp.count);
     }
 
     {
         SearchParameters sp{neighbors, start_index, end_index, big_mask};
         search<true>(sp, sp.start_index, UINT64_C(1) << sp.start_index);
-        fmt::print("{}\n", sp.count);
+        answer.add(sp.count);
     }
 }
+AOC_REGISTER_SOLVER(2021, 12, run);
 
 }

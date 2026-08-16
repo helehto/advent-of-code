@@ -2,7 +2,7 @@
 
 namespace aoc_2021_13 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<std::pair<int, int>> pairs;
     auto lines = split_lines(buf);
@@ -49,11 +49,15 @@ void run(std::string_view buf)
         }
     }
 
+    std::string output;
     for (int y = 0; y <= rows; y++) {
+        if (y)
+            output.push_back('\n');
         for (int x = 0; x <= cols; x++)
-            fmt::print("{}", grid(x, y) ? '#' : '.');
-        fmt::print("{}\n", "");
+            output.push_back(grid(x, y) ? '#' : '.');
     }
+    answer.add(output);
 }
+AOC_REGISTER_SOLVER(2021, 13, run);
 
 }

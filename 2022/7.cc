@@ -4,7 +4,7 @@
 
 namespace aoc_2022_7 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::unordered_map<std::string, int> sizes;
     std::vector<std::string_view> cwd;
@@ -40,8 +40,9 @@ void run(std::string_view buf)
         if (v >= needed)
             part2 = std::min(part2, v);
     }
-    fmt::print("{}\n", part1);
-    fmt::print("{}\n", part2);
+    answer.add(part1);
+    answer.add(part2);
 }
+AOC_REGISTER_SOLVER(2022, 7, run);
 
 }

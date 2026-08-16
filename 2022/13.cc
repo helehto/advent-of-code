@@ -82,7 +82,7 @@ static int parse_line(std::vector<Packet> &storage, std::string_view s)
     return *p;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     const auto lines = split_lines(buf);
 
@@ -104,7 +104,7 @@ void run(std::string_view buf)
             if (std::is_lt(compare(storage, packets[i], packets[i + 1])))
                 sum += i / 2 + 1;
         }
-        fmt::print("{}\n", sum);
+        answer.add(sum);
     }
 
     // Part 2:
@@ -120,8 +120,9 @@ void run(std::string_view buf)
             if (packets[i] == a || packets[i] == b)
                 key *= i + 1;
         }
-        fmt::print("{}\n", key);
+        answer.add(key);
     }
 }
+AOC_REGISTER_SOLVER(2022, 13, run);
 
 }

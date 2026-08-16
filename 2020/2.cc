@@ -2,7 +2,7 @@
 
 namespace aoc_2020_2 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     int part1 = 0, part2 = 0, a = 0, b = 0;
     for (std::string_view line : split_lines(buf)) {
@@ -17,8 +17,9 @@ void run(std::string_view buf)
         part1 += char_count[c - 'a'] >= a && char_count[c - 'a'] <= b;
         part2 += (password[a - 1] == c) ^ (password[b - 1] == c);
     }
-    fmt::print("{}\n", part1);
-    fmt::print("{}\n", part2);
+    answer.add(part1);
+    answer.add(part2);
 }
+AOC_REGISTER_SOLVER(2020, 2, run);
 
 }

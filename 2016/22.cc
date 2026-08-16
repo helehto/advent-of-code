@@ -97,15 +97,16 @@ constexpr int part2(std::span<const uint16_t> nums)
     return steps;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<uint16_t> nums;
     nums.reserve(2 + buf.size() / 48);
     find_numbers(buf, nums);
     ASSERT(nums.size() % 6 == 0);
 
-    fmt::print("{}\n", part1(nums));
-    fmt::print("{}\n", part2(nums));
+    answer.add(part1(nums));
+    answer.add(part2(nums));
 }
+AOC_REGISTER_SOLVER(2016, 22, run);
 
 }

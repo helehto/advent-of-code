@@ -112,7 +112,8 @@ static int part1(Deck a, Deck b)
     return a.cards[0] != 0 ? a.score() : b.score();
 }
 
-static bool recursive_combat(Deck &&a, Deck &&b, bool is_root_game = true)
+static bool
+recursive_combat(Deck &&a, Deck &&b, aoc::Answer &answer, bool is_root_game = true)
 {
     const auto a_initial_size = a.size();
     const auto b_initial_size = b.size();
@@ -130,20 +131,20 @@ static bool recursive_combat(Deck &&a, Deck &&b, bool is_root_game = true)
     while (true) {
         if (a.cards[0] == 0 || b.cards[0] == 0) {
             if (is_root_game)
-                fmt::print("{}\n", a.cards[0] != 0 ? a.score() : b.score());
+                answer.add(a.cards[0] != 0 ? a.score() : b.score());
             return a.cards[0] != 0;
         }
 
         if (auto [it, inserted] = seen.emplace(a, b); !inserted) {
             if (is_root_game)
-                fmt::print("{}\n", a.score());
+                answer.add(a.score());
             return true;
         }
 
         const auto ca = a.draw_card();
         const auto cb = b.draw_card();
         bool a_wins = a.cards[ca - 1] != 0 && b.cards[cb - 1] != 0
-                          ? recursive_combat(a.prefix(ca), b.prefix(cb), false)
+                          ? recursive_combat(a.prefix(ca), b.prefix(cb), answer, false)
                           : ca > cb;
 
         if (a_wins)
@@ -153,7 +154,7 @@ static bool recursive_combat(Deck &&a, Deck &&b, bool is_root_game = true)
     }
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     ASSERT(Deck::NUM_CARDS % hn::Lanes(Deck::d) == 0);
 
@@ -166,8 +167,9 @@ void run(std::string_view buf)
     std::ranges::copy(a, deck_a.cards.data());
     std::ranges::copy(b, deck_b.cards.data());
 
-    fmt::print("{}\n", part1(deck_a, deck_b));
-    recursive_combat(std::move(deck_a), std::move(deck_b));
+    answer.add(part1(deck_a, deck_b));
+    recursive_combat(std::move(deck_a), std::move(deck_b), answer);
 }
+AOC_REGISTER_SOLVER(2020, 22, run);
 
 }

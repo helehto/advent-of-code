@@ -77,7 +77,7 @@ constexpr bool vx_can_reach_target_area(int v, const int x0, const int x1)
             return x + v <= x1;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto [x0, x1, y0, y1] = find_numbers_n<int16_t, 4>(buf);
 
@@ -102,11 +102,12 @@ void run(std::string_view buf)
         }
     }
 
-    fmt::print("{}\n", ymax);
+    answer.add(ymax);
 
     // Velocities that match the target area will cause the probe to enter the
     // target area within one time step, by definition; count those separately:
-    fmt::print("{}\n", valid_velocities_count + (y1 - y0 + 1) * (x1 - x0 + 1));
+    answer.add(valid_velocities_count + (y1 - y0 + 1) * (x1 - x0 + 1));
 }
+AOC_REGISTER_SOLVER(2021, 17, run);
 
 }

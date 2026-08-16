@@ -7,7 +7,7 @@ struct Instruction {
     int addend;
 };
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     int X = 1;
     int cycle = 1;
@@ -49,8 +49,9 @@ void run(std::string_view buf)
         cycle++;
     }
 
-    fmt::print("{}\n", signal_strength);
-    fmt::print("{}\n", crt);
+    answer.add(signal_strength);
+    answer.add(crt);
 }
+AOC_REGISTER_SOLVER(2022, 10, run);
 
 }

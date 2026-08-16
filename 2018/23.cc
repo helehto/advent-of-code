@@ -132,11 +132,12 @@ static int part2(const Nanobots &bots)
     return std::ranges::max(maxarg | std::ranges::views::transform(f));
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     const Nanobots bots(find_numbers<int>(buf));
-    fmt::print("{}\n", part1(bots));
-    fmt::print("{}\n", part2(bots));
+    answer.add(part1(bots));
+    answer.add(part2(bots));
 }
+AOC_REGISTER_SOLVER(2018, 23, run);
 
 }

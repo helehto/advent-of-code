@@ -91,7 +91,7 @@ static int64_t part2(std::span<const Hailstone> hailstones)
     return round(x[0]) + round(x[1]) + round(x[2]);
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<Hailstone> hailstones;
 
@@ -110,8 +110,9 @@ void run(std::string_view buf)
             });
     }
 
-    fmt::print("{}\n", part1(hailstones));
-    fmt::print("{}\n", part2(hailstones));
+    answer.add(part1(hailstones));
+    answer.add(part2(hailstones));
 }
+AOC_REGISTER_SOLVER(2023, 24, run);
 
 }

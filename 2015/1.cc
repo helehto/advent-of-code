@@ -2,7 +2,7 @@
 
 namespace aoc_2015_1 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     int p1 = 0;
     int p2 = -1;
@@ -11,8 +11,9 @@ void run(std::string_view buf)
         if (p1 < 0 && p2 < 0)
             p2 = i + 1;
     }
-    fmt::print("{}\n", p1);
-    fmt::print("{}\n", p2);
+    answer.add(p1);
+    answer.add(p2);
 }
+AOC_REGISTER_SOLVER(2015, 1, run);
 
 }

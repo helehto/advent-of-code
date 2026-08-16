@@ -53,13 +53,14 @@ static int solve(Matrix<char> grid, int iterations, bool stuck)
     return std::ranges::count(grid.all(), '#');
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     Matrix<char> grid = Matrix<char>::from_lines(split_lines(buf)).padded(1, '.');
 
     constexpr int iterations = 100;
-    fmt::print("{}\n", solve(grid, iterations, false));
-    fmt::print("{}\n", solve(std::move(grid), iterations, true));
+    answer.add(solve(grid, iterations, false));
+    answer.add(solve(std::move(grid), iterations, true));
 }
+AOC_REGISTER_SOLVER(2015, 18, run);
 
 }

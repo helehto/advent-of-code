@@ -2,7 +2,7 @@
 
 namespace aoc_2021_5 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     struct Pair {
         Vec2i a;
@@ -65,8 +65,9 @@ void run(std::string_view buf)
         if (n >= 2)
             part2++;
 
-    fmt::print("{}\n", part1);
-    fmt::print("{}\n", part2);
+    answer.add(part1);
+    answer.add(part2);
 }
+AOC_REGISTER_SOLVER(2021, 5, run);
 
 }

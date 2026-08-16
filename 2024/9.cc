@@ -97,10 +97,11 @@ static int64_t part2(std::string_view line)
     return checksum;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
-    fmt::print("{}\n", part1(buf));
-    fmt::print("{}\n", part2(buf));
+    answer.add(part1(buf));
+    answer.add(part2(buf));
 }
+AOC_REGISTER_SOLVER(2024, 9, run);
 
 }

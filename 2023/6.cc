@@ -8,7 +8,7 @@ static uint64_t ways(uint64_t t, uint64_t d)
            std::ceil(t / 2. - sqrt(t * t / 4 - d) + 1e-6) + 1;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto ts = find_numbers_small<int>(lines[0]);
@@ -24,7 +24,9 @@ void run(std::string_view buf)
         t = pow10i[digit_count_base10(ts[i])] * t + ts[i];
         d = pow10i[digit_count_base10(ds[i])] * d + ds[i];
     }
-    fmt::print("{}\n{}\n", prod, ways(t, d));
+    answer.add(prod);
+    answer.add(ways(t, d));
 }
+AOC_REGISTER_SOLVER(2023, 6, run);
 
 }

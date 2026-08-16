@@ -64,7 +64,7 @@ static int region_sides(MatrixView<const char> g, std::span<const Vec2i> points)
     return result;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto g = Matrix<char>::from_lines(lines);
@@ -83,8 +83,9 @@ void run(std::string_view buf)
         s2 += r.size() * region_sides(g, r);
     }
 
-    fmt::print("{}\n", s1);
-    fmt::print("{}\n", s2);
+    answer.add(s1);
+    answer.add(s2);
 }
+AOC_REGISTER_SOLVER(2024, 12, run);
 
 }

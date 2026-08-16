@@ -2,7 +2,7 @@
 
 namespace aoc_2017_11 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     const char *p = buf.data();
 
@@ -33,8 +33,9 @@ void run(std::string_view buf)
         furthest = std::max(furthest, manhattan(pos));
     }
 
-    fmt::print("{}\n", manhattan(pos));
-    fmt::print("{}\n", furthest);
+    answer.add(manhattan(pos));
+    answer.add(furthest);
 }
+AOC_REGISTER_SOLVER(2017, 11, run);
 
 }

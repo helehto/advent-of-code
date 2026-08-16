@@ -52,7 +52,7 @@ count_cheats_from_square(MatrixView<const int32_t> dist, const Vec2i p)
     return count_all_rows(std::make_integer_sequence<int, 2 * N + 1>());
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -98,8 +98,9 @@ void run(std::string_view buf)
         part2.fetch_add(solve.operator()<N>(span));
     });
 
-    fmt::print("{}\n", part1.load());
-    fmt::print("{}\n", part2.load());
+    answer.add(part1.load());
+    answer.add(part2.load());
 }
+AOC_REGISTER_SOLVER(2024, 20, run);
 
 }

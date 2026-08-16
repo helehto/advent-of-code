@@ -2,7 +2,7 @@
 
 namespace aoc_2020_12 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -34,7 +34,7 @@ void run(std::string_view buf)
         }
         i++;
     }
-    fmt::print("{}\n", manhattan<int>(p, {0, 0}));
+    answer.add(manhattan<int>(p, {0, 0}));
 
     p = {0, 0};
     d = {1, 0};
@@ -61,7 +61,8 @@ void run(std::string_view buf)
         }
         i++;
     }
-    fmt::print("{}\n", manhattan<int>(p, {0, 0}));
+    answer.add(manhattan<int>(p, {0, 0}));
 }
+AOC_REGISTER_SOLVER(2020, 12, run);
 
 }

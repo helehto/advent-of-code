@@ -104,13 +104,14 @@ constexpr int part2(MatrixView<const int> grid, const Vec2i target)
     ASSERT_MSG(false, "No path found!?");
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto [depth, target_x, target_y] = find_numbers_n<int, 3>(buf);
     const Vec2i target{target_x, target_y};
     auto grid = build_grid(depth, target);
-    fmt::print("{}\n", part1(grid, target));
-    fmt::print("{}\n", part2(grid, target));
+    answer.add(part1(grid, target));
+    answer.add(part2(grid, target));
 }
+AOC_REGISTER_SOLVER(2018, 22, run);
 
 }

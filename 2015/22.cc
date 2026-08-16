@@ -103,7 +103,7 @@ static size_t do_player_turn(State *__restrict__ out, const State &state)
     return n;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     const auto [boss_hp, boss_damage] = find_numbers_n<uint8_t, 2>(buf);
     ForkPool<State> fork_pool(ThreadPool::get());
@@ -156,7 +156,9 @@ void run(std::string_view buf)
         }
     });
 
-    fmt::print("{}\n{}\n", solutions[0].load(), solutions[1].load());
+    answer.add(solutions[0].load());
+    answer.add(solutions[1].load());
 }
+AOC_REGISTER_SOLVER(2015, 22, run);
 
 }

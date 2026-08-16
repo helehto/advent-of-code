@@ -74,7 +74,7 @@ static Vec2i intersect(std::vector<Vec2i> &a, std::vector<Vec2i> &b)
     return a[ai];
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<Sensor> sensors;
     for (std::string_view s : split_lines(buf)) {
@@ -97,7 +97,7 @@ void run(std::string_view buf)
             xmax = std::max(xmax, p.x + span);
         }
     }
-    fmt::print("{}\n", xmax - xmin);
+    answer.add(xmax - xmin);
 
     std::vector<std::vector<Vec2i>> bps;
     for (size_t i = 0; i < sensors.size(); i++) {
@@ -110,7 +110,8 @@ void run(std::string_view buf)
     }
 
     auto [x, y] = intersect(bps[0], bps[1]);
-    fmt::print("{}\n", (x * UINT64_C(4'000'000) + y));
+    answer.add(x * UINT64_C(4'000'000) + y);
 }
+AOC_REGISTER_SOLVER(2022, 15, run);
 
 }

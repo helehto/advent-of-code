@@ -5,7 +5,7 @@
 
 namespace aoc_2021_11 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines, λx(x - '0'));
@@ -44,12 +44,13 @@ void run(std::string_view buf)
         }
 
         if (step == 100) {
-            fmt::print("{}\n", total_flashes);
+            answer.add(total_flashes);
         } else if (flashed.size() == grid.size()) {
-            fmt::print("{}\n", step);
+            answer.add(step);
             return;
         }
     }
 }
+AOC_REGISTER_SOLVER(2021, 11, run);
 
 }

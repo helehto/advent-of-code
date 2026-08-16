@@ -2,7 +2,7 @@
 
 namespace aoc_2024_18 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<int> nums;
     find_numbers(buf, nums);
@@ -62,7 +62,7 @@ void run(std::string_view buf)
         }
     };
 
-    fmt::print("{}\n", search());
+    answer.add(search());
 
     size_t lo = 1024;
     size_t hi = nums.size() / 2;
@@ -80,7 +80,8 @@ void run(std::string_view buf)
             hi = mid;
         }
     }
-    fmt::print("{},{}\n", nums[2 * lo], nums[2 * lo + 1]);
+    answer.add_formatted("{},{}", nums[2 * lo], nums[2 * lo + 1]);
 }
+AOC_REGISTER_SOLVER(2024, 18, run);
 
 }

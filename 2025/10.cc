@@ -338,10 +338,12 @@ static int part2(std::span<const Machine> machines)
     return result.load();
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     const auto machines = parse_input(split_lines(buf));
-    fmt::print("{}\n{}\n", part1(machines), part2(machines));
+    answer.add(part1(machines));
+    answer.add(part2(machines));
 }
+AOC_REGISTER_SOLVER(2025, 10, run);
 
 }

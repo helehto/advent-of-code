@@ -110,13 +110,14 @@ static int part2(std::span<const Scanner> scanners)
     }
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     small_vector<uint8_t, 256> nums;
     find_numbers(buf, nums);
     std::span scanners(reinterpret_cast<Scanner *>(nums.data()), nums.size() / 2);
-    fmt::print("{}\n", part1(scanners));
-    fmt::print("{}\n", part2(scanners));
+    answer.add(part1(scanners));
+    answer.add(part2(scanners));
 }
+AOC_REGISTER_SOLVER(2017, 13, run);
 
 }

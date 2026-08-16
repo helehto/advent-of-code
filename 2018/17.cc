@@ -3,7 +3,7 @@
 
 namespace aoc_2018_17 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto nums = find_numbers<int>(buf);
@@ -107,7 +107,9 @@ void run(std::string_view buf)
 
     const size_t at_rest = std::ranges::count(grid.all(), '~');
     const size_t flowing = std::ranges::count(grid.all(), '|');
-    fmt::print("{}\n{}\n", at_rest + flowing, at_rest);
+    answer.add(at_rest + flowing);
+    answer.add(at_rest);
 }
+AOC_REGISTER_SOLVER(2018, 17, run);
 
 }

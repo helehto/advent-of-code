@@ -123,12 +123,11 @@ static int max_happiness(MatrixView<const int> matrix)
     return result.load();
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto matrix = get_happiness_matrix(buf);
     ASSERT(matrix.rows + 1 < std::size(factorials));
-
-    fmt::print("{}\n", max_happiness(matrix));
+    answer.add(max_happiness(matrix));
 
     Matrix<int> augmented(matrix.rows + 1, matrix.cols + 1);
     for (size_t i = 0; i < matrix.rows; i++) {
@@ -136,7 +135,8 @@ void run(std::string_view buf)
             augmented(i, j) = matrix(i, j);
         }
     }
-    fmt::print("{}\n", max_happiness(augmented));
+    answer.add(max_happiness(augmented));
 }
+AOC_REGISTER_SOLVER(2015, 13, run);
 
 }

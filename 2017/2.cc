@@ -2,7 +2,7 @@
 
 namespace aoc_2017_2 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     std::vector<int> nums;
@@ -26,8 +26,9 @@ void run(std::string_view buf)
             }
         }
     }
-    fmt::print("{}\n", s1);
-    fmt::print("{}\n", s2);
+    answer.add(s1);
+    answer.add(s2);
 }
+AOC_REGISTER_SOLVER(2017, 2, run);
 
 }

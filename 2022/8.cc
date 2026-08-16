@@ -2,7 +2,7 @@
 
 namespace aoc_2022_8 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<std::string_view> trees;
 
@@ -49,7 +49,7 @@ void run(std::string_view buf)
             visible += !!vis;
         }
     }
-    fmt::print("{}\n", n * n - (n - 2) * (n - 2) + visible);
+    answer.add(n * n - (n - 2) * (n - 2) + visible);
 
     int max_scenic_score = 0;
     for (size_t i = 1; i < n - 1; i++) {
@@ -88,7 +88,8 @@ void run(std::string_view buf)
             max_scenic_score = std::max(max_scenic_score, u * d * l * r);
         }
     }
-    fmt::print("{}\n", max_scenic_score);
+    answer.add(max_scenic_score);
 }
+AOC_REGISTER_SOLVER(2022, 8, run);
 
 }

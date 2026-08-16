@@ -16,7 +16,7 @@ static int turn(int dir, bool left)
     return tab[dir] ^ left;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto prog = find_numbers<VM::value_type>(buf);
 
@@ -71,13 +71,14 @@ void run(std::string_view buf)
         max_d = std::max(max_d, dxdy);
 
         if (u == start)
-            fmt::print("{}\n", dxdy);
+            answer.add(dxdy);
 
         for (auto v : neighbors4(m, u))
             if ((m(v) != '#') && !visited(v))
                 queue.emplace_back(v, dxdy + 1);
     }
-    fmt::print("{}\n", max_d);
+    answer.add(max_d);
 }
+AOC_REGISTER_SOLVER(2019, 15, run);
 
 }

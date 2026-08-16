@@ -13,7 +13,7 @@ static double to_angle(Vec2i16 a)
     return std::fabs(angle);
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -47,7 +47,7 @@ void run(std::string_view buf)
             station = asteroids[i];
         }
     }
-    fmt::print("{}\n", best_angles.size());
+    answer.add(best_angles.size());
 
     std::vector<std::pair<Vec2i16, small_vector<Vec2i16>>> targets_by_direction(
         best_angles.begin(), best_angles.end());
@@ -64,7 +64,7 @@ void run(std::string_view buf)
             num_vaporized++;
             if (num_vaporized == 200) {
                 const auto [x, y] = targets.back();
-                fmt::print("{}\n", 100 * x + y);
+                answer.add(100 * x + y);
                 return;
             }
             targets.pop_back();
@@ -75,5 +75,6 @@ void run(std::string_view buf)
         }
     }
 }
+AOC_REGISTER_SOLVER(2019, 10, run);
 
 }

@@ -76,7 +76,7 @@ constexpr int sigma(int n)
     return result;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     ASSERT(lines[0].starts_with("#ip"));
@@ -90,8 +90,9 @@ void run(std::string_view buf)
         return sigma(get_mystery_number(ip_reg, lines, regs));
     };
 
-    fmt::print("{}\n", solve(0));
-    fmt::print("{}\n", solve(1));
+    answer.add(solve(0));
+    answer.add(solve(1));
 }
+AOC_REGISTER_SOLVER(2018, 19, run);
 
 }

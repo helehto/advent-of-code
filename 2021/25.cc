@@ -59,7 +59,7 @@ step_d(std::span<const uint256> r, std::span<uint256> d, std::span<uint256> pend
     return moved;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -90,7 +90,8 @@ void run(std::string_view buf)
         round++;
     }
 
-    fmt::print("{}\n", round + 1);
+    answer.add(round + 1);
 }
+AOC_REGISTER_SOLVER(2021, 25, run);
 
 }

@@ -16,7 +16,7 @@ constexpr bool xisalpha(const char c)
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto g = Matrix<char>::from_lines(lines);
@@ -136,8 +136,9 @@ void run(std::string_view buf)
         ASSERT_MSG(false, "No solution found!?");
     };
 
-    fmt::print("{}\n", solve(false));
-    fmt::print("{}\n", solve(true));
+    answer.add(solve(false));
+    answer.add(solve(true));
 }
+AOC_REGISTER_SOLVER(2019, 20, run);
 
 }

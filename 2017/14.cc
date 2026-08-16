@@ -5,7 +5,7 @@
 
 namespace aoc_2017_14 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     Matrix<bool> grid(128, 128);
 
@@ -32,7 +32,7 @@ void run(std::string_view buf)
 
         part1.fetch_add(used_squares, std::memory_order_relaxed);
     });
-    fmt::print("{}\n", part1.load());
+    answer.add(part1.load());
 
     Matrix<bool> visited(grid.rows, grid.cols, false);
     int regions = 0;
@@ -54,7 +54,8 @@ void run(std::string_view buf)
             ++regions;
         }
     }
-    fmt::print("{}\n", regions);
+    answer.add(regions);
 }
+AOC_REGISTER_SOLVER(2017, 14, run);
 
 }

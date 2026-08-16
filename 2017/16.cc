@@ -120,14 +120,16 @@ static void dance(std::span<uint8_t, 16> programs, const Moves &m)
     hn::StoreU(perm, d, programs.data());
 }
 
-static void print_permutation(std::span<uint8_t, 16> p)
+static std::string permutation_string(std::span<uint8_t, 16> p)
 {
+    std::string result;
+    result.reserve(p.size());
     for (uint8_t c : p)
-        putc(c + 'a', stdout);
-    putc('\n', stdout);
+        result += c + 'a';
+    return result;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     const auto moves = parse_moves(buf);
 
@@ -136,7 +138,7 @@ void run(std::string_view buf)
     // Part 1:
     {
         dance(programs, moves);
-        print_permutation(programs);
+        answer.add(permutation_string(programs));
     }
 
     // Part 2:
@@ -149,8 +151,9 @@ void run(std::string_view buf)
             dance(programs, moves);
         }
         sequence.pop_back();
-        print_permutation(sequence[1'000'000'000 % sequence.size()]);
+        answer.add(permutation_string(sequence[1'000'000'000 % sequence.size()]));
     }
 }
+AOC_REGISTER_SOLVER(2017, 16, run);
 
 }

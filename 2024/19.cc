@@ -88,7 +88,7 @@ static int64_t solve(std::string_view s, const PrefixTree &designs)
     return cache[0];
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -113,7 +113,9 @@ void run(std::string_view buf)
         s1 += r > 0;
         s2 += r;
     }
-    fmt::print("{}\n{}\n", s1, s2);
+    answer.add(s1);
+    answer.add(s2);
 }
+AOC_REGISTER_SOLVER(2024, 19, run);
 
 }

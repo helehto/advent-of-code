@@ -38,7 +38,7 @@ static int dijkstra(MatrixView<const char> m, size_t target, std::vector<uint32_
     return dist[target];
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto m = Matrix<char>::from_lines(split_lines(buf));
 
@@ -53,7 +53,7 @@ void run(std::string_view buf)
 
     // Part 1:
     dist[start_index] = 0;
-    fmt::print("{}\n", dijkstra(m, end_index, dist));
+    answer.add(dijkstra(m, end_index, dist));
 
     // Part 2:
     {
@@ -67,8 +67,9 @@ void run(std::string_view buf)
                 dist[i] = 0;
         }
 
-        fmt::print("{}\n", dijkstra(m, end_index, dist));
+        answer.add(dijkstra(m, end_index, dist));
     }
 }
+AOC_REGISTER_SOLVER(2022, 12, run);
 
 }

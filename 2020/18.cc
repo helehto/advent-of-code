@@ -80,7 +80,7 @@ static int64_t evaluate(std::span<const Token> tokens, int add_precedence)
     return e.expr(-1);
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     int64_t sum1 = 0;
     int64_t sum2 = 0;
@@ -90,8 +90,9 @@ void run(std::string_view buf)
         sum1 += evaluate(tokens, 0);
         sum2 += evaluate(tokens, 1);
     }
-    fmt::print("{}\n", sum1);
-    fmt::print("{}\n", sum2);
+    answer.add(sum1);
+    answer.add(sum2);
 }
+AOC_REGISTER_SOLVER(2020, 18, run);
 
 }

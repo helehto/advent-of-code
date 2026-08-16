@@ -226,7 +226,7 @@ static int part2(small_vector<Group, 32> groups)
     return best_result.load().units_left;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     const auto lines = split_lines(buf);
     auto separator = std::ranges::find(lines, "");
@@ -237,8 +237,9 @@ void run(std::string_view buf)
     for (auto it = separator + 2; it != lines.end(); ++it)
         groups.push_back(parse_group(*it, INFECTION));
 
-    fmt::print("{}\n", fight(groups).units_left);
-    fmt::print("{}\n", part2(groups));
+    answer.add(fight(groups).units_left);
+    answer.add(part2(groups));
 }
+AOC_REGISTER_SOLVER(2018, 24, run);
 
 }

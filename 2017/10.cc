@@ -18,10 +18,11 @@ static std::array<char, 33> part2(std::string_view buf)
         std::span(reinterpret_cast<const uint8_t *>(buf.data()), buf.size())));
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
-    fmt::print("{}\n", part1(buf));
-    fmt::print("{}\n", part2(buf).data());
+    answer.add(part1(buf));
+    answer.add(std::string_view(part2(buf).data()));
 }
+AOC_REGISTER_SOLVER(2017, 10, run);
 
 }

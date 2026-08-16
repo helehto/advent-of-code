@@ -17,7 +17,7 @@ struct Cart {
     uint16_t crossings : 14 = 0;
 };
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     Matrix<char> grid(lines.size(), lines[0].size(), ' ');
@@ -67,7 +67,7 @@ void run(std::string_view buf)
                 auto &c2 = carts[j];
                 if (&c != &c2 && c.p == c2.p) {
                     if (!first_printed) {
-                        fmt::print("{},{}\n", c.p.x, c.p.y);
+                        answer.add_formatted("{},{}", c.p.x, c.p.y);
                         first_printed = true;
                     }
 
@@ -82,7 +82,8 @@ void run(std::string_view buf)
         }
     }
 
-    fmt::print("{},{}\n", carts[0].p.x, carts[0].p.y);
+    answer.add_formatted("{},{}", carts[0].p.x, carts[0].p.y);
 }
+AOC_REGISTER_SOLVER(2018, 13, run);
 
 }

@@ -126,7 +126,7 @@ static State parse_input(std::string_view buf)
     return state;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<std::tuple<State, int>> queue;
     dense_set<CanonicalState, CrcHasher> seen;
@@ -190,14 +190,12 @@ void run(std::string_view buf)
     };
 
     auto initial_state = parse_input(buf);
+    answer.add(search(initial_state));
 
-    // Part 1:
-    fmt::print("{}\n", search(initial_state));
-
-    // Part 2:
     initial_state.items[0].generator_mask |= 1 << 6 | 1 << 7;
     initial_state.items[0].microchip_mask |= 1 << 6 | 1 << 7;
-    fmt::print("{}\n", search(initial_state));
+    answer.add(search(initial_state));
 }
+AOC_REGISTER_SOLVER(2016, 11, run);
 
 }

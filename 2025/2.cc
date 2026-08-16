@@ -88,7 +88,7 @@ static size_t count_reps_any(small_vector_base<uint64_t> &buffer, size_t a, size
     return sum_unique(buffer);
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<std::string_view> ranges;
     split(buf, ranges, ',');
@@ -103,7 +103,9 @@ void run(std::string_view buf)
         part2 += count_reps_any<2>(tmp, a, b);
     }
 
-    fmt::print("{}\n{}\n", part1, part2);
+    answer.add(part1);
+    answer.add(part2);
 }
+AOC_REGISTER_SOLVER(2025, 2, run);
 
 }

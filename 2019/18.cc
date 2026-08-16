@@ -77,7 +77,7 @@ precompute_key_distance_matrix(MatrixView<const char> grid, std::span<const Vec2
     return std::pair(std::move(result), max_key_distance);
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto grid = Matrix<char>::from_lines(split_lines(buf));
 
@@ -158,7 +158,7 @@ void run(std::string_view buf)
     };
 
     const Vec2i start1[] = {start};
-    fmt::print("{}\n", search(start1, 1));
+    answer.add(search(start1, 1));
 
     grid(start) = '#';
     grid(start + Vec2i{-1, 0}) = '#';
@@ -172,7 +172,8 @@ void run(std::string_view buf)
         start + Vec2i{+1, +1},
         start + Vec2i{+1, -1},
     };
-    fmt::print("{}\n", search(start2, 4));
+    answer.add(search(start2, 4));
 }
+AOC_REGISTER_SOLVER(2019, 18, run);
 
 }

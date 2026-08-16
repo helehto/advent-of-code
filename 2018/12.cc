@@ -2,7 +2,7 @@
 
 namespace aoc_2018_12 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -67,7 +67,7 @@ void run(std::string_view buf)
     int generation = 0;
     for (; generation < 20; generation++)
         offset = step(offset);
-    fmt::print("{}\n", index_sum(state, offset));
+    answer.add(index_sum(state, offset));
 
     int old_offset = 0;
     for (; !std::ranges::equal(state, new_state); generation++)
@@ -76,6 +76,8 @@ void run(std::string_view buf)
 
     constexpr uint64_t target = UINT64_C(50'000'000'000);
     uint64_t final_offset = offset + offset_per_step * (target - generation);
-    fmt::print("{}\n", index_sum(state, final_offset));
+    answer.add(index_sum(state, final_offset));
 }
+AOC_REGISTER_SOLVER(2018, 12, run);
+
 }

@@ -21,7 +21,8 @@ static size_t part1(Matrix<int8_t> grid)
             size_t j = 1;
             const auto *p = &grid(i, j);
 
-            for (; j + hn::Lanes(d) - 1 < grid.cols - 1; j += hn::Lanes(d), p += hn::Lanes(d)) {
+            for (; j + hn::Lanes(d) - 1 < grid.cols - 1;
+                 j += hn::Lanes(d), p += hn::Lanes(d)) {
                 const hn::Vec<D> v = hn::LoadU(d, p);
                 const hn::Vec<D> vnext = hn::LoadU(d, &next(i, j));
                 const hn::Mask<D> eq_dot = hn::Eq(v, vdot);
@@ -153,11 +154,13 @@ static size_t part2(Matrix<int8_t> grid)
     return std::ranges::count(grid.all(), '#');
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto grid = Matrix<int8_t>::from_lines(lines).padded(1, '@');
-    fmt::print("{}\n", part1(grid));
-    fmt::print("{}\n", part2(grid));
+    answer.add(part1(grid));
+    answer.add(part2(grid));
 }
+AOC_REGISTER_SOLVER(2020, 11, run);
+
 }

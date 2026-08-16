@@ -197,12 +197,12 @@ static int64_t part2(std::span<const Instruction> instrs)
     return p1.sent_values;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto instrs = assemble(split_lines(buf));
-
-    fmt::print("{}\n", part1(instrs));
-    fmt::print("{}\n", part2(instrs));
+    answer.add(part1(instrs));
+    answer.add(part2(instrs));
 }
+AOC_REGISTER_SOLVER(2017, 18, run);
 
 }

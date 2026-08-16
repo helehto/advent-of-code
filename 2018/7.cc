@@ -3,8 +3,10 @@
 
 namespace aoc_2018_7 {
 
-static void part1(std::array<small_vector<int>, 26> dependencies, int max_task)
+static void
+part1(std::array<small_vector<int>, 26> dependencies, int max_task, aoc::Answer &answer)
 {
+    std::string result;
     int tasks[26];
     int n = 0;
 
@@ -16,7 +18,7 @@ static void part1(std::array<small_vector<int>, 26> dependencies, int max_task)
         int *p = std::min_element(tasks, tasks + n);
         int u = std::exchange(*p, tasks[--n]);
 
-        fmt::print("{}", static_cast<char>(u + 'A'));
+        result += static_cast<char>(u + 'A');
 
         for (int i = 0; i <= max_task; i++) {
             if (!dependencies[i].empty()) {
@@ -26,10 +28,11 @@ static void part1(std::array<small_vector<int>, 26> dependencies, int max_task)
             }
         }
     }
-    fmt::print("\n");
+    answer.add(result);
 }
 
-static void part2(std::array<small_vector<int>, 26> dependencies, int max_task)
+static void
+part2(std::array<small_vector<int>, 26> dependencies, int max_task, aoc::Answer &answer)
 {
     struct Task {
         int id;
@@ -72,10 +75,10 @@ static void part2(std::array<small_vector<int>, 26> dependencies, int max_task)
         active_tasks.erase(completed.begin(), completed.end());
     }
 
-    fmt::print("{}\n", t);
+    answer.add(t);
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<std::string_view> cs;
     std::array<small_vector<int>, 26> dependencies;
@@ -88,8 +91,9 @@ void run(std::string_view buf)
         max_task = std::max({max_task, c1, c2});
     }
 
-    part1(dependencies, max_task);
-    part2(std::move(dependencies), max_task);
+    part1(dependencies, max_task, answer);
+    part2(std::move(dependencies), max_task, answer);
 }
+AOC_REGISTER_SOLVER(2018, 7, run);
 
 }

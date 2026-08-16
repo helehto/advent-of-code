@@ -122,7 +122,7 @@ get_neighbors(int d, Vec2i p, const std::string &str, uint32_t door_mask)
     return result;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     ASSERT(buf.size() < 32);
 
@@ -201,7 +201,9 @@ void run(std::string_view buf)
     });
 
     ASSERT_MSG(shortest.has_value(), "No path found!?");
-    fmt::print("{}\n{}\n", shortest->substr(buf.size()), longest);
+    answer.add(shortest->substr(buf.size()));
+    answer.add(longest);
 }
+AOC_REGISTER_SOLVER(2016, 17, run);
 
 }

@@ -24,7 +24,7 @@ constexpr bool solve(int64_t goal, const int64_t *operands, size_t n, int64_t ac
            (Part == 2 && solve<Part>(goal, operands + 1, n - 1, concatenate(accum, a)));
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     ThreadPool &pool = ThreadPool::get();
     auto lines = split_lines(buf);
@@ -43,7 +43,9 @@ void run(std::string_view buf)
     });
 
     std::atomic_thread_fence(std::memory_order_seq_cst);
-    fmt::print("{}\n{}\n", s1.load(), s2.load());
+    answer.add(s1.load());
+    answer.add(s2.load());
 }
+AOC_REGISTER_SOLVER(2024, 7, run);
 
 }

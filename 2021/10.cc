@@ -29,7 +29,7 @@ constexpr static auto matching_pairs = [] {
     return t;
 }();
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     int score1 = 0;
     std::array<char, 64> stack;
@@ -59,9 +59,10 @@ void run(std::string_view buf)
         score1 += mismatch_score;
     }
 
-    fmt::print("{}\n", score1);
+    answer.add(score1);
     std::ranges::nth_element(scores2, scores2.begin() + scores2.size() / 2);
-    fmt::print("{}\n", scores2[scores2.size() / 2]);
+    answer.add(scores2[scores2.size() / 2]);
 }
+AOC_REGISTER_SOLVER(2021, 10, run);
 
 }

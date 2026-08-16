@@ -66,7 +66,7 @@ struct Passport {
     }
 };
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -119,8 +119,9 @@ void run(std::string_view buf)
         }
     } while (i < lines.size());
 
-    fmt::print("{}\n", valid_part1);
-    fmt::print("{}\n", valid_part2);
+    answer.add(valid_part1);
+    answer.add(valid_part2);
 }
+AOC_REGISTER_SOLVER(2020, 4, run);
 
 }

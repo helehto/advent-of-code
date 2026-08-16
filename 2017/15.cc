@@ -172,11 +172,12 @@ static int part2(uint32_t a, uint32_t b)
     return result;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto [a, b] = find_numbers_n<int, 2>(buf);
-    fmt::print("{}\n", part1(a, b));
-    fmt::print("{}\n", part2(a, b));
+    answer.add(part1(a, b));
+    answer.add(part2(a, b));
 }
+AOC_REGISTER_SOLVER(2017, 15, run);
 
 }

@@ -83,7 +83,7 @@ static std::optional<Cycle> detect_cycle(std::span<const State> states)
     };
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     dense_map<CacheKey, small_vector<State, 4>, CrcHasher> past_states;
     dense_set<Vec2i> occupied;
@@ -147,8 +147,9 @@ void run(std::string_view buf)
                heights[cycle.start - cycle.period - 1];
     };
 
-    fmt::print("{}\n", solve(2022));
-    fmt::print("{}\n", solve(1000000000000));
+    answer.add(solve(2022));
+    answer.add(solve(1000000000000));
 }
+AOC_REGISTER_SOLVER(2022, 17, run);
 
 }

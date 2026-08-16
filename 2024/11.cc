@@ -22,7 +22,7 @@ static void step(dense_map<int64_t, int64_t, CrcHasher> &counter,
     }
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     dense_map<int64_t, int64_t, CrcHasher> counter;
     dense_map<int64_t, int64_t, CrcHasher> tmp;
@@ -40,8 +40,9 @@ void run(std::string_view buf)
         int64_t total = 0;
         for (auto &[_, freq] : counter)
             total += freq;
-        fmt::print("{}\n", total);
+        answer.add(total);
     }
 }
+AOC_REGISTER_SOLVER(2024, 11, run);
 
 }

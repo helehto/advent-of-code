@@ -2,7 +2,7 @@
 
 namespace aoc_2016_25 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     // The assembly program adds the product of the two factors mentioned in
     // the first few instructions to the `a` register, and outputs the binary
@@ -19,7 +19,8 @@ void run(std::string_view buf)
     while (n < factor)
         n = n << 2 | 0b10;
 
-    fmt::print("{}\n", n - factor);
+    answer.add(n - factor);
 }
+AOC_REGISTER_SOLVER(2016, 25, run);
 
 }

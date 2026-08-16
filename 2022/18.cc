@@ -82,7 +82,7 @@ static dense_set<Cube, CrcHasher> flood(dense_set<Cube, CrcHasher> occupied)
     return unvisited;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     const auto lines = split_lines(buf);
     dense_set<Cube, CrcHasher> cubes;
@@ -91,10 +91,11 @@ void run(std::string_view buf)
         cubes.insert(find_numbers_n<int, 3>(line));
 
     const auto area = sum_surface_area(cubes);
-    fmt::print("{}\n", area);
+    answer.add(area);
 
     const auto unvisited = flood(cubes);
-    fmt::print("{}\n", area - sum_surface_area(unvisited));
+    answer.add(area - sum_surface_area(unvisited));
 }
+AOC_REGISTER_SOLVER(2022, 18, run);
 
 }

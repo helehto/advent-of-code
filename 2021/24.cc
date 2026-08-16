@@ -98,10 +98,11 @@ constexpr std::array<int, 14> solve2()
     return {a, b, c, c + kc, d, e, e + ke, f, f + kf, g, g + kg, d + kd, b + kb, a + ka};
 }
 
-void run(std::string_view)
+void run(std::string_view, aoc::Answer &answer)
 {
-    fmt::print("{}\n", fmt::join(solve1(), ""));
-    fmt::print("{}\n", fmt::join(solve2(), ""));
+    answer.add_formatted("{}", fmt::join(solve1(), ""));
+    answer.add_formatted("{}", fmt::join(solve2(), ""));
 }
+AOC_REGISTER_SOLVER(2021, 24, run);
 
 }

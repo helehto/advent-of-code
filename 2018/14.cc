@@ -47,7 +47,7 @@ hn::Vec<D> prefix_sum_u8(D d, const hn::Vec<D> v)
     }
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto [n] = find_numbers_n<size_t, 1>(buf);
 
@@ -158,8 +158,8 @@ void run(std::string_view buf)
         if (!p) [[likely]]
             return false;
 
-        fmt::print("{}\n", fmt::join(std::span(full_subseq + n, 10), ""));
-        fmt::print("{}\n", static_cast<const uint8_t *>(p) - full_subseq);
+        answer.add_formatted("{}", fmt::join(std::span(full_subseq + n, 10), ""));
+        answer.add(static_cast<const uint8_t *>(p) - full_subseq);
         return true;
     };
 
@@ -193,5 +193,6 @@ void run(std::string_view buf)
             step_single();
     } while (prev_fullp < full_subseq + n + 10 || !search(prev_fullp - 10, fullp));
 }
+AOC_REGISTER_SOLVER(2018, 14, run);
 
 }

@@ -114,7 +114,7 @@ constexpr VertexSet bron_kerbosch(VertexSet nodes,
     return bk.clique;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     VertexSet nodes;
     std::array<VertexSet, 32 * 32> edges;
@@ -177,7 +177,7 @@ void run(std::string_view buf)
                 }
             }
         }
-        fmt::print("{}\n", triples);
+        answer.add(triples);
     }
 
     // Part 2:
@@ -193,8 +193,9 @@ void run(std::string_view buf)
                 result += ',';
             }
         }
-        fmt::print("{}\n", std::string_view(result).substr(0, result.size() - 1));
+        answer.add(std::string_view(result).substr(0, result.size() - 1));
     }
 }
+AOC_REGISTER_SOLVER(2024, 23, run);
 
 }

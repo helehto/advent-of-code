@@ -185,7 +185,7 @@ constexpr void transform(Matrix<T> &m, int trfm)
         vflip(m);
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     small_vector<int> nums;
@@ -258,7 +258,7 @@ void run(std::string_view buf)
         if (n_unique == 2)
             corner_tiles.push_back(tile_id);
     }
-    fmt::print("{}\n", std::ranges::fold_left(corner_tiles, uint64_t(1), λab(a * b)));
+    answer.add(std::ranges::fold_left(corner_tiles, uint64_t(1), λab(a * b)));
 
     const auto B = static_cast<size_t>(std::round(std::sqrt(tiles.size())));
     ASSERT(B * B == tiles.size());
@@ -320,7 +320,8 @@ void run(std::string_view buf)
     rot90(grid);
     clear_monsters();
 
-    fmt::print("{}\n", std::ranges::count(grid.all(), '#'));
+    answer.add(std::ranges::count(grid.all(), '#'));
 }
+AOC_REGISTER_SOLVER(2020, 20, run);
 
 }

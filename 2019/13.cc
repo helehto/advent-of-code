@@ -6,7 +6,7 @@ namespace aoc_2019_13 {
 
 using VM = IntcodeVM<SplitMemory<int64_t>>;
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto prog = find_numbers<VM::value_type>(buf);
 
@@ -23,7 +23,7 @@ void run(std::string_view buf)
         if (id == 2)
             block_tiles.insert({x, y});
     }
-    fmt::print("{}\n", block_tiles.size());
+    answer.add(block_tiles.size());
 
     prog[0] = 2;
     vm.reset(prog);
@@ -51,7 +51,8 @@ void run(std::string_view buf)
                 ball_x = x;
         }
     } while (reason != HaltReason::op99);
-    fmt::print("{}\n", score);
+    answer.add(score);
 }
+AOC_REGISTER_SOLVER(2019, 13, run);
 
 }

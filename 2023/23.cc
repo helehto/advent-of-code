@@ -127,7 +127,7 @@ static Graph build_graph(MatrixView<const char> grid, const Vec2z start, const V
     return graph;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
@@ -192,7 +192,9 @@ void run(std::string_view buf)
         });
     }
 
-    fmt::print("{}\n{}\n", solutions[0].load() - 1, solutions[1].load() - 1);
+    answer.add(solutions[0].load() - 1);
+    answer.add(solutions[1].load() - 1);
 }
+AOC_REGISTER_SOLVER(2023, 23, run);
 
 }

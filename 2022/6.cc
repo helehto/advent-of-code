@@ -18,10 +18,11 @@ static size_t solve(std::string_view s, int n)
     return i;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
-    fmt::print("{}\n", solve(buf, 4));
-    fmt::print("{}\n", solve(buf, 14));
+    answer.add(solve(buf, 4));
+    answer.add(solve(buf, 14));
 }
+AOC_REGISTER_SOLVER(2022, 6, run);
 
 }

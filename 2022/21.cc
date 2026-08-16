@@ -169,12 +169,13 @@ static int64_t part2(const Input &input)
     return k;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     Input input = parse_monkeys(buf);
-    fmt::print("{}\n", part1(input));
+    answer.add(part1(input));
     input.monkeys[input.humn_index].type = OP_VARIABLE;
-    fmt::print("{}\n", part2(input));
+    answer.add(part2(input));
 }
+AOC_REGISTER_SOLVER(2022, 21, run);
 
 }

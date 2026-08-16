@@ -40,7 +40,7 @@ struct UnionFind {
     }
 };
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto nums = find_numbers<uint32_t>(buf);
     auto lines = split_lines(buf);
@@ -146,13 +146,13 @@ void run(std::string_view buf)
                 // Network is fully connected; part 2 done.
                 const int64_t xi = xs[i];
                 const int64_t xj = xs[j];
-                fmt::print("{}\n", xi * xj);
+                answer.add(xi * xj);
                 return;
             }
             if (iters == part1_iterations) {
                 auto s = uf.size;
                 std::ranges::partial_sort(s, s.begin() + 3, λab(a > b));
-                fmt::print("{}\n", s[0] * s[1] * s[2]);
+                answer.add(s[0] * s[1] * s[2]);
             }
             iters++;
         }
@@ -160,5 +160,6 @@ void run(std::string_view buf)
 
     ASSERT(false);
 }
+AOC_REGISTER_SOLVER(2025, 8, run);
 
 }

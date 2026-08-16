@@ -50,7 +50,7 @@ static int part2(const std::vector<Reindeer> &reindeer, int time)
     return *std::max_element(begin(scores), end(scores));
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     const auto reindeer = parse_input(buf);
 
@@ -58,8 +58,9 @@ void run(std::string_view buf)
     for (auto &r : reindeer)
         distance = std::max(distance, fly_part1(r, 2503));
 
-    fmt::print("{}\n", distance);
-    fmt::print("{}\n", part2(reindeer, 2503));
+    answer.add(distance);
+    answer.add(part2(reindeer, 2503));
 }
+AOC_REGISTER_SOLVER(2015, 14, run);
 
 }

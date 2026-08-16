@@ -94,7 +94,7 @@ static int64_t part2(std::vector<int16_t> &nums,
     return result;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -115,8 +115,9 @@ void run(std::string_view buf)
     i += 3; // skip our ticket + blank line + 'nearby tickets:'
 
     std::vector<std::string_view> tickets(lines.begin() + i, lines.end());
-
-    fmt::print("{}\n", part1(nums, tickets, intervals));
-    fmt::print("{}\n", part2(nums, field_names, your_ticket, tickets, intervals));
+    answer.add(part1(nums, tickets, intervals));
+    answer.add(part2(nums, field_names, your_ticket, tickets, intervals));
 }
+AOC_REGISTER_SOLVER(2020, 16, run);
+
 }

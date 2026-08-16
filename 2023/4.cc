@@ -3,7 +3,7 @@
 
 namespace aoc_2023_4 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     small_vector<int, 256> matches;
     small_vector<int, 64> v;
@@ -28,14 +28,15 @@ void run(std::string_view buf)
         if (v)
             score_sum += 1 << (v - 1);
     }
-    fmt::print("{}\n", score_sum);
+    answer.add(score_sum);
 
     small_vector<int, 256> n_cards(matches.size(), 1);
     for (size_t i = 0; i < n_cards.size(); i++) {
         for (int j = 0; j < matches[i]; j++)
             n_cards[i + j + 1] += n_cards[i];
     }
-    fmt::print("{}\n", std::accumulate(n_cards.begin(), n_cards.end(), 0));
+    answer.add(std::accumulate(n_cards.begin(), n_cards.end(), 0));
 }
+AOC_REGISTER_SOLVER(2023, 4, run);
 
 }

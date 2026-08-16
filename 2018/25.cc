@@ -3,7 +3,7 @@
 
 namespace aoc_2018_25 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     const auto nums = find_numbers<int8_t>(buf);
     ASSERT(nums.size() % 4 == 0);
@@ -75,7 +75,8 @@ void run(std::string_view buf)
         num_constellations++;
     }
 
-    fmt::print("{}\n", num_constellations);
+    answer.add(num_constellations);
 }
+AOC_REGISTER_SOLVER(2018, 25, run);
 
 }

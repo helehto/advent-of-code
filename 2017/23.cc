@@ -175,12 +175,13 @@ static int64_t part2(std::span<const Instruction> instrs)
     return composites;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     ASSERT(std::size(primes) % hn::Lanes(D()) == 0);
     auto instrs = assemble(split_lines(buf));
-    fmt::print("{}\n", part1(instrs));
-    fmt::print("{}\n", part2(instrs));
+    answer.add(part1(instrs));
+    answer.add(part2(instrs));
 }
+AOC_REGISTER_SOLVER(2017, 23, run);
 
 }

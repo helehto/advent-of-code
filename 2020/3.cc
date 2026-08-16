@@ -2,7 +2,7 @@
 
 namespace aoc_2020_3 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
@@ -21,9 +21,10 @@ void run(std::string_view buf)
         }
         i++;
     }
-    fmt::print("{}\n", slope_trees[1]);
-    fmt::print("{}\n", static_cast<uint64_t>(slope_trees[0]) * slope_trees[1] *
-                           slope_trees[2] * slope_trees[3] * slope_trees[4]);
+    answer.add(slope_trees[1]);
+    answer.add(static_cast<uint64_t>(slope_trees[0]) * slope_trees[1] * slope_trees[2] *
+               slope_trees[3] * slope_trees[4]);
 }
+AOC_REGISTER_SOLVER(2020, 3, run);
 
 }

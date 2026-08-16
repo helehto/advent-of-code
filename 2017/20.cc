@@ -78,7 +78,7 @@ static int part2(std::vector<Particle> &particles)
     return particles.size();
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto nums = find_numbers<int>(buf);
     ASSERT(nums.size() % 9 == 0);
@@ -92,8 +92,9 @@ void run(std::string_view buf)
         };
     }
 
-    fmt::print("{}\n", part1(particles));
-    fmt::print("{}\n", part2(particles));
+    answer.add(part1(particles));
+    answer.add(part2(particles));
 }
+AOC_REGISTER_SOLVER(2017, 20, run);
 
 }

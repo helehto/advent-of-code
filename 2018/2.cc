@@ -3,7 +3,7 @@
 
 namespace aoc_2018_2 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -19,7 +19,7 @@ void run(std::string_view buf)
         if (std::ranges::count(counts, 3) != 0)
             threes++;
     }
-    fmt::print("{}\n", twos * threes);
+    answer.add(twos * threes);
 
     for (size_t i = 0; i < lines.size(); i++) {
         for (size_t j = i + 1; j < lines.size(); j++) {
@@ -36,11 +36,12 @@ void run(std::string_view buf)
             }
 
             if (diffs == 1) {
-                fmt::print("{}{}\n", a.substr(0, index), a.substr(index + 1));
+                answer.add_formatted("{}{}", a.substr(0, index), a.substr(index + 1));
                 return;
             }
         }
     }
 }
+AOC_REGISTER_SOLVER(2018, 2, run);
 
 }

@@ -18,7 +18,7 @@ static void step(inplace_vector<int, 16> &v)
     }
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto blocksv = find_numbers<int>(buf);
 
@@ -51,8 +51,10 @@ void run(std::string_view buf)
             ++mu;
         }
 
-        fmt::print("{}\n{}\n", mu + lambda, lambda);
+        answer.add(mu + lambda);
+        answer.add(lambda);
     }
 }
+AOC_REGISTER_SOLVER(2017, 6, run);
 
 }

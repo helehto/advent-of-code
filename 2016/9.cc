@@ -27,10 +27,11 @@ static size_t uncompressed_length(std::string_view s)
     }
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
-    fmt::print("{}\n", uncompressed_length<false>(buf));
-    fmt::print("{}\n", uncompressed_length<true>(buf));
+    answer.add(uncompressed_length<false>(buf));
+    answer.add(uncompressed_length<true>(buf));
 }
+AOC_REGISTER_SOLVER(2016, 9, run);
 
 }

@@ -46,15 +46,16 @@ static int part1(std::vector<uint64_t> nums)
     return steps;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto nums = find_numbers<int64_t>(buf);
     std::vector<uint64_t> nums2;
     for (int64_t n : nums)
         nums2.push_back(static_cast<uint64_t>(n));
 
-    fmt::print("{}\n", part1(nums2));
-    fmt::print("{}\n", part2(std::move(nums2)));
+    answer.add(part1(nums2));
+    answer.add(part2(std::move(nums2)));
 }
+AOC_REGISTER_SOLVER(2017, 5, run);
 
 }

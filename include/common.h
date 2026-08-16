@@ -29,6 +29,65 @@
 // static dispatch anyway.
 namespace hn = hwy::HWY_NAMESPACE;
 
+// Machinery for solver registration.
+namespace aoc {
+
+// Formatted output from a solver. Most solvers output two solutions, with the
+// exception being the final day of the year which only outputs one.
+struct Answer {
+    std::string part1;
+    std::string part2;
+    int num_parts = 0;
+
+    void clear()
+    {
+        part1.clear();
+        part2.clear();
+        num_parts = 0;
+    }
+
+    void add_vformatted(fmt::string_view fmt, fmt::format_args args)
+    {
+        if (num_parts == 0)
+            fmt::vformat_to(std::back_inserter(part1), fmt, args);
+        else if (num_parts == 1)
+            fmt::vformat_to(std::back_inserter(part2), fmt, args);
+        else
+            ASSERT(false);
+        num_parts++;
+    }
+
+    template <typename... T>
+    [[gnu::noinline]] void add_formatted(fmt::format_string<T...> fmt, T &&...args)
+    {
+        add_vformatted(fmt.get(), fmt::make_format_args(args...));
+    }
+
+    template <typename T>
+    [[gnu::noinline]] void add(T &&value)
+    {
+        add_formatted("{}", static_cast<T &&>(value));
+    }
+};
+
+struct Problem {
+    int year;
+    int day;
+    void (*run)(std::string_view, aoc::Answer &answer);
+};
+
+// Define and register a solver for a given year and day. Must be used inside a
+// namespace, with the function body following the macro invocation.
+// clang-format off
+#define AOC_REGISTER_SOLVER(y, d, f)                              \
+    __attribute__((used, retain, section("aoc_solvers")))        \
+    constinit extern const ::aoc::Problem _solver = {y, d, f};                                                                      \
+    // clang-format on
+
+} // namespace aoc
+extern const aoc::Problem __start_aoc_solvers[];
+extern const aoc::Problem __stop_aoc_solvers[];
+
 template <typename T>
 struct Vec2 {
     T x;
@@ -752,10 +811,11 @@ struct fmt::formatter<M> : fmt::formatter<std::remove_cv_t<typename M::value_typ
     auto format(const M &m, auto &ctx) const
     {
         for (size_t i = 0; i < m.rows; i++) {
+            if (i)
+                fmt::format_to(ctx.out(), "\n");
             for (size_t j = 0; j < m.cols; j++)
                 fmt::formatter<std::remove_cv_t<typename M::value_type>>::format(m(i, j),
                                                                                  ctx);
-            fmt::format_to(ctx.out(), "\n");
         }
 
         return ctx.out();

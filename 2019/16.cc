@@ -61,9 +61,9 @@ constexpr uint8_t binomial_mod_10_repr(int m, int n)
     return a * n1 + b * n2;
 }
 
-void run(std::string_view input)
+void run(std::string_view buf, aoc::Answer &answer)
 {
-    std::string buf(input);
+    std::string input(buf);
 
     std::vector<uint8_t> v(input.size());
     for (size_t i = 0; i < buf.size(); ++i)
@@ -103,9 +103,10 @@ void run(std::string_view input)
             std::swap(v, next);
         }
 
+        std::string result;
         for (size_t i = 0; i < 8; ++i)
-            fputc(v[i] + '0', stdout);
-        fputc('\n', stdout);
+            result += v[i] + '0';
+        answer.add(result);
     }
 
     // For part 2, ignoring the reduction mod 10 for each step for a moment:
@@ -169,6 +170,7 @@ void run(std::string_view input)
                 coeffs[i] = binomial_mod_10_repr(i + 100 - 1, 100 - 1);
         });
 
+        std::string result;
         for (size_t i = offset; i < offset + 8; ++i) {
             int val = 0;
             for (size_t j = i, k = i % n; j < ((i + n - 1) / n) * n; ++j, ++k)
@@ -177,9 +179,11 @@ void run(std::string_view input)
                 for (size_t k = 0; k < n; ++k)
                     val += coeffs[block * n + k - i] * v[k];
 
-            fputc('0' + (val % 10), stdout);
+            result += '0' + (val % 10);
         }
-        fputc('\n', stdout);
+        answer.add(result);
     }
 }
+AOC_REGISTER_SOLVER(2019, 16, run);
+
 }

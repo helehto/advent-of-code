@@ -78,7 +78,7 @@ constexpr bool is_safe2(std::span<const int> nums)
     return false;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     int s1 = 0;
     int s2 = 0;
@@ -89,8 +89,9 @@ void run(std::string_view buf)
         s2 += is_safe2(nums);
     }
 
-    fmt::print("{}\n", s1);
-    fmt::print("{}\n", s2);
+    answer.add(s1);
+    answer.add(s2);
 }
+AOC_REGISTER_SOLVER(2024, 2, run);
 
 }

@@ -3,7 +3,7 @@
 
 namespace aoc_2020_9 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     constexpr size_t window_length = 25;
     std::vector<uint64_t> nums;
@@ -25,7 +25,7 @@ void run(std::string_view buf)
             sum_frequencies[nums[w - window_length] + nums[j]]--;
         }
     }
-    fmt::print("{}\n", nums[w]);
+    answer.add(nums[w]);
 
     // Part 2:
     size_t i = 0;
@@ -43,7 +43,8 @@ void run(std::string_view buf)
         }
     }
     auto [min, max] = std::minmax_element(nums.data() + i, nums.data() + j);
-    fmt::print("{}\n", *min + *max);
+    answer.add(*min + *max);
 }
+AOC_REGISTER_SOLVER(2020, 9, run);
 
 }

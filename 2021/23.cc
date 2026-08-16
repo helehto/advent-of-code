@@ -172,7 +172,7 @@ static int solve(const State state, size_t room_capacity)
     ASSERT_MSG(false, "No solution found!?");
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -188,7 +188,7 @@ void run(std::string_view buf)
     state.rooms[3] = (0b1000 | (lines[3][9] - 'A')) << 4 | (0b1000 | (lines[2][9] - 'A'))
                                                                << 0;
 
-    fmt::print("{}\n", solve(state, 2));
+    answer.add(solve(state, 2));
 
     state.rooms[0] =
         (state.rooms[0] & 0xf) | (state.rooms[0] & 0xf0) << 8 | 0b1011'1011'0000; // DD
@@ -199,7 +199,8 @@ void run(std::string_view buf)
     state.rooms[3] =
         (state.rooms[3] & 0xf) | (state.rooms[3] & 0xf0) << 8 | 0b1010'1000'0000; // CA
 
-    fmt::print("{}\n", solve(state, 4));
+    answer.add(solve(state, 4));
 }
+AOC_REGISTER_SOLVER(2021, 23, run);
 
 }

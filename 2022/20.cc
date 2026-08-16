@@ -38,7 +38,7 @@ static int64_t solve(std::vector<int64_t> nums, int key, int rounds, int64_t zer
            (nums[(zero_index + 3000) % nums.size()] >> index_shift);
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<int64_t> nums = find_numbers<int64_t>(buf);
 
@@ -53,8 +53,9 @@ void run(std::string_view buf)
         i++;
     }
 
-    fmt::print("{}\n", solve(nums, 1, 1, zero));
-    fmt::print("{}\n", solve(nums, 811589153, 10, zero));
+    answer.add(solve(nums, 1, 1, zero));
+    answer.add(solve(nums, 811589153, 10, zero));
 }
+AOC_REGISTER_SOLVER(2022, 20, run);
 
 }

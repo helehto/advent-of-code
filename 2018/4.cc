@@ -39,7 +39,7 @@ static dense_map<int, Schedule> parse_schedules(std::span<std::string_view> line
     return schedules;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     std::ranges::sort(lines);
@@ -48,7 +48,7 @@ void run(std::string_view buf)
     // Part 1:
     {
         auto &[id, sched] = *std::ranges::max_element(schedules, {}, λx(x.second.total));
-        fmt::print("{}\n", id * sched.sleepiest_minute);
+        answer.add(id * sched.sleepiest_minute);
     }
 
     // Part 2:
@@ -58,8 +58,9 @@ void run(std::string_view buf)
                 auto &s = x.second;
                 return s.per_minute[s.sleepiest_minute];
             });
-        fmt::print("{}\n", id * sched.sleepiest_minute);
+        answer.add(id * sched.sleepiest_minute);
     }
 }
+AOC_REGISTER_SOLVER(2018, 4, run);
 
 }

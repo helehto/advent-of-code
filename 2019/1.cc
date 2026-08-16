@@ -2,7 +2,7 @@
 
 namespace aoc_2019_1 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto nums = find_numbers<int>(buf);
 
@@ -21,7 +21,9 @@ void run(std::string_view buf)
         }
         sum2 += s;
     }
-    fmt::print("{}\n{}\n", sum, sum2);
+    answer.add(sum);
+    answer.add(sum2);
 }
+AOC_REGISTER_SOLVER(2019, 1, run);
 
 }

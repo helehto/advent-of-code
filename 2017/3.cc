@@ -46,11 +46,12 @@ static int part2(const int n)
     }
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto [n] = find_numbers_n<int, 1>(buf);
-    fmt::print("{}\n", manhattan(num_to_xy(n)));
-    fmt::print("{}\n", part2(n));
+    answer.add(manhattan(num_to_xy(n)));
+    answer.add(part2(n));
 }
+AOC_REGISTER_SOLVER(2017, 3, run);
 
 }

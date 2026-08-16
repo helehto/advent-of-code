@@ -3,7 +3,7 @@
 
 namespace aoc_2020_6 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -25,8 +25,9 @@ void run(std::string_view buf)
         i++;
     } while (i < lines.size());
 
-    fmt::print("{}\n", any_count);
-    fmt::print("{}\n", all_count);
+    answer.add(any_count);
+    answer.add(all_count);
 }
+AOC_REGISTER_SOLVER(2020, 6, run);
 
 }

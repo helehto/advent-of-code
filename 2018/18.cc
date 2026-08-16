@@ -166,12 +166,13 @@ static uint8_t parse_char(char c)
         ASSERT(false);
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto grid = Matrix<uint8_t>::from_lines(split_lines(buf), parse_char);
     auto padded = grid.padded(1, EMPTY);
-    fmt::print("{}\n", part1(padded));
-    fmt::print("{}\n", part2(std::move(padded)));
+    answer.add(part1(padded));
+    answer.add(part2(std::move(padded)));
 }
+AOC_REGISTER_SOLVER(2018, 18, run);
 
 }

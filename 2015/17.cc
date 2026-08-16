@@ -23,7 +23,7 @@ static void search(const small_vector_base<int> &containers,
     }
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     small_vector<int> containers;
     find_numbers<int>(buf, containers);
@@ -37,8 +37,9 @@ void run(std::string_view buf)
 
     small_vector<int> result(containers.size());
     search(containers, result);
-    fmt::print("{}\n", std::ranges::fold_left(result, 0, λab(a + b)));
-    fmt::print("{}\n", *std::ranges::find_if(result, λa(a != 0)));
+    answer.add(std::ranges::fold_left(result, 0, λab(a + b)));
+    answer.add(*std::ranges::find_if(result, λa(a != 0)));
 }
+AOC_REGISTER_SOLVER(2015, 17, run);
 
 }

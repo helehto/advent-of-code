@@ -128,7 +128,7 @@ static int count_loops_with_obstructions(const Matrix<char> &original_grid,
     return loops;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines).padded(1, pad_value);
@@ -147,7 +147,7 @@ void run(std::string_view buf)
     for (auto &v : visited_states)
         v = Bitset(grid.rows * grid.cols);
     auto visited = initial_walk(grid, start, visited_states);
-    fmt::print("{}\n", visited.size() + 1);
+    answer.add(visited.size() + 1);
 
     std::atomic<int> total_loops = 0;
     ThreadPool::get().for_each_slice(visited, [&](auto obstructions) {
@@ -155,7 +155,8 @@ void run(std::string_view buf)
         total_loops.fetch_add(loops);
     });
 
-    fmt::print("{}\n", total_loops.load());
+    answer.add(total_loops.load());
 }
+AOC_REGISTER_SOLVER(2024, 6, run);
 
 }

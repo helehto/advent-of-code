@@ -134,7 +134,7 @@ static int64_t part2(std::span<const Workflow> workflows, int start_workflow)
     return volume;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     dense_map<std::string_view, int> workflow_index;
@@ -158,8 +158,9 @@ void run(std::string_view buf)
     i++;
 
     const auto in = workflow_index.at("in");
-    fmt::print("{}\n", part1(workflows, std::span(lines.begin() + i, lines.end()), in));
-    fmt::print("{}\n", part2(workflows, in));
+    answer.add(part1(workflows, std::span(lines.begin() + i, lines.end()), in));
+    answer.add(part2(workflows, in));
 }
+AOC_REGISTER_SOLVER(2023, 19, run);
 
 }

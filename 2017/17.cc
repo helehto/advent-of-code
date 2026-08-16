@@ -96,11 +96,12 @@ static int part2(const int stride)
     return result;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     const auto [n] = find_numbers_n<size_t, 1>(buf);
-    fmt::print("{}\n", part1(n));
-    fmt::print("{}\n", part2(n));
+    answer.add(part1(n));
+    answer.add(part2(n));
 }
+AOC_REGISTER_SOLVER(2017, 17, run);
 
 }

@@ -189,7 +189,7 @@ fight(Matrix<char> grid, Pathfinding &pf, std::vector<Unit> units, int elf_attac
     return {outcome, orig_elves - std::ranges::count_if(units, λa(a.ch == 'E'))};
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto grid = Matrix<char>::from_lines(split_lines(buf));
     ASSERT(grid.size() < INT16_MAX);
@@ -209,7 +209,7 @@ void run(std::string_view buf)
             });
         }
     }
-    fmt::print("{}\n", fight(grid, pf, units, 3).first);
+    answer.add(fight(grid, pf, units, 3).first);
 
     // Prepare for binary search; find an upper bound:
     int hi = 4;
@@ -228,7 +228,8 @@ void run(std::string_view buf)
         else
             hi = mid;
     }
-    fmt::print("{}\n", fight(grid, pf, units, hi).first);
+    answer.add(fight(grid, pf, units, hi).first);
 }
+AOC_REGISTER_SOLVER(2018, 15, run);
 
 }

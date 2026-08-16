@@ -3,7 +3,7 @@
 
 namespace aoc_2018_16 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -37,7 +37,7 @@ void run(std::string_view buf)
 
         part1 += matches >= 3;
     }
-    fmt::print("{}\n", part1);
+    answer.add(part1);
 
 restart:
     for (size_t j = 0; j < std::size(masks); j++) {
@@ -64,7 +64,8 @@ restart:
         execute(regs, instr);
     }
 
-    fmt::print("{}\n", regs[0]);
+    answer.add(regs[0]);
 }
+AOC_REGISTER_SOLVER(2018, 16, run);
 
 }

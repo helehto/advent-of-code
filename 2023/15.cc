@@ -60,13 +60,14 @@ static int part2(const std::vector<std::string_view> &fields)
     return sum;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<std::string_view> fields;
     split(buf, fields, ',');
 
-    fmt::print("{}\n", part1(fields));
-    fmt::print("{}\n", part2(fields));
+    answer.add(part1(fields));
+    answer.add(part2(fields));
 }
+AOC_REGISTER_SOLVER(2023, 15, run);
 
 }

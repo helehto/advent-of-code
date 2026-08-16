@@ -144,7 +144,7 @@ static bool is_north_pole(std::string_view name, uint16_t sector_id)
     return name.find(north) != std::string::npos;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     int sector_id_sum = 0;
     int north_sector_id = -1;
@@ -155,7 +155,9 @@ void run(std::string_view buf)
             north_sector_id = sector_id;
     });
 
-    fmt::print("{}\n{}\n", sector_id_sum, north_sector_id);
+    answer.add(sector_id_sum);
+    answer.add(north_sector_id);
 }
+AOC_REGISTER_SOLVER(2016, 4, run);
 
 }

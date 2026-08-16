@@ -2,7 +2,7 @@
 
 namespace aoc_2017_19 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -37,7 +37,8 @@ void run(std::string_view buf)
         if (c >= 'A' && c <= 'Z') {
             letters.push_back(c);
         } else if (c == ' ') {
-            fmt::print("{}\n{}\n", letters, steps);
+            answer.add(letters);
+            answer.add(steps);
             return;
         }
         steps++;
@@ -62,5 +63,6 @@ void run(std::string_view buf)
         p += d;
     }
 }
+AOC_REGISTER_SOLVER(2017, 19, run);
 
 }

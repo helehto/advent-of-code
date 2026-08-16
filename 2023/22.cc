@@ -17,7 +17,7 @@ struct Brick {
     std::vector<Brick *> supporting;
 };
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -73,7 +73,7 @@ void run(std::string_view buf)
                 unsafe_bricks.insert(i);
         }
     }
-    fmt::print("{}\n", bricks.size() - unsafe_bricks.size());
+    answer.add(bricks.size() - unsafe_bricks.size());
 
     // toposort
     std::vector<uint16_t> topo_sorted;
@@ -132,7 +132,8 @@ void run(std::string_view buf)
         }
     }
 
-    fmt::print("{}\n", sum);
+    answer.add(sum);
 }
+AOC_REGISTER_SOLVER(2023, 22, run);
 
 }

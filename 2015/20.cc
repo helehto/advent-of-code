@@ -228,11 +228,12 @@ static int part2(const int N)
     return lowest;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto N = find_numbers_n<int, 1>(buf)[0];
-    fmt::print("{}\n", part1(N));
-    fmt::print("{}\n", part2(N));
+    answer.add(part1(N));
+    answer.add(part2(N));
 }
+AOC_REGISTER_SOLVER(2015, 20, run);
 
 }

@@ -20,7 +20,7 @@ static std::pair<uint64_t, uint64_t> parse_mask_line(std::string_view line)
     return std::pair(mask1, maskx);
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     dense_map<uint64_t, uint64_t, CrcHasher> memory;
@@ -44,7 +44,7 @@ void run(std::string_view buf)
                 sum += result;
             }
         }
-        fmt::print("{}\n", sum);
+        answer.add(sum);
     }
 
     // Part 2:
@@ -71,8 +71,9 @@ void run(std::string_view buf)
                 }
             }
         }
-        fmt::print("{}\n", sum);
+        answer.add(sum);
     }
 }
+AOC_REGISTER_SOLVER(2020, 14, run);
 
 }

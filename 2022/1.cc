@@ -5,7 +5,7 @@ namespace aoc_2022_1 {
 
 using namespace std;
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     small_vector<int, 256> calories{0};
 
@@ -23,8 +23,9 @@ void run(std::string_view buf)
     if (calories[0] > calories[1])
         std::swap(calories[0], calories[1]);
 
-    fmt::print("{}\n", calories[0]);
-    fmt::print("{}\n", calories[0] + calories[1] + calories[2]);
+    answer.add(calories[0]);
+    answer.add(calories[0] + calories[1] + calories[2]);
 }
+AOC_REGISTER_SOLVER(2022, 1, run);
 
 }

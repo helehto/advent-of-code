@@ -38,7 +38,7 @@ static int64_t signed_area(std::span<const Vec2z> points)
     return result;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
@@ -80,7 +80,7 @@ void run(std::string_view buf)
     }
     path.push_back(path.front());
     polygon.push_back(polygon.front());
-    fmt::print("{}\n", path.size() / 2);
+    answer.add(path.size() / 2);
 
     // Remove any superfluous pipes from the grid.
     dense_set<Vec2z> path_set(path.begin(), path.end());
@@ -127,7 +127,8 @@ void run(std::string_view buf)
         for (Vec2 q : neighbors4(grid, p))
             fill(q);
     }
-    fmt::print("{}\n", area);
+    answer.add(area);
 }
+AOC_REGISTER_SOLVER(2023, 10, run);
 
 }

@@ -48,7 +48,7 @@ static int64_t count(std::span<const std::pair<bool, Region>> input)
     return volume(region) + count(rest) - count(overlaps);
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -64,8 +64,9 @@ void run(std::string_view buf)
     std::ranges::copy_if(full_input, std::back_inserter(small_input),
                          λa(overlaps(a.second, part1_region)));
 
-    fmt::print("{}\n", count(small_input));
-    fmt::print("{}\n", count(full_input));
+    answer.add(count(small_input));
+    answer.add(count(full_input));
 }
+AOC_REGISTER_SOLVER(2021, 22, run);
 
 }

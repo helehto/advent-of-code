@@ -5,7 +5,7 @@ namespace aoc_2019_25 {
 
 using VM = IntcodeVM<SplitMemory<int64_t>>;
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto prog = find_numbers<VM::value_type>(buf);
 
@@ -33,7 +33,8 @@ void run(std::string_view buf)
         s.push_back(c);
     vm.output.clear();
     find_numbers(s, nums);
-    fmt::print("{}\n", nums[0]);
+    answer.add(nums[0]);
 }
+AOC_REGISTER_SOLVER(2019, 25, run);
 
 }

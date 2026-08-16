@@ -20,11 +20,13 @@ static int solve(std::span<const int16_t> input, size_t window_size)
     return count;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     small_vector<int16_t, 2048> xs;
     find_numbers(buf, xs);
-    fmt::print("{}\n", solve(xs, 1));
-    fmt::print("{}\n", solve(xs, 3));
+    answer.add(solve(xs, 1));
+    answer.add(solve(xs, 3));
 }
+AOC_REGISTER_SOLVER(2021, 1, run);
+
 }

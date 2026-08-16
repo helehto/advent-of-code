@@ -159,7 +159,7 @@ static void search(const SearchParameters &p, State s)
     }
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     const auto input = parse_valves(buf);
     const auto costs = floyd_warshall(input.valves);
@@ -182,7 +182,7 @@ void run(std::string_view buf)
         int m = 0;
         for (auto &[_, score] : path_scores)
             m = std::max(m, score);
-        fmt::print("{}\n", m);
+        answer.add(m);
     }
 
     // Part 2:
@@ -213,8 +213,9 @@ void run(std::string_view buf)
             }
         }
 
-        fmt::print("{}\n", score);
+        answer.add(score);
     }
 }
+AOC_REGISTER_SOLVER(2022, 16, run);
 
 }

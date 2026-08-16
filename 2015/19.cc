@@ -78,11 +78,12 @@ static int part2(std::string_view input)
     return atoms - rn - ar - 2 * y - 1;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
-    fmt::print("{}\n", part1(lines));
-    fmt::print("{}\n", part2(lines.back()));
+    answer.add(part1(lines));
+    answer.add(part2(lines.back()));
 }
+AOC_REGISTER_SOLVER(2015, 19, run);
 
 }

@@ -2,7 +2,7 @@
 
 namespace aoc_2020_13 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -27,7 +27,7 @@ void run(std::string_view buf)
             }
         }
     }
-    fmt::print("{}\n", nums[earliest_bus] * min_wait);
+    answer.add(nums[earliest_bus] * min_wait);
 
     // Part 2, using the Chinese remainder theorem:
     int64_t M = 1;
@@ -42,6 +42,8 @@ void run(std::string_view buf)
             x += a * b * modinv(b, nums[i]);
         }
     }
-    fmt::print("{}\n", x % M);
+    answer.add(x % M);
 }
+AOC_REGISTER_SOLVER(2020, 13, run);
+
 }

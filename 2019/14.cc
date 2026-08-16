@@ -19,7 +19,7 @@ static auto parse_quantity_and_name(std::string_view s)
     return std::pair(n, name);
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     std::vector<std::string_view> tmp;
@@ -93,7 +93,7 @@ void run(std::string_view buf)
             return need[ore_index];
         };
 
-    fmt::print("{}\n", fuel_to_ore(1));
+    answer.add(fuel_to_ore(1));
 
     // Find an upper bound:
     constexpr int64_t ore_target = 1'000'000'000'000;
@@ -123,7 +123,8 @@ void run(std::string_view buf)
         }
     }
 
-    fmt::print("{}\n", fuel_lo);
+    answer.add(fuel_lo);
 }
+AOC_REGISTER_SOLVER(2019, 14, run);
 
 }

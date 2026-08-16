@@ -10,7 +10,7 @@ constexpr static auto char2bit = [] {
     return bit;
 }();
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     uint64_t id_sum = 0;
     int min_id = INT_MAX;
@@ -24,8 +24,9 @@ void run(std::string_view buf)
         id_sum += id;
     }
 
-    fmt::print("{}\n", max_id);
-    fmt::print("{}\n", max_id * (max_id + 1) / 2 - min_id * (min_id - 1) / 2 - id_sum);
+    answer.add(max_id);
+    answer.add(max_id * (max_id + 1) / 2 - min_id * (min_id - 1) / 2 - id_sum);
 }
+AOC_REGISTER_SOLVER(2020, 5, run);
 
 }

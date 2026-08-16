@@ -104,7 +104,7 @@ static bool has_tree(const Robots &r)
     return false;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::vector<int> nums;
     find_numbers(buf, nums);
@@ -128,7 +128,7 @@ void run(std::string_view buf)
     r.step(25);
     r.step(25);
     r.step(25);
-    fmt::print("{}\n", safety_factor(r));
+    answer.add(safety_factor(r));
 
     ThreadPool &pool = ThreadPool::get();
     std::atomic<size_t> min_tree_step = SIZE_MAX;
@@ -152,7 +152,8 @@ void run(std::string_view buf)
         }
     });
 
-    fmt::print("{}\n", min_tree_step.load());
+    answer.add(min_tree_step.load());
 }
+AOC_REGISTER_SOLVER(2024, 14, run);
 
 }

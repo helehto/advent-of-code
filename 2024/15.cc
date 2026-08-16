@@ -150,7 +150,7 @@ static int part2(MatrixView<const char> grid, std::string_view moves)
     return result;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto nl = std::ranges::find(lines, "") - lines.begin();
@@ -160,8 +160,9 @@ void run(std::string_view buf)
     for (std::string_view line : std::span(lines.begin() + nl + 1, lines.end()))
         moves.insert(moves.end(), line.begin(), line.end());
 
-    fmt::print("{}\n", part1(grid, moves));
-    fmt::print("{}\n", part2(grid, moves));
+    answer.add(part1(grid, moves));
+    answer.add(part2(grid, moves));
 }
+AOC_REGISTER_SOLVER(2024, 15, run);
 
 }

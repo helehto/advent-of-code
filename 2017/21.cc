@@ -97,7 +97,7 @@ parse_rules(std::string_view buf)
     return {rules_2x2, rules_3x3};
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto [rules_2x2, rules_3x3] = parse_rules(buf);
 
@@ -214,9 +214,10 @@ void run(std::string_view buf)
             for (size_t i = 0; i < size; ++i)
                 for (size_t j = 0; j < size; ++j)
                     on += !!grid(i, j);
-            fmt::print("{}\n", on);
+            answer.add(on);
         }
     }
 }
+AOC_REGISTER_SOLVER(2017, 21, run);
 
 }

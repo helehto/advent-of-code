@@ -30,11 +30,12 @@ static std::pair<std::span<const uint8_t>, int> solve(std::span<const uint8_t> t
     return {tree.subspan(n_metadata), value};
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto tree = find_numbers<uint8_t>(buf);
-    fmt::print("{}\n", solve<1>(tree).second);
-    fmt::print("{}\n", solve<2>(tree).second);
+    answer.add(solve<1>(tree).second);
+    answer.add(solve<2>(tree).second);
 }
+AOC_REGISTER_SOLVER(2018, 8, run);
 
 }

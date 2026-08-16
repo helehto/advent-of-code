@@ -13,7 +13,7 @@ static int64_t signed_area(std::span<const Vec2i64> points)
     return result;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     int n = 0;
@@ -30,7 +30,7 @@ void run(std::string_view buf)
         polygon.push_back(curr);
         curr = next;
     }
-    fmt::print("{}\n", signed_area(polygon) / 2 + npoints / 2 + 1);
+    answer.add(signed_area(polygon) / 2 + npoints / 2 + 1);
 
     polygon.clear();
     npoints = 0;
@@ -44,7 +44,8 @@ void run(std::string_view buf)
         polygon.push_back(curr);
         curr = next;
     }
-    fmt::print("{}\n", signed_area(polygon) / 2 + npoints / 2 + 1);
+    answer.add(signed_area(polygon) / 2 + npoints / 2 + 1);
 }
+AOC_REGISTER_SOLVER(2023, 18, run);
 
 }

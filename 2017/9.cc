@@ -2,7 +2,7 @@
 
 namespace aoc_2017_9 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     int score = 0;
     int depth = 1;
@@ -25,8 +25,9 @@ void run(std::string_view buf)
     }
     ASSERT(depth == 1);
 
-    fmt::print("{}\n", score);
-    fmt::print("{}\n", chars);
+    answer.add(score);
+    answer.add(chars);
 }
+AOC_REGISTER_SOLVER(2017, 9, run);
 
 }

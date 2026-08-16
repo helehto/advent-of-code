@@ -219,10 +219,11 @@ static int solve2(std::string_view prefix)
     ASSERT_MSG(false, "No solution found!?");
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
-    fmt::print("{}\n", solve1(buf));
-    fmt::print("{}\n", solve2(buf));
+    answer.add(solve1(buf));
+    answer.add(solve2(buf));
 }
+AOC_REGISTER_SOLVER(2016, 14, run);
 
 }

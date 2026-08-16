@@ -36,7 +36,7 @@ static inplace_vector<PartNumber, 8> surrounding_part_numbers(
     return result;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines).padded(1, '.');
@@ -52,7 +52,7 @@ void run(std::string_view buf)
         +static_cast<ptrdiff_t>(grid.cols) + 1, // DR
     };
 
-    int sum=0;
+    int sum = 0;
     int ratio_sum = 0;
     for (size_t i = 0; i < grid.size(); i++) {
         char c = grid.data()[i];
@@ -65,7 +65,9 @@ void run(std::string_view buf)
         }
     }
 
-    fmt::print("{}\n{}\n", sum, ratio_sum);
+    answer.add(sum);
+    answer.add(ratio_sum);
 }
+AOC_REGISTER_SOLVER(2023, 3, run);
 
 }

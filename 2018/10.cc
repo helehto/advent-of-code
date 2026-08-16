@@ -3,7 +3,7 @@
 
 namespace aoc_2018_10 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     std::vector<int64_t> px;
@@ -51,8 +51,9 @@ void run(std::string_view buf)
     for (int i = 0; i < n; i++)
         grid(py[i] - min_y, px[i] - min_x) = '#';
 
-    fmt::print("{}", grid);
-    fmt::print("{}\n", t0);
+    answer.add(grid);
+    answer.add(t0);
 }
+AOC_REGISTER_SOLVER(2018, 10, run);
 
 }

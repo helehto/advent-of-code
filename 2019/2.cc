@@ -2,7 +2,7 @@
 
 namespace aoc_2019_2 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     small_vector<uint32_t, 256> prog;
     find_numbers(buf, prog);
@@ -30,7 +30,7 @@ void run(std::string_view buf)
     // Running with noun=1, verb=0 yields c₁ + c₂, from which we get c₁.
     auto c2 = run_program(0, 0);
     auto c1 = run_program(1, 0) - c2;
-    fmt::print("{}\n", 12 * c1 + 2 + c2);
+    answer.add(12 * c1 + 2 + c2);
 
     // Given c₁ ≥ 100, 0 ≤ noun < 100 and 0 ≤ verb < 100, the only solution to
     // `noun * c₁ + verb + c₂ = 19690720` is this:
@@ -38,7 +38,8 @@ void run(std::string_view buf)
     const auto verb = (19690720 - c2) % c1;
     ASSERT(noun < 100);
     ASSERT(verb < 100);
-    fmt::print("{}\n", 100 * noun + verb);
+    answer.add(100 * noun + verb);
 }
+AOC_REGISTER_SOLVER(2019, 2, run);
 
 }

@@ -3,12 +3,13 @@
 
 namespace aoc_2016_12 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto prog = assemble(buf);
     optimize(prog);
-    fmt::print("{}\n", run_program(prog, {0, 0, 0, 0}));
-    fmt::print("{}\n", run_program(prog, {0, 0, 1, 0}));
+    answer.add(run_program(prog, {0, 0, 0, 0}));
+    answer.add(run_program(prog, {0, 0, 1, 0}));
 }
+AOC_REGISTER_SOLVER(2016, 12, run);
 
 }

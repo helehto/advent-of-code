@@ -265,7 +265,7 @@ static size_t length_of(std::span<int> counts)
     return length;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::array<int, NUM_ATOMS> counts_vec{}, new_counts_vec;
     for (size_t i = 1; i < std::size(atomic_sequences); i++) {
@@ -284,13 +284,14 @@ void run(std::string_view buf)
         step(*new_counts, *counts);
         std::swap(new_counts, counts);
     }
-    fmt::print("{}\n", length_of(*counts));
+    answer.add(length_of(*counts));
 
     for (; i < 50; i++) {
         step(*new_counts, *counts);
         std::swap(new_counts, counts);
     }
-    fmt::print("{}\n", length_of(*counts));
+    answer.add(length_of(*counts));
 }
+AOC_REGISTER_SOLVER(2015, 10, run);
 
 }

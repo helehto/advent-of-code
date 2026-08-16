@@ -29,7 +29,7 @@ static void move(std::span<Vec2i> pos, dense_set<Vec2i> &tail_positions, Vec2i d
     }
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     std::array<Vec2i, 2> s1{};
     std::array<Vec2i, 10> s2{};
@@ -55,8 +55,9 @@ void run(std::string_view buf)
         move(s2, p2, d, n);
     }
 
-    fmt::print("{}\n", p1.size());
-    fmt::print("{}\n", p2.size());
+    answer.add(p1.size());
+    answer.add(p2.size());
 }
+AOC_REGISTER_SOLVER(2022, 9, run);
 
 }

@@ -79,15 +79,16 @@ part2(dense_map<State, std::pair<int64_t, int64_t>, CrcHasher> &cache, const Sta
     return it->second = result;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto [_1, a, _2, b] = find_numbers_n<uint8_t, 4>(buf);
-    fmt::print("{}\n", part1({a, b}));
+    answer.add(part1({a, b}));
 
     dense_map<State, std::pair<int64_t, int64_t>, CrcHasher> cache;
     cache.reserve(1 << 16);
     auto [a_universes, b_universes] = part2(cache, State{.pos = {a, b}});
-    fmt::print("{}\n", std::max(a_universes, b_universes));
+    answer.add(std::max(a_universes, b_universes));
 }
+AOC_REGISTER_SOLVER(2021, 21, run);
 
 }

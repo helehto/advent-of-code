@@ -66,7 +66,7 @@ static void walk(MatrixView<const char> grid, Vec2i start, size_t max_steps, aut
     }
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines).padded(1, (char)-1);
@@ -102,8 +102,9 @@ void run(std::string_view buf)
                y1 * (x - 0) * (x - 2) / ((1 - 0) * (1 - 2)) +
                y2 * (x - 0) * (x - 1) / ((2 - 0) * (2 - 1));
     };
-    fmt::print("{}\n", part1);
-    fmt::print("{}\n", P((steps - N / 2) / N));
+    answer.add(part1);
+    answer.add(P((steps - N / 2) / N));
 }
+AOC_REGISTER_SOLVER(2023, 21, run);
 
 }

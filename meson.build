@@ -28,19 +28,11 @@ solutions = {
 cpp = meson.get_compiler('cpp')
 
 sources = []
-xmacro_body = ''
 foreach year, days : solutions
     foreach day : days.split()
         sources += ['@0@/@1@.cc'.format(year, day)]
-        xmacro_body += '    X(@0@, @1@) \\\n'.format(year, day)
     endforeach
 endforeach
-
-config_h = configure_file(
-    input: files('include/config.h.in'),
-    output: 'config.h',
-    configuration: {'PROBLEMS': xmacro_body},
-)
 
 # Read warning flags for uberpedantic mode, if activated.
 extra_warning_flags = []
@@ -128,7 +120,6 @@ libaoc_dep = declare_dependency(
 executable(
     'aoc',
     sources,
-    config_h,
     'main.cc',
     cpp_args: cpp_args,
     dependencies: libaoc_dep,

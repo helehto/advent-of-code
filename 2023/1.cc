@@ -10,7 +10,7 @@ constexpr uint64_t pack(std::string_view p)
     return r;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     int part1 = 0;
     int part2 = 0;
@@ -61,8 +61,9 @@ void run(std::string_view buf)
         part2 += v.front() * 10 + v.back();
     }
 
-    fmt::print("{}\n", part1);
-    fmt::print("{}\n", part2);
+    answer.add(part1);
+    answer.add(part2);
 }
+AOC_REGISTER_SOLVER(2023, 1, run);
 
 }

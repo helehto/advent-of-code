@@ -208,7 +208,7 @@ static size_t count_tiles(std::span<const uint256> rows)
     return (max_i - min_i + 1) * (max_j - min_j) - elves;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto [rows, min_y, max_y] = parse_input(buf);
 
@@ -222,14 +222,15 @@ void run(std::string_view buf)
     for (; round < 10; ++round)
         step(rows, round, proposals_n.data(), proposals_s.data(), proposals_w.data(),
              proposals_e.data(), min_y, max_y);
-    fmt::print("{}\n", count_tiles(rows));
+    answer.add(count_tiles(rows));
 
     for (;; ++round) {
         if (!step(rows, round, proposals_n.data(), proposals_s.data(), proposals_w.data(),
                   proposals_e.data(), min_y, max_y))
             break;
     }
-    fmt::print("{}\n", round + 1);
+    answer.add(round + 1);
 }
+AOC_REGISTER_SOLVER(2022, 23, run);
 
 }

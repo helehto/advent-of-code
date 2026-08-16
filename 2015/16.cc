@@ -15,7 +15,7 @@ enum {
     PERFUMES,
 };
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     constexpr std::array<int8_t, 10> tape{3, 7, 2, 3, 0, 0, 5, 3, 2, 1};
 
@@ -88,7 +88,9 @@ void run(std::string_view buf)
             break;
     }
 
-    fmt::print("{}\n{}\n", aunt1, aunt2);
+    answer.add(aunt1);
+    answer.add(aunt2);
 }
+AOC_REGISTER_SOLVER(2015, 16, run);
 
 }

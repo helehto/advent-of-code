@@ -5,7 +5,7 @@ namespace aoc_2022_25 {
 
 using namespace std::literals;
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     int64_t n = 0;
     for (std::string_view s : split_lines(buf)) {
@@ -22,7 +22,8 @@ void run(std::string_view buf)
     }
 
     std::reverse(begin(result), end(result));
-    fmt::print("{}\n", result);
+    answer.add(result);
 }
+AOC_REGISTER_SOLVER(2022, 25, run);
 
 }

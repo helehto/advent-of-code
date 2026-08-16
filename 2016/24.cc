@@ -2,7 +2,7 @@
 
 namespace aoc_2016_24 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     small_vector<Vec2i, 16> locations;
 
@@ -62,7 +62,9 @@ void run(std::string_view buf)
     small_vector<int> order;
     for (size_t i = 0; i < locations.size(); ++i)
         order.push_back(i);
-    fmt::print("{}\n", solve(order, false));
-    fmt::print("{}\n", solve(order, true));
+    answer.add(solve(order, false));
+    answer.add(solve(order, true));
 }
+AOC_REGISTER_SOLVER(2016, 24, run);
+
 }

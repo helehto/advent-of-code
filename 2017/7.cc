@@ -4,7 +4,7 @@
 
 namespace aoc_2017_7 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -39,7 +39,7 @@ void run(std::string_view buf)
 
     for (size_t i = 0; i < below.size(); ++i) {
         if (below[i] < 0) {
-            fmt::print("{}\n", names[i]);
+            answer.add(names[i]);
             break;
         }
     }
@@ -85,9 +85,9 @@ void run(std::string_view buf)
         r.emplace_back(cumulative_weight[u], cumulative_weight[u] - local_weight[u]);
     ASSERT(!r.empty());
     std::ranges::sort(r);
-    fmt::print("{}\n", r[0].first != r[1].first
-                           ? r[1].first - r[0].second
-                           : r[r.size() - 2].first - r[r.size() - 1].second);
+    answer.add(r[0].first != r[1].first ? r[1].first - r[0].second
+                                        : r[r.size() - 2].first - r[r.size() - 1].second);
 }
+AOC_REGISTER_SOLVER(2017, 7, run);
 
 }

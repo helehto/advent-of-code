@@ -23,10 +23,11 @@ static int discrete_log(int x, const int b, const int p)
     std::unreachable();
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto [k1, k2] = find_numbers_n<int, 2>(buf);
-    fmt::print("{}\n", modexp(k1, discrete_log(k2, 7, 20201227), 20201227));
+    answer.add(modexp(k1, discrete_log(k2, 7, 20201227), 20201227));
 }
+AOC_REGISTER_SOLVER(2020, 25, run);
 
 }

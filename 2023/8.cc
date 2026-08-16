@@ -8,7 +8,7 @@ constexpr uint16_t encode_name(std::string_view sv)
     return (sv[0] - 'A') << 10 | (sv[1] - 'A') << 5 | (sv[2] - 'A');
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     std::string_view directions = lines[0];
@@ -35,12 +35,13 @@ void run(std::string_view buf)
         return n;
     };
 
-    fmt::print("{}\n", walk(encode_name("AAA")));
+    answer.add(walk(encode_name("AAA")));
 
     uint64_t part2 = 1;
     for (size_t k : starts)
         part2 = std::lcm(part2, walk(k));
-    fmt::print("{}\n", part2);
+    answer.add(part2);
 }
+AOC_REGISTER_SOLVER(2023, 8, run);
 
 }

@@ -3,7 +3,7 @@
 
 namespace aoc_2015_3 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     {
         dense_set<Vec2i> points;
@@ -28,7 +28,7 @@ void run(std::string_view buf)
             points.insert(p);
         }
 
-        fmt::print("{}\n", points.size());
+        answer.add(points.size());
     }
 
     {
@@ -56,8 +56,9 @@ void run(std::string_view buf)
             i++;
         }
 
-        fmt::print("{}\n", points.size());
+        answer.add(points.size());
     }
 }
+AOC_REGISTER_SOLVER(2015, 3, run);
 
 }

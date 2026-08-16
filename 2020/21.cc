@@ -65,7 +65,7 @@ static Input parse_input(std::string_view buf)
     return result;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     Input input = parse_input(buf);
     const size_t n_ingredients = input.ingredients.indices.size();
@@ -155,7 +155,7 @@ void run(std::string_view buf)
             }
         }
 
-        fmt::print("{}\n", harmless_ingredients);
+        answer.add(harmless_ingredients);
     }
 
     // Part 2: compute the list of ingredients with allergens, sorted by the
@@ -170,10 +170,11 @@ void run(std::string_view buf)
         std::ranges::sort(danger_list, {},
                           λx(input.allergens.names[ingredient_of_allergen[x]]));
 
-        fmt::print("{}\n", fmt::join(danger_list | std::ranges::views::transform(
-                                                       λx(input.ingredients.names[x])),
-                                     ","));
+        answer.add(fmt::join(
+            danger_list | std::ranges::views::transform(λx(input.ingredients.names[x])),
+            ","));
     }
 }
+AOC_REGISTER_SOLVER(2020, 21, run);
 
 }

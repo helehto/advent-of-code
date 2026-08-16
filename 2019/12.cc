@@ -50,7 +50,7 @@ uint64_t cycle_length_1d(const System initial_state, size_t dim)
     return i;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     System initial_state{};
     for (size_t i = 0; std::string_view line : split_lines(buf)) {
@@ -64,13 +64,14 @@ void run(std::string_view buf)
         system.step1d(1);
         system.step1d(2);
     }
-    fmt::print("{}\n", system.total_energy());
+    answer.add(system.total_energy());
 
     uint64_t len = 1;
     len = std::lcm(len, cycle_length_1d(initial_state, 0));
     len = std::lcm(len, cycle_length_1d(initial_state, 1));
     len = std::lcm(len, cycle_length_1d(initial_state, 2));
-    fmt::print("{}\n", len);
+    answer.add(len);
 }
+AOC_REGISTER_SOLVER(2019, 12, run);
 
 }

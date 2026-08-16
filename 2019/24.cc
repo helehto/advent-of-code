@@ -159,7 +159,7 @@ static int part2(uint32_t grid)
     return num_bugs;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     uint32_t grid = 0;
     for (size_t j = 0; char c : buf) {
@@ -171,7 +171,9 @@ void run(std::string_view buf)
         }
     }
 
-    fmt::print("{}\n", part1(grid));
-    fmt::print("{}\n", part2(grid));
+    answer.add(part1(grid));
+    answer.add(part2(grid));
 }
+AOC_REGISTER_SOLVER(2019, 24, run);
+
 }

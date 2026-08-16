@@ -1,5 +1,4 @@
 #include "common.h"
-#include "config.h"
 #include "thread_pool.h"
 #include <cassert>
 #include <chrono>
@@ -8,6 +7,7 @@
 #include <fmt/core.h>
 #include <fnmatch.h>
 #include <getopt.h>
+#include <optional>
 #include <string_view>
 #include <sys/mman.h>
 #include <thread>
@@ -15,6 +15,7 @@
 #include <vector>
 
 using namespace std::literals;
+using Problem = aoc::Problem;
 
 #define die(fmt, ...)                                                                    \
     do {                                                                                 \
@@ -22,22 +23,7 @@ using namespace std::literals;
         exit(EXIT_FAILURE);                                                              \
     } while (0)
 
-#define PROBLEM_NAMESPACE(year, day) GLUE(aoc_, GLUE3(year, _, day))
-
-#define X_DECLARE_RUN_FUNCS(year, day)                                                   \
-    namespace GLUE(aoc_, GLUE3(year, _, day)) {                                          \
-    extern void run(std::string_view);                                                   \
-    }
-#define X_PROBLEM_TABLE_INITIALIZERS(year, day)                                          \
-    {year, day, PROBLEM_NAMESPACE(year, day)::run},
-
 #define ASSERT_ERRNO_MSG(expr, func) ASSERT_MSG(expr, #func ": {}", strerror(errno))
-
-struct Problem {
-    int year;
-    int day;
-    void (*func)(std::string_view);
-};
 
 struct Options {
     const char *input_file = nullptr;
@@ -46,21 +32,20 @@ struct Options {
     double target_time = -1;
     bool stable_mode = false;
     bool json = false;
-    std::vector<const Problem *> problems_to_run;
+    std::vector<Problem> problems_to_run;
 };
 
-X_FOR_EACH_PROBLEM(X_DECLARE_RUN_FUNCS)
-static constexpr Problem problems[] = {X_FOR_EACH_PROBLEM(X_PROBLEM_TABLE_INITIALIZERS)};
-
-static std::vector<const Problem *> glob_problem(const char *pattern)
+static std::vector<Problem> glob_problem(std::span<const Problem> problems,
+                                         const char *pattern)
 {
-    std::vector<const Problem *> result;
+    std::vector<Problem> result;
+    result.reserve(problems.size());
 
     for (const auto &p : problems) {
         char s[64];
         snprintf(s, sizeof(s), "%d/%d", p.year, p.day);
         if (fnmatch(pattern, s, 0) == 0)
-            result.push_back(&p);
+            result.push_back(p);
     }
 
     return result;
@@ -72,36 +57,6 @@ struct ProblemData {
     std::vector<uint64_t> durations;
     std::string output;
 };
-
-static void redirect_stdout(int &memfd, int &original_stdout)
-{
-    fflush(stdout);
-
-    if (original_stdout < 0) {
-        original_stdout = dup(STDOUT_FILENO);
-        ASSERT_ERRNO_MSG(original_stdout >= 0, "dup");
-    }
-
-    if (memfd >= 0) {
-        ASSERT_ERRNO_MSG(lseek(memfd, 0, SEEK_SET) >= 0, "lseek");
-        ASSERT_ERRNO_MSG(ftruncate(memfd, 0) >= 0, "ftruncate");
-    } else {
-        memfd = memfd_create("output", MFD_CLOEXEC);
-        ASSERT_ERRNO_MSG(memfd >= 0, "memfd_create");
-    }
-
-    ASSERT_ERRNO_MSG(dup2(memfd, STDOUT_FILENO) == STDOUT_FILENO, "dup2");
-}
-
-static std::string restore_stdout(int memfd, int original_stdout)
-{
-    fflush(stdout);
-    ASSERT_ERRNO_MSG(dup2(original_stdout, STDOUT_FILENO) == STDOUT_FILENO, "dup2");
-    char buf[4096];
-    ssize_t bytes_read = pread(memfd, buf, sizeof(buf), 0);
-    ASSERT(bytes_read >= 0 && bytes_read < 4096);
-    return std::string(buf, buf + bytes_read);
-}
 
 static std::string slurp(FILE *f)
 {
@@ -116,8 +71,14 @@ static std::string slurp(FILE *f)
     return contents;
 }
 
+static std::string format_answer(const aoc::Answer &a)
+{
+    return a.num_parts > 1 ? fmt::format("{}\n{}\n", a.part1, a.part2)
+                           : fmt::format("{}\n", a.part1);
+}
+
 static std::pair<std::vector<uint64_t>, std::string>
-run_problem(const Problem &p, std::string input_path, const Options &opts)
+run_solver(const Problem &s, std::string input_path, const Options &opts)
 {
     using namespace std::chrono;
 
@@ -137,27 +98,35 @@ run_problem(const Problem &p, std::string input_path, const Options &opts)
     std::vector<uint64_t> durations;
     durations.reserve(opts.iterations);
     uint64_t total_duration = 0;
+    aoc::Answer answer;
+    std::optional<aoc::Answer> reference;
 
     auto run = [&] {
+        answer.clear();
         const auto start = high_resolution_clock::now();
-        p.func(input);
+        s.run(input, answer);
         const auto end = high_resolution_clock::now();
         uint64_t duration = duration_cast<nanoseconds>(end - start).count();
         durations.push_back(duration);
         total_duration += duration;
+
+        // Verify that the solver produces the same output every time.
+        if (!reference)
+            reference = answer;
+        if (answer.num_parts != reference->num_parts ||
+            answer.part1 != reference->part1 || answer.part2 != reference->part2) {
+            die("%d/%d: non-deterministic output\n"
+                "--- iteration %zu:\n%s"
+                "--- iteration %zu:\n%s",
+                s.year, s.day, durations.size() - 1, format_answer(*reference).c_str(),
+                durations.size(), format_answer(answer).c_str());
+        }
     };
 
-    std::string output;
-    if (opts.json) {
-        // Capture the output of the first output if we're dumping JSON.
-        static int memfd = -1;
-        static int original_stdout = -1;
-        redirect_stdout(memfd, original_stdout);
-        run();
-        output = restore_stdout(memfd, original_stdout);
-    } else {
-        run();
-    }
+    run();
+    std::string output = format_answer(*reference);
+    if (!opts.json)
+        fmt::print("{}", output);
 
     if (opts.stable_mode) {
         // Run for `warmup_duration` or `warmup_iterations` iterations to warm
@@ -289,8 +258,13 @@ int main(int argc, char **argv)
         }
     }
 
+    // Copy the table of solvers and sort it, since its order is not guaranteed
+    // (depends on the link order).
+    small_vector<Problem, 512> all_problems(__start_aoc_solvers, __stop_aoc_solvers);
+    std::ranges::sort(all_problems, {}, λa(std::pair(a.year, a.day)));
+
     for (int i = optind; i < argc; i++) {
-        std::vector<const Problem *> problems = glob_problem(argv[i]);
+        std::vector<Problem> problems = glob_problem(all_problems, argv[i]);
         if (problems.empty())
             die("invalid problem or pattern '%s'", argv[i]);
         opts.problems_to_run.insert(end(opts.problems_to_run), begin(problems),
@@ -303,12 +277,12 @@ int main(int argc, char **argv)
                                                  : std::thread::hardware_concurrency());
 
     std::vector<ProblemData> timings;
-    for (const auto *p : opts.problems_to_run) {
+    for (const Problem &p : opts.problems_to_run) {
         auto input_path = opts.input_file
                               ? opts.input_file
-                              : fmt::format("../inputs/input-{}-{}.txt", p->year, p->day);
-        auto [times, output] = run_problem(*p, input_path, opts);
-        timings.push_back({p->year, p->day, std::move(times), std::move(output)});
+                              : fmt::format("../inputs/input-{}-{}.txt", p.year, p.day);
+        auto [times, output] = run_solver(p, input_path, opts);
+        timings.push_back({p.year, p.day, std::move(times), std::move(output)});
     }
 
     if (opts.json) {

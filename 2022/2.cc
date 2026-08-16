@@ -2,7 +2,7 @@
 
 namespace aoc_2022_2 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     static constexpr int loses_to[] = {1, 2, 0};
     static constexpr int wins_against[] = {2, 0, 1};
@@ -32,8 +32,9 @@ void run(std::string_view buf)
             score2 += loses_to[a] + 7;
     }
 
-    fmt::print("{}\n", score1);
-    fmt::print("{}\n", score2);
+    answer.add(score1);
+    answer.add(score2);
 }
+AOC_REGISTER_SOLVER(2022, 2, run);
 
 }

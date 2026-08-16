@@ -37,7 +37,7 @@ static int64_t solve(small_vector<std::array<int, 2>> galaxies, int factor)
     return sum;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     small_vector<std::array<int, 2>> galaxies;
 
@@ -49,8 +49,9 @@ void run(std::string_view buf)
         i++;
     }
 
-    fmt::print("{}\n", solve(galaxies, 2));
-    fmt::print("{}\n", solve(galaxies, 1'000'000));
+    answer.add(solve(galaxies, 2));
+    answer.add(solve(galaxies, 1'000'000));
 }
+AOC_REGISTER_SOLVER(2023, 11, run);
 
 }

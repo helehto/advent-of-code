@@ -185,7 +185,7 @@ apply_final_continuation:
     return visited->size();
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
@@ -196,7 +196,7 @@ void run(std::string_view buf)
         Vec2u8 p = step({x, y}, (dir + 2) & 3);
         return fire_laser(cache, grid, p, dir);
     };
-    fmt::print("{}\n", fire_from_edge(0, 0, E));
+    answer.add(fire_from_edge(0, 0, E));
 
     for (uint8_t x = 0; x < grid.cols; x++) {
         part2 = std::max(part2, fire_from_edge(x, 0, S));
@@ -206,7 +206,8 @@ void run(std::string_view buf)
         part2 = std::max(part2, fire_from_edge(0, y, E));
         part2 = std::max(part2, fire_from_edge(grid.cols - 1, y, W));
     }
-    fmt::print("{}\n", part2);
+    answer.add(part2);
 }
+AOC_REGISTER_SOLVER(2023, 16, run);
 
 }

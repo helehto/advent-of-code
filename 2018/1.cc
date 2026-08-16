@@ -4,10 +4,10 @@
 
 namespace aoc_2018_1 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto nums = find_numbers<int>(buf);
-    fmt::print("{}\n", std::accumulate(nums.begin(), nums.end(), 0));
+    answer.add(std::accumulate(nums.begin(), nums.end(), 0));
 
     dense_set<int> seen;
     seen.reserve(100'000);
@@ -15,12 +15,13 @@ void run(std::string_view buf)
     while (true) {
         for (int x : nums) {
             if (!seen.insert(freq).second) {
-                fmt::print("{}\n", freq);
+                answer.add(freq);
                 return;
             }
             freq += x;
         }
     }
 }
+AOC_REGISTER_SOLVER(2018, 1, run);
 
 }

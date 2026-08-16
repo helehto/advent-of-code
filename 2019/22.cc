@@ -53,7 +53,7 @@ static std::pair<int64_t, int64_t> get_coefficients(std::span<std::string_view> 
     return {a, b};
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -63,7 +63,7 @@ void run(std::string_view buf)
     {
         constexpr int64_t m = 10007;
         auto [a, b] = get_coefficients(lines, m);
-        fmt::print("{}\n", (modinv(a, m) * (2019 - b)) % m);
+        answer.add((modinv(a, m) * (2019 - b)) % m);
     }
 
     // Part 2: If f(x) = (ax + b) mod m, we have
@@ -96,8 +96,9 @@ void run(std::string_view buf)
         constexpr int64_t n = 101741582076661;
         auto [a, b] = get_coefficients(lines, m);
         const int64_t v = modexp(a, n, m);
-        fmt::print("{}\n", (v * 2020 + mulq3_mod(b, 1 - v, modinv(m + 1 - a, m), m)) % m);
+        answer.add((v * 2020 + mulq3_mod(b, 1 - v, modinv(m + 1 - a, m), m)) % m);
     }
 }
+AOC_REGISTER_SOLVER(2019, 22, run);
 
 }

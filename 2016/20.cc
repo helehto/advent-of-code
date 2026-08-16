@@ -2,7 +2,7 @@
 
 namespace aoc_2016_20 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
 
@@ -30,7 +30,9 @@ void run(std::string_view buf)
     for (const auto &[a, b] : merged)
         blocked += b - a + 1;
 
-    fmt::print("{}\n{}\n", merged[0].second + 1, UINT32_MAX - blocked + 1);
+    answer.add(merged[0].second + 1);
+    answer.add(UINT32_MAX - blocked + 1);
 }
+AOC_REGISTER_SOLVER(2016, 20, run);
 
 }

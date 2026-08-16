@@ -36,7 +36,7 @@ static bool has_nonoverlapping_pairs(std::span<const uint8_t, 8> s)
     return std::popcount(mask) >= 2;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     ASSERT(buf.size() == 8);
     std::array<uint8_t, 8> s;
@@ -46,10 +46,13 @@ void run(std::string_view buf)
         do {
             increment(s);
         } while (!has_nonoverlapping_pairs(s) || !has_increasing_triple(s));
+        std::string password;
+        password.reserve(s.size());
         for (uint8_t c : s)
-            fputc(c + 'a', stdout);
-        fputc('\n', stdout);
+            password.push_back(c + 'a');
+        answer.add(std::move(password));
     }
 }
+AOC_REGISTER_SOLVER(2015, 11, run);
 
 }

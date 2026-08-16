@@ -103,14 +103,15 @@ static int walk(State &state, size_t x0, size_t y0, size_t x1, size_t y1)
     return t;
 }
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     auto state = parse_input(buf);
     auto t1 = walk(state, 0, 0, state.cols - 1, state.rows - 1);
     auto t2 = walk(state, state.cols - 1, state.rows - 1, 0, 0);
     auto t3 = walk(state, 0, 0, state.cols - 1, state.rows - 1);
-    fmt::print("{}\n", t1);
-    fmt::print("{}\n", t1 + t2 + t3);
+    answer.add(t1);
+    answer.add(t1 + t2 + t3);
 }
+AOC_REGISTER_SOLVER(2022, 24, run);
 
 }

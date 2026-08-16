@@ -3,7 +3,7 @@
 
 namespace aoc_2021_20 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     HWY_ALIGN_MAX std::array<int8_t, 512> pattern;
     auto lines = split_lines(buf);
@@ -134,9 +134,10 @@ void run(std::string_view buf)
                 const int8_t *HWY_RESTRICT p = &image(y, x0);
                 count += std::count(p, p + x1 - x0 + 1, -1);
             }
-            fmt::print("{}\n", count);
+            answer.add(count);
         }
     }
 }
+AOC_REGISTER_SOLVER(2021, 20, run);
 
 }

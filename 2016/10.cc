@@ -3,7 +3,7 @@
 
 namespace aoc_2016_10 {
 
-void run(std::string_view buf)
+void run(std::string_view buf, aoc::Answer &answer)
 {
     constexpr int max_bots = 256;
 
@@ -96,8 +96,9 @@ void run(std::string_view buf)
         }
     }
 
-    fmt::print("{}\n", bot_17_61);
-    fmt::print("{}\n", output[0] * output[1] * output[2]);
+    answer.add(bot_17_61);
+    answer.add(output[0] * output[1] * output[2]);
 }
+AOC_REGISTER_SOLVER(2016, 10, run);
 
 }
