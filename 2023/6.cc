@@ -21,8 +21,8 @@ void run(std::string_view buf)
     uint64_t t = 0;
     uint64_t d = 0;
     for (size_t i = 0; i < ts.size(); i++) {
-        t = pow(10, ceil(log10(ts[i]))) * t + ts[i];
-        d = pow(10, ceil(log10(ds[i]))) * d + ds[i];
+        t = pow10i[digit_count_base10(ts[i])] * t + ts[i];
+        d = pow10i[digit_count_base10(ds[i])] * d + ds[i];
     }
     fmt::print("{}\n{}\n", prod, ways(t, d));
 }
