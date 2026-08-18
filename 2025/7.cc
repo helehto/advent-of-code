@@ -6,14 +6,13 @@ void run(std::string_view buf, aoc::Answer &answer)
 {
     auto grid = Matrix<char>::from_lines(split_lines(buf));
 
-    uint8_t start_x = UINT8_MAX;
-    for (auto p : grid.ndindex()) {
-        if (grid(p) == 'S') {
-            start_x = p.x;
-            break;
-        }
-    }
-    ASSERT(start_x != UINT8_MAX);
+    uint8_t start_x = [&] {
+        for (size_t i = 0; i < grid.rows; ++i)
+            for (size_t j = 0; j < grid.cols; ++j)
+                if (grid(i, j) == 'S')
+                    return j;
+        ASSERT_MSG(false, "No start point found");
+    }();
 
     std::vector<uint8_t> beams{start_x};
     std::vector<uint8_t> new_beams;

@@ -30,8 +30,9 @@ void run(std::string_view buf, aoc::Answer &answer)
     }
 
     int n_disputed = 0;
-    for (auto p : grid.ndindex())
-        n_disputed += grid(p) > 1;
+    for (size_t i = 0; i < grid.rows; ++i)
+        for (size_t j = 0; j < grid.cols; ++j)
+            n_disputed += grid(i, j) > 1;
     answer.add(n_disputed);
 
     for (size_t i = 0; i < claims.size(); ++i) {

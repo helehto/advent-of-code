@@ -44,10 +44,12 @@ void run(std::string_view buf, aoc::Answer &answer)
 
     int64_t s1 = 0;
     int64_t s2 = 0;
-    for (auto u : grid.ndindex<int>()) {
-        if (grid(u) == '0') {
-            s1 += trailhead_score<false>(grid, u, queue, visited);
-            s2 += trailhead_score<true>(grid, u, queue, visited);
+    for (size_t i = 0; i < grid.rows; ++i) {
+        for (size_t j = 0; j < grid.cols; ++j) {
+            if (const Vec2i u(j, i); grid(u) == '0') {
+                s1 += trailhead_score<false>(grid, u, queue, visited);
+                s2 += trailhead_score<true>(grid, u, queue, visited);
+            }
         }
     }
 

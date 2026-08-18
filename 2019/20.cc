@@ -33,41 +33,44 @@ void run(std::string_view buf, aoc::Answer &answer)
     portals_tmp.reserve(n_letters / 2);
     portals_map.reserve(n_letters / 2);
 
-    for (Vec2i8 p : g.ndindex<int8_t>()) {
-        if (!xisalpha(g(p)))
-            continue;
+    for (size_t i = 0; i < g.rows; ++i) {
+        for (size_t j = 0; j < g.cols; ++j) {
+            const Vec2i8 p(j, i);
+            if (!xisalpha(g(p)))
+                continue;
 
-        if (auto q = p + Vec2i8{-1, 0}; g.in_bounds(q) && xisalpha(g(q)))
-            continue;
-        if (auto q = p + Vec2i8{0, -1}; g.in_bounds(q) && xisalpha(g(q)))
-            continue;
+            if (auto q = p + Vec2i8{-1, 0}; g.in_bounds(q) && xisalpha(g(q)))
+                continue;
+            if (auto q = p + Vec2i8{0, -1}; g.in_bounds(q) && xisalpha(g(q)))
+                continue;
 
-        std::array<char, 2> b{g(p)};
-        Vec2i8 to;
-        if (auto q = p + Vec2i8{0, 2}; g.in_bounds(q) && g(q) == '.') {
-            b[1] = g(p + Vec2i8{0, 1});
-            to = q;
-        } else if (auto q = p + Vec2i8{2, 0}; g.in_bounds(q) && g(q) == '.') {
-            b[1] = g(p + Vec2i8{1, 0});
-            to = q;
-        } else if (auto q = p + Vec2i8{-1, 0}; g.in_bounds(q) && g(q) == '.') {
-            b[1] = g(p + Vec2i8{1, 0});
-            to = q;
-        } else if (auto q = p + Vec2i8{0, -1}; g.in_bounds(q) && g(q) == '.') {
-            b[1] = g(p + Vec2i8{0, 1});
-            to = q;
-        } else {
-            continue;
-        }
+            std::array<char, 2> b{g(p)};
+            Vec2i8 to;
+            if (auto q = p + Vec2i8{0, 2}; g.in_bounds(q) && g(q) == '.') {
+                b[1] = g(p + Vec2i8{0, 1});
+                to = q;
+            } else if (auto q = p + Vec2i8{2, 0}; g.in_bounds(q) && g(q) == '.') {
+                b[1] = g(p + Vec2i8{1, 0});
+                to = q;
+            } else if (auto q = p + Vec2i8{-1, 0}; g.in_bounds(q) && g(q) == '.') {
+                b[1] = g(p + Vec2i8{1, 0});
+                to = q;
+            } else if (auto q = p + Vec2i8{0, -1}; g.in_bounds(q) && g(q) == '.') {
+                b[1] = g(p + Vec2i8{0, 1});
+                to = q;
+            } else {
+                continue;
+            }
 
-        const bool inwards = to.x > 3 && to.x < static_cast<int>(g.cols - 3) &&
-                             to.y > 3 && to.y < static_cast<int>(g.rows - 3);
-        if (auto [it, inserted] = portals_tmp.emplace(b, to); !inserted) {
-            const auto delta = inwards ? +1 : -1;
-            portals_map.try_emplace(to, it->second, delta);
-            portals_map.try_emplace(it->second, to, -delta);
-            portals(to) = Portal(it->second, delta);
-            portals(it->second) = Portal(to, -delta);
+            const bool inwards = to.x > 3 && to.x < static_cast<int>(g.cols - 3) &&
+                                 to.y > 3 && to.y < static_cast<int>(g.rows - 3);
+            if (auto [it, inserted] = portals_tmp.emplace(b, to); !inserted) {
+                const auto delta = inwards ? +1 : -1;
+                portals_map.try_emplace(to, it->second, delta);
+                portals_map.try_emplace(it->second, to, -delta);
+                portals(to) = Portal(it->second, delta);
+                portals(it->second) = Portal(to, -delta);
+            }
         }
     }
     const Vec2i8 start = portals_tmp.at({'A', 'A'});

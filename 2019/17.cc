@@ -72,13 +72,13 @@ static bool search(std::span<const Move> curr,
 static std::vector<Move> walk_scaffold(MatrixView<const char> g)
 {
     // Find our starting location.
-    Vec2i p{};
-    for (auto q : g.ndindex<int>()) {
-        if (g(q) == '^') {
-            p = q;
-            break;
-        }
-    }
+    Vec2i p = [&] {
+        for (size_t i = 0; i < g.rows; ++i)
+            for (size_t j = 0; j < g.cols; ++j)
+                if (g(i, j) == '^')
+                    return Vec2i(j, i);
+        ASSERT_MSG(false, "No starting location found");
+    }();
 
     std::vector<Move> result;
     result.push_back(Move{L});
@@ -150,13 +150,16 @@ construct_input(std::string_view main_routine,
 static int part1(MatrixView<const char> g)
 {
     int alignment_sum = 0;
-    for (auto p : g.ndindex()) {
-        if (g(p) == '#') {
-            int n = 0;
-            for (auto q : neighbors4(g, p))
-                n += g(q) == '#';
-            if (n == 4)
-                alignment_sum += p.x * p.y;
+    for (size_t i = 0; i < g.rows; ++i) {
+        for (size_t j = 0; j < g.cols; ++j) {
+            const Vec2z p(j, i);
+            if (g(p) == '#') {
+                int n = 0;
+                for (auto q : neighbors4(g, p))
+                    n += g(q) == '#';
+                if (n == 4)
+                    alignment_sum += p.x * p.y;
+            }
         }
     }
     return alignment_sum;

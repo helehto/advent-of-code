@@ -24,24 +24,27 @@ void run(std::string_view buf, aoc::Answer &answer)
     std::vector<int> cell_count(xs.size() + 1);
     std::vector<int> d(xs.size());
 
-    for (auto p : closest_grid.ndindex<int>()) {
-        for (size_t i = 0; i < xs.size(); i++)
-            d[i] = manhattan({xs[i], ys[i]}, p);
+    for (size_t i = 0; i < closest_grid.rows; ++i) {
+        for (size_t j = 0; j < closest_grid.cols; ++j) {
+            const Vec2i p(j, i);
+            for (size_t k = 0; k < xs.size(); k++)
+                d[k] = manhattan({xs[k], ys[k]}, p);
 
-        std::pair<int16_t, int16_t> min1 = {0, d[0]};
-        std::pair<int16_t, int16_t> min2 = {1, d[1]};
-        if (min1.second < min2.second)
-            std::swap(min1, min2);
-        for (size_t i = 2; i < xs.size(); i++) {
-            if (d[i] < min1.second)
-                min2 = std::exchange(min1, {i, d[i]});
-            else if (d[i] < min2.second)
-                min2 = {i, d[i]};
-        }
+            std::pair<int16_t, int16_t> min1 = {0, d[0]};
+            std::pair<int16_t, int16_t> min2 = {1, d[1]};
+            if (min1.second < min2.second)
+                std::swap(min1, min2);
+            for (size_t k = 2; k < xs.size(); k++) {
+                if (d[k] < min1.second)
+                    min2 = std::exchange(min1, {k, d[k]});
+                else if (d[k] < min2.second)
+                    min2 = {k, d[k]};
+            }
 
-        if (min1.second != min2.second) {
-            closest_grid(p) = min1.first;
-            cell_count[min1.first]++;
+            if (min1.second != min2.second) {
+                closest_grid(p) = min1.first;
+                cell_count[min1.first]++;
+            }
         }
     }
 

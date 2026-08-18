@@ -51,12 +51,14 @@ static std::pair<dense_set<Vec2i>, Vec2i> parse_input(std::string_view buf)
 
     dense_set<Vec2i> cells;
     cells.reserve(grid.rows * grid.cols);
-    for (auto p : grid.ndindex<int>()) {
-        if (grid(p) == '#') {
-            grid(p) = INFECTED;
-            cells.insert(p);
-        } else {
-            grid(p) = CLEAN;
+    for (size_t i = 0; i < grid.rows; ++i) {
+        for (size_t j = 0; j < grid.cols; ++j) {
+            if (grid(i, j) == '#') {
+                grid(i, j) = INFECTED;
+                cells.insert(Vec2i(j, i));
+            } else {
+                grid(i, j) = CLEAN;
+            }
         }
     }
 

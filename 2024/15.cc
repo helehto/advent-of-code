@@ -46,22 +46,22 @@ static int part1(const Matrix<char> &original_grid, std::string_view moves)
 {
     Matrix<char> grid = original_grid;
 
-    Vec2i robot{};
-    for (auto p : grid.ndindex<int>()) {
-        if (grid(p) == '@') {
-            robot = p;
-            break;
-        }
-    }
+    Vec2i robot = [&] {
+        for (size_t i = 0; i < grid.rows; ++i)
+            for (size_t j = 0; j < grid.cols; ++j)
+                if (grid(i, j) == '@')
+                    return Vec2i(j, i);
+        ASSERT_MSG(false, "No robot found");
+    }();
 
     for (char c : moves)
         robot = step1(grid, robot, c);
 
     int result = 0;
-    for (auto p : grid.ndindex<int>()) {
-        if (grid(p) == 'O')
-            result += 100 * p.y + p.x;
-    }
+    for (size_t i = 0; i < grid.rows; ++i)
+        for (size_t j = 0; j < grid.cols; ++j)
+            result += grid(i, j) == 'O' ? 100 * i + j : 0;
+
     return result;
 }
 
@@ -127,15 +127,17 @@ static int part2(MatrixView<const char> grid, std::string_view moves)
     Matrix<bool> boxes(grid.rows, 2 * grid.cols, false);
     Matrix<bool> walls(grid.rows, 2 * grid.cols, false);
 
-    for (auto p : grid.ndindex<int>()) {
-        const Vec2i pp(2 * p.x, p.y);
-        if (grid(p) == '@') {
-            robot = pp;
-        } else if (grid(p) == 'O') {
-            boxes(pp) = true;
-        } else if (grid(p) == '#') {
-            walls(pp) = true;
-            walls(pp + Vec2i(1, 0)) = true;
+    for (size_t i = 0; i < grid.rows; ++i) {
+        for (size_t j = 0; j < grid.cols; ++j) {
+            const Vec2i pp(2 * j, i);
+            if (grid(i, j) == '@') {
+                robot = pp;
+            } else if (grid(i, j) == 'O') {
+                boxes(pp) = true;
+            } else if (grid(i, j) == '#') {
+                walls(pp) = true;
+                walls(pp + Vec2i(1, 0)) = true;
+            }
         }
     }
 
@@ -144,9 +146,10 @@ static int part2(MatrixView<const char> grid, std::string_view moves)
         robot = step2(robot, boxes, walls, c, to_move);
 
     int result = 0;
-    for (auto p : boxes.ndindex<int>())
-        if (boxes(p))
-            result += 100 * p.y + p.x;
+    for (size_t i = 0; i < boxes.rows; ++i)
+        for (size_t j = 0; j < boxes.cols; ++j)
+            result += boxes(i, j) ? 100 * i + j : 0;
+
     return result;
 }
 

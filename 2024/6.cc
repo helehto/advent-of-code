@@ -135,13 +135,13 @@ void run(std::string_view buf, aoc::Answer &answer)
     ASSERT(grid.rows < 256);
     ASSERT(grid.cols < 256);
 
-    State start{};
-    for (auto p : grid.ndindex<uint16_t>()) {
-        if (grid(p) == '^') {
-            start.offset = &grid(p) - grid.data();
-            break;
-        }
-    }
+    State start = [&] {
+        for (size_t i = 0; i < grid.rows; ++i)
+            for (size_t j = 0; j < grid.cols; ++j)
+                if (grid(i, j) == '^')
+                    return State(&grid(i, j) - grid.data());
+        ASSERT_MSG(false, "No start point found");
+    }();
 
     std::array<Bitset, 4> visited_states;
     for (auto &v : visited_states)

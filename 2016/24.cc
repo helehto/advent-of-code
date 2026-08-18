@@ -9,12 +9,13 @@ void run(std::string_view buf, aoc::Answer &answer)
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
 
-    for (Vec2i p : grid.ndindex<int>()) {
-        size_t n = grid(p) - '0';
-        if (n <= 9) {
-            if (locations.size() <= n)
-                locations.resize(n + 1, Vec2i{});
-            locations[n] = p;
+    for (size_t i = 0; i < grid.rows; ++i) {
+        for (size_t j = 0; j < grid.cols; ++j) {
+            if (size_t n = grid(i, j) - '0'; n <= 9) {
+                if (locations.size() <= n)
+                    locations.resize(n + 1, Vec2i{});
+                locations[n] = Vec2i(j, i);
+            }
         }
     }
 

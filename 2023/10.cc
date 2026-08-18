@@ -43,10 +43,13 @@ void run(std::string_view buf, aoc::Answer &answer)
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines);
 
-    Vec2z start{};
-    for (auto p : grid.ndindex())
-        if (grid(p) == 'S')
-            start = p;
+    Vec2z start = [&] {
+        for (size_t i = 0; i < grid.rows; ++i)
+            for (size_t j = 0; j < grid.cols; ++j)
+                if (grid(i, j) == 'S')
+                    return Vec2z(j, i);
+        ASSERT_MSG(false, "No start point found");
+    }();
 
     // Find the two pipes connected to the start point.
     std::array<Vec2z, 2> start_neighbors;
@@ -84,9 +87,11 @@ void run(std::string_view buf, aoc::Answer &answer)
 
     // Remove any superfluous pipes from the grid.
     dense_set<Vec2z> path_set(path.begin(), path.end());
-    for (auto p : grid.ndindex()) {
-        if (!path_set.count(p))
-            grid(p) = '.';
+    for (size_t i = 0; i < grid.rows; ++i) {
+        for (size_t j = 0; j < grid.cols; ++j) {
+            if (!path_set.count(Vec2z(j, i)))
+                grid(i, j) = '.';
+        }
     }
 
     // Make sure the polygon is oriented correctly.

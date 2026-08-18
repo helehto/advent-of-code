@@ -48,10 +48,12 @@ void run(std::string_view buf, aoc::Answer &answer)
         }
     };
 
-    for (auto u : grid.ndindex<int>()) {
-        if (grid(u) && !visited(u)) {
-            flood(u);
-            ++regions;
+    for (size_t i = 0; i < grid.rows; ++i) {
+        for (size_t j = 0; j < grid.cols; ++j) {
+            if (const Vec2i u(j, i); grid(u) && !visited(u)) {
+                flood(u);
+                ++regions;
+            }
         }
     }
     answer.add(regions);

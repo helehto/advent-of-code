@@ -60,11 +60,13 @@ void run(std::string_view buf, aoc::Answer &answer)
     auto grid = Matrix<char>::from_lines(lines).padded(20, '#');
 
     Vec2i start, end;
-    for (auto p : grid.ndindex<int>()) {
-        if (grid(p) == 'S')
-            start = p;
-        else if (grid(p) == 'E')
-            end = p;
+    for (size_t i = 0; i < grid.rows; ++i) {
+        for (size_t j = 0; j < grid.cols; ++j) {
+            if (grid(i, j) == 'S')
+                start = Vec2i(j, i);
+            else if (grid(i, j) == 'E')
+                end = Vec2i(j, i);
+        }
     }
 
     // First run a straight-forward BFS to determine which squares are

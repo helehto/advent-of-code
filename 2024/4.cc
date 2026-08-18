@@ -26,11 +26,12 @@ constexpr int part1(MatrixView<const char> grid)
     alignas(4) std::array<char, 4> word;
     int result = 0;
 
-    for (auto p : grid.ndindex<int>())
-        for (int dx : {-1, 0, 1})
-            for (int dy : {-1, 0, 1})
-                result += scan(grid, p, {dx, dy}, 4, word.data()) &&
-                          match_word(word, 'X', 'M', 'A', 'S');
+    for (size_t i = 0; i < grid.rows; ++i)
+        for (size_t j = 0; j < grid.cols; ++j)
+            for (int dx : {-1, 0, 1})
+                for (int dy : {-1, 0, 1})
+                    result += scan(grid, Vec2i(j, i), {dx, dy}, 4, word.data()) &&
+                              match_word(word, 'X', 'M', 'A', 'S');
 
     return result;
 }
@@ -40,15 +41,18 @@ constexpr int part2(MatrixView<const char> grid)
     alignas(4) std::array<char, 4> word;
     int result = 0;
 
-    for (auto p : grid.ndindex<int>()) {
-        auto check = [&](Vec2i start, int dx, int dy) {
-            word.fill(0);
-            return scan(grid, start, {dx, dy}, 3, word.data()) &&
-                   (match_word(word, 'M', 'A', 'S', 0) ||
-                    match_word(word, 'S', 'A', 'M', 0));
-        };
+    for (size_t i = 0; i < grid.rows; ++i) {
+        for (size_t j = 0; j < grid.cols; ++j) {
+            const Vec2i p(j, i);
+            auto check = [&](Vec2i start, int dx, int dy) {
+                word.fill(0);
+                return scan(grid, start, {dx, dy}, 3, word.data()) &&
+                       (match_word(word, 'M', 'A', 'S', 0) ||
+                        match_word(word, 'S', 'A', 'M', 0));
+            };
 
-        result += check(p, 1, 1) && check(p + Vec2i(2, 0), -1, 1);
+            result += check(p, 1, 1) && check(p + Vec2i(2, 0), -1, 1);
+        }
     }
 
     return result;

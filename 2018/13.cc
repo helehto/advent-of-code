@@ -25,21 +25,23 @@ void run(std::string_view buf, aoc::Answer &answer)
         std::ranges::copy(lines[i], grid.row(i).begin());
 
     std::vector<Cart> carts;
-    for (auto p : grid.ndindex<uint8_t>()) {
-        uint8_t d;
-        char &c = grid(p);
-        if (c == '<')
-            d = W;
-        else if (c == '>')
-            d = E;
-        else if (c == '^')
-            d = N;
-        else if (c == 'v')
-            d = S;
-        else
-            continue;
-        c = "|-"[d & 1];
-        carts.emplace_back(p, d);
+    for (size_t i = 0; i < grid.rows; ++i) {
+        for (size_t j = 0; j < grid.cols; ++j) {
+            uint8_t d;
+            char &c = grid(i, j);
+            if (c == '<')
+                d = W;
+            else if (c == '>')
+                d = E;
+            else if (c == '^')
+                d = N;
+            else if (c == 'v')
+                d = S;
+            else
+                continue;
+            c = "|-"[d & 1];
+            carts.emplace_back(Vec2u8(j, i), d);
+        }
     }
 
     bool first_printed = false;

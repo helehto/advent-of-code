@@ -502,36 +502,6 @@ constexpr std::string_view strip(std::string_view s)
 }
 
 template <typename T>
-struct Ndindex2DRange {
-    size_t rows;
-    size_t cols;
-    T i = 0;
-    T j = 0;
-
-    struct sentinel {};
-
-    constexpr Ndindex2DRange begin() { return *this; }
-    constexpr sentinel end() { return {}; }
-
-    constexpr Vec2<T> operator*() const { return {j, i}; }
-    constexpr bool operator==(sentinel) const { return static_cast<size_t>(i) >= rows; }
-
-    constexpr Ndindex2DRange &operator++()
-    {
-        if (static_cast<size_t>(j) < cols - 1) {
-            j++;
-        } else {
-            i++;
-            j = 0;
-        }
-
-        return *this;
-    }
-
-    constexpr Ndindex2DRange operator++(int) { return ++*this; }
-};
-
-template <typename T>
 struct StridedIterator {
     using difference_type = std::ptrdiff_t;
     using iterator_category = std::random_access_iterator_tag;
@@ -652,12 +622,6 @@ struct MatrixBase {
         DEBUG_ASSERT_MSG(self.in_bounds(p), "{} is not a valid matrix entry (x<{}, y<{})",
                          p, self.cols, self.rows);
         return self.data()[p.y * self.cols + p.x];
-    }
-
-    template <typename IndexTy = size_t>
-    constexpr Ndindex2DRange<IndexTy> ndindex(this auto &&self) noexcept
-    {
-        return {self.rows, self.cols};
     }
 
     template <typename IndexTy>

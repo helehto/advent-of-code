@@ -220,10 +220,12 @@ void run(std::string_view buf, aoc::Answer &answer)
     auto grid = Matrix<char>::from_lines(lines);
 
     std::array<size_t, 4> extents{1, 1, 0, 0};
-    for (auto p : grid.ndindex()) {
-        if (grid(p) == '#') {
-            extents[2] = std::max(extents[2], p.y);
-            extents[3] = std::max(extents[3], p.x);
+    for (size_t i = 0; i < grid.rows; ++i) {
+        for (size_t j = 0; j < grid.cols; ++j) {
+            if (grid(i, j) == '#') {
+                extents[2] = std::max(extents[2], i);
+                extents[3] = std::max(extents[3], j);
+            }
         }
     }
     extents[2]++;
@@ -237,9 +239,10 @@ void run(std::string_view buf, aoc::Answer &answer)
         extents[3] += 2 * pad;
 
         Grid4D active(extents);
-        for (auto p : grid.ndindex())
-            if (grid(p) == '#')
-                active[0, pad, p.y + pad, p.x + pad] = 1;
+        for (size_t i = 0; i < grid.rows; ++i)
+            for (size_t j = 0; j < grid.cols; ++j)
+                if (grid(i, j) == '#')
+                    active[0, pad, i + pad, j + pad] = 1;
 
         for (size_t i = 0; i < 6; ++i)
             active = step_grid_3d(active);
@@ -258,13 +261,15 @@ void run(std::string_view buf, aoc::Answer &answer)
         active.bbox_min = {pad, pad, SIZE_MAX, SIZE_MAX};
         active.bbox_max = {pad, pad, 0, 0};
 
-        for (auto p : grid.ndindex()) {
-            if (grid(p) == '#') {
-                active[pad, pad, p.y + pad, p.x + pad] = 1;
-                active.bbox_min[2] = std::min(active.bbox_min[2], p.y + pad);
-                active.bbox_min[3] = std::min(active.bbox_min[3], p.x + pad);
-                active.bbox_max[2] = std::max(active.bbox_max[2], p.y + pad);
-                active.bbox_max[3] = std::max(active.bbox_max[3], p.x + pad);
+        for (size_t i = 0; i < grid.rows; ++i) {
+            for (size_t j = 0; j < grid.cols; ++j) {
+                if (grid(i, j) == '#') {
+                    active[pad, pad, i + pad, j + pad] = 1;
+                    active.bbox_min[2] = std::min(active.bbox_min[2], i + pad);
+                    active.bbox_min[3] = std::min(active.bbox_min[3], j + pad);
+                    active.bbox_max[2] = std::max(active.bbox_max[2], i + pad);
+                    active.bbox_max[3] = std::max(active.bbox_max[3], j + pad);
+                }
             }
         }
 

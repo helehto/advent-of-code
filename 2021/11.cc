@@ -20,10 +20,10 @@ void run(std::string_view buf, aoc::Answer &answer)
         for (auto &v : grid.all())
             v += 1;
 
-        for (auto p : grid.ndindex()) {
-            if (grid(p) > 9)
-                queue.push_back(p);
-        }
+        for (size_t i = 0; i < grid.rows; ++i)
+            for (size_t j = 0; j < grid.cols; ++j)
+                if (grid(i, j) > 9)
+                    queue.emplace_back(j, i);
 
         for (size_t j = 0; j < queue.size(); j++) {
             const auto c = queue[j];
@@ -36,10 +36,12 @@ void run(std::string_view buf, aoc::Answer &answer)
             }
         }
 
-        for (auto p : grid.ndindex()) {
-            if (grid(p) > 9) {
-                total_flashes++;
-                grid(p) = 0;
+        for (size_t i = 0; i < grid.rows; ++i) {
+            for (size_t j = 0; j < grid.cols; ++j) {
+                if (grid(i, j) > 9) {
+                    total_flashes++;
+                    grid(i, j) = 0;
+                }
             }
         }
 

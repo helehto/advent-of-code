@@ -26,9 +26,10 @@ void run(std::string_view buf, aoc::Answer &answer)
 
     // TODO: Use SIMD to pack cell positions into a fixed-size buffer instead.
     small_vector<Vec2z> queue;
-    for (const auto p : grid.ndindex<size_t>())
-        if (grid(p) == '@' && num_neighbors(p) < 4)
-            queue.emplace_back(p.x, p.y);
+    for (size_t i = 0; i < grid.rows; ++i)
+        for (size_t j = 0; j < grid.cols; ++j)
+            if (grid(i, j) == '@' && num_neighbors(i, j) < 4)
+                queue.emplace_back(j, i);
     answer.add(queue.size());
 
     int part2 = 0;

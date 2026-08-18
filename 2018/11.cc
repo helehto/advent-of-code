@@ -7,10 +7,12 @@ static Matrix<int> generate_grid(int serial_number, size_t size)
 {
     Matrix<int> grid(size, size);
 
-    for (auto p : grid.ndindex<int>()) {
-        int rack = p.x + 11;
-        int power = (rack * (p.y + 1) + serial_number) * rack;
-        grid(p) = (power / 100) % 10 - 5;
+    for (size_t i = 0; i < grid.rows; ++i) {
+        for (size_t j = 0; j < grid.cols; ++j) {
+            int rack = j + 11;
+            int power = (rack * (i + 1) + serial_number) * rack;
+            grid(i, j) = (power / 100) % 10 - 5;
+        }
     }
 
     return grid;

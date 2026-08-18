@@ -83,17 +83,20 @@ void run(std::string_view buf, aoc::Answer &answer)
 
     Vec2i start{};
     int num_keys = 0;
-    for (auto p : grid.ndindex<int>()) {
-        if (grid(p) >= 'a' && grid(p) <= 'z')
-            num_keys++;
-        else if (grid(p) == '@')
-            start = p;
+    for (size_t i = 0; i < grid.rows; ++i) {
+        for (size_t j = 0; j < grid.cols; ++j) {
+            if (grid(i, j) >= 'a' && grid(i, j) <= 'z')
+                num_keys++;
+            else if (grid(i, j) == '@')
+                start = Vec2i(j, i);
+        }
     }
 
     std::vector<Vec2i> keys(num_keys);
-    for (auto p : grid.ndindex<int>())
-        if (grid(p) >= 'a' && grid(p) <= 'z')
-            keys[grid(p) - 'a'] = p;
+    for (size_t i = 0; i < grid.rows; ++i)
+        for (size_t j = 0; j < grid.cols; ++j)
+            if (grid(i, j) >= 'a' && grid(i, j) <= 'z')
+                keys[grid(i, j) - 'a'] = Vec2i(j, i);
 
     MonotonicBucketQueue<State> bq;
     dense_map<State, uint32_t, CrcHasher> dist;

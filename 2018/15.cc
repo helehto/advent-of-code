@@ -199,14 +199,16 @@ void run(std::string_view buf, aoc::Answer &answer)
     Pathfinding pf(grid.rows, grid.cols);
 
     std::vector<Unit> units;
-    for (auto p : grid.ndindex()) {
-        if (grid(p) == 'E' || grid(p) == 'G') {
-            units.push_back(Unit{
-                .ch = grid(p),
-                .pos = static_cast<int16_t>(p.y * grid.cols + p.x),
-                .attack_power = 3,
-                .hp = 200,
-            });
+    for (size_t i = 0; i < grid.rows; ++i) {
+        for (size_t j = 0; j < grid.cols; ++j) {
+            if (grid(i, j) == 'E' || grid(i, j) == 'G') {
+                units.push_back(Unit{
+                    .ch = grid(i, j),
+                    .pos = static_cast<int16_t>(i * grid.cols + j),
+                    .attack_power = 3,
+                    .hp = 200,
+                });
+            }
         }
     }
     answer.add(fight(grid, pf, units, 3).first);

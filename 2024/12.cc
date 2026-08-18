@@ -71,8 +71,9 @@ void run(std::string_view buf, aoc::Answer &answer)
 
     std::vector<Vec2i> points;
     points.reserve(g.rows * g.cols);
-    for (auto p : g.ndindex<int>())
-        points.push_back(p);
+    for (size_t i = 0; i < g.rows; ++i)
+        for (size_t j = 0; j < g.cols; ++j)
+            points.emplace_back(j, i);
 
     auto ccs = regions(g, points);
 

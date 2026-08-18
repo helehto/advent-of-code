@@ -9,9 +9,10 @@ void run(std::string_view buf, aoc::Answer &answer)
     auto grid = Matrix<char>::from_lines(lines);
 
     dense_map<char, small_vector<Vec2u16>> antennas;
-    for (auto p : grid.ndindex<uint16_t>())
-        if (grid(p) != '.' && grid(p) != '#')
-            antennas[grid(p)].push_back(p);
+    for (size_t i = 0; i < grid.rows; ++i)
+        for (size_t j = 0; j < grid.cols; ++j)
+            if (grid(i, j) != '.' && grid(i, j) != '#')
+                antennas[grid(i, j)].emplace_back(j, i);
 
     auto antinodes1 = grid;
     auto antinodes2 = grid;

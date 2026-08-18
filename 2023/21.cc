@@ -71,10 +71,13 @@ void run(std::string_view buf, aoc::Answer &answer)
     auto lines = split_lines(buf);
     auto grid = Matrix<char>::from_lines(lines).padded(1, (char)-1);
 
-    Vec2i start;
-    for (Vec2z p : grid.ndindex())
-        if (grid(p) == 'S')
-            start = p.cast<int>();
+    Vec2i start = [&] {
+        for (size_t i = 0; i < grid.rows; ++i)
+            for (size_t j = 0; j < grid.cols; ++j)
+                if (grid(i, j) == 'S')
+                    return Vec2i(j, i);
+        ASSERT_MSG(false, "No start point found");
+    }();
 
     ASSERT(grid.rows == grid.cols);
     const int64_t N = grid.rows - 2;
