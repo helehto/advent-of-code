@@ -396,29 +396,6 @@ struct State {
     }
 };
 
-/// Table of MD5 hash functions specialized for different numbers of non-empty
-/// blocks.
-///
-/// Note that block 14 is always included since it contains the lower 32 bits
-/// of the message length. (We assume that the upper 32 bits are always zero.)
-constexpr VecT (*partial_hash_funcs[])(const SequentialBlocks &) = {
-    nullptr,
-    hash_block<0b0100'0000'0000'0001, ResultType::only_a>,
-    hash_block<0b0100'0000'0000'0011, ResultType::only_a>,
-    hash_block<0b0100'0000'0000'0111, ResultType::only_a>,
-    hash_block<0b0100'0000'0000'1111, ResultType::only_a>,
-    hash_block<0b0100'0000'0001'1111, ResultType::only_a>,
-    hash_block<0b0100'0000'0011'1111, ResultType::only_a>,
-    hash_block<0b0100'0000'0111'1111, ResultType::only_a>,
-    hash_block<0b0100'0000'1111'1111, ResultType::only_a>,
-    hash_block<0b0100'0001'1111'1111, ResultType::only_a>,
-    hash_block<0b0100'0011'1111'1111, ResultType::only_a>,
-    hash_block<0b0100'0111'1111'1111, ResultType::only_a>,
-    hash_block<0b0100'1111'1111'1111, ResultType::only_a>,
-    hash_block<0b0101'1111'1111'1111, ResultType::only_a>,
-    hash_block<0b0111'1111'1111'1111, ResultType::only_a>,
-};
-
 /// 0000-9999 packed into a single string, plus a few extra entries wrapping
 /// around to 0000 to avoid bounds checks in hash_4digit_chunks().
 constexpr auto digits_4x = [] consteval {
@@ -433,6 +410,9 @@ constexpr auto digits_4x = [] consteval {
         table[i] = table[i - 4 * 10000];
     return table;
 }();
+
+using HashBlockFunc = VecT(const SequentialBlocks &);
+extern HashBlockFunc *const partial_hash_funcs[15];
 
 /// Shared logic between 2015/4 and 2016/5.
 ///
@@ -517,4 +497,4 @@ inline bool hash_4digit_chunks(md5::SequentialBlocks &messages,
     return true;
 }
 
-}
+} // namespace md5

@@ -94,6 +94,7 @@ link_args = [
 
 libaoc = static_library(
     'aoc',
+    'include/md5.cc',
     'include/thread_pool.cc',
     cpp_args: cpp_args,
 )
