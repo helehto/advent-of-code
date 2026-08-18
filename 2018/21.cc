@@ -1,5 +1,8 @@
-#include "common.h"
-#include "dense_set.h"
+#include <aoc/base.h>
+#include <aoc/dense_set.h>
+#include <cstdint>
+#include <string_view>
+#include <utility>
 
 namespace aoc_2018_21 {
 

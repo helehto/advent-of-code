@@ -1,5 +1,15 @@
-#include "common.h"
 #include <algorithm>
+#include <aoc/base.h>
+#include <aoc/inplace_vector.h>
+#include <aoc/macros.h>
+#include <aoc/small_vector.h>
+#include <aoc/string.h>
+#include <array>
+#include <cstdint>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace aoc_2018_7 {
 

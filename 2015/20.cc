@@ -1,5 +1,13 @@
-#include "common.h"
-#include "inplace_vector.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/inplace_vector.h>
+#include <aoc/string.h>
+#include <bit>
+#include <climits>
+#include <cstddef>
+#include <cstdint>
+#include <span>
+#include <string_view>
 
 namespace aoc_2015_20 {
 

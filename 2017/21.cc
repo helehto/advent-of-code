@@ -1,5 +1,15 @@
-#include "bitmanip.h"
-#include "common.h"
+#include <aoc/base.h>
+#include <aoc/bitmanip.h>
+#include <aoc/math.h>
+#include <aoc/string.h>
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <string_view>
+#include <sys/types.h>
+#include <utility>
+#include <vector>
 
 namespace aoc_2017_21 {
 

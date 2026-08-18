@@ -1,21 +1,29 @@
 #ifndef DENSE_MAP_H
 #define DENSE_MAP_H
 
-#include "common.h"
+#include <algorithm>
+#include <aoc/macros.h>
+#include <array>
 #include <bit>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
+#include <fmt/base.h>
+#include <functional>
 #include <hwy/highway.h>
 #include <initializer_list>
 #include <iterator>
 #include <memory>
 #include <ratio>
+#include <span>
 #include <tuple>
 #include <type_traits>
 #include <utility>
 
 namespace detail {
+
+namespace hn = hwy::HWY_NAMESPACE;
 
 using D = hn::ScalableTag<uint8_t>;
 constexpr D d;
@@ -119,6 +127,7 @@ public:
     using const_reference = const value_type &;
 
 private:
+    using D = detail::D;
     using Slot = detail::Slot<value_type>;
     using SlotState = detail::SlotState;
 
@@ -229,7 +238,7 @@ private:
         const auto mask = capacity_ - 1;
         size_t i = hash & mask;
         uint8_t expected_state = 0b11000000 | (hash & detail::state_hash_mask);
-        const size_t stride = hn::Lanes(D());
+        const size_t stride = Lanes(D());
 
         // Fast path before we drop into the SIMD loop: is the very first
         // slot we landed at empty or the key we're looking for?
@@ -241,8 +250,8 @@ private:
         // No, unfortunately not. Skip it and start checking slots en masse.
         i = (i + 1) & mask;
 
-        const hn::Vec<D> vexpected_state = hn::Set(D(), expected_state);
-        const hn::Vec<D> vzero = hn::Zero(D());
+        const detail::hn::Vec<D> vexpected_state = Set(D(), expected_state);
+        const detail::hn::Vec<D> vzero = Zero(D());
 
         for (;; i = (i + stride < capacity_) ? i + stride : 0) {
             // Note that if we are near the end of the table, this load will
@@ -250,12 +259,12 @@ private:
             // end of the state array. These will never match anything, so we
             // are effectively checking fewer than hn::Lanes(D()) slots in
             // that case.
-            const hn::Vec<D> v = hn::LoadU(D(), states_ + i);
-            const hn::Mask<D> match = hn::Eq(v, vexpected_state);
-            const hn::Mask<D> empty = hn::Eq(v, vzero);
+            const detail::hn::Vec<D> v = LoadU(D(), states_ + i);
+            const detail::hn::Mask<D> match = Eq(v, vexpected_state);
+            const detail::hn::Mask<D> empty = Eq(v, vzero);
 
-            uint64_t match_mask = hn::BitsFromMask(D(), match);
-            uint64_t empty_mask = hn::BitsFromMask(D(), empty);
+            uint64_t match_mask = BitsFromMask(D(), match);
+            uint64_t empty_mask = BitsFromMask(D(), empty);
 
             // We want to stop at the first empty slot; mask out any matches
             // that occur after it.
@@ -294,13 +303,13 @@ private:
     {
         const std::pair<size_t, size_t> fields[] = {
             {sizeof(Slot) * new_capacity, alignof(Slot)},
-            {sizeof(SlotState) * (new_capacity + hn::Lanes(detail::D())), 128},
+            {sizeof(SlotState) * (new_capacity + Lanes(detail::D())), 128},
         };
         storage_ = detail::compound_allocate(fields, &slots_, &states_);
 
         capacity_ = new_capacity;
         memset(states_, 0, capacity_);
-        for (size_t i = 0; i < hn::Lanes(detail::D()); i++)
+        for (size_t i = 0; i < Lanes(detail::D()); i++)
             set_state_of(capacity_ + i, SlotState::occupied);
     }
 

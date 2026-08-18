@@ -1,5 +1,13 @@
-#include "common.h"
-#include "thread_pool.h"
+#include <aoc/base.h>
+#include <aoc/string.h>
+#include <aoc/thread_pool.h>
+#include <atomic>
+#include <cstddef>
+#include <cstdint>
+#include <string_view>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 namespace aoc_2025_3 {
 

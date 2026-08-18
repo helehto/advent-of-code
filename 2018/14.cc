@@ -1,6 +1,23 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/inplace_vector.h>
+#include <aoc/macros.h>
+#include <aoc/string.h>
+#include <array>
+#include <concepts>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <fmt/ranges.h>
+#include <hwy/highway.h>
+#include <memory>
+#include <span>
+#include <string_view>
 
 namespace aoc_2018_14 {
+
+namespace hn = hwy::HWY_NAMESPACE;
 
 /// Compute the prefix sum of a vector of 8-bit integers.
 template <typename D>

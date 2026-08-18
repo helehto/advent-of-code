@@ -1,5 +1,14 @@
-#include "common.h"
-#include "small_vector.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/small_vector.h>
+#include <aoc/string.h>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <memory>
+#include <string_view>
+#include <vector>
 
 namespace aoc_2018_25 {
 

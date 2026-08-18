@@ -1,4 +1,12 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <span>
+#include <string>
+#include <string_view>
 
 namespace aoc_2016_4 {
 
@@ -42,7 +50,7 @@ constexpr ParsedLine parse_line(std::string_view s)
 /// ascending order.
 constexpr void insert_sorted(std::span<uint16_t, 5> a, uint16_t value)
 {
-    DEBUG_ASSERT(std::ranges::is_sorted(a));
+    DEBUG_ASSERT(std::is_sorted(a.begin(), a.end()));
 
     if (value < a[2]) {
         if (value < a[0]) {

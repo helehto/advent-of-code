@@ -3,8 +3,7 @@
 #pragma once
 
 #include <cstdio>
-#include <fmt/core.h>
-#include <fmt/ranges.h>
+#include <fmt/base.h>
 
 // The STRINGIFY() macro expands its argument into a string literal.
 #define STRINGIFY2(x) #x

@@ -1,5 +1,6 @@
 #include "assembunny.h"
-#include "common.h"
+#include <aoc/base.h>
+#include <string_view>
 
 namespace aoc_2016_12 {
 

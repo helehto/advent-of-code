@@ -1,4 +1,7 @@
-#include "common.h"
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <cstddef>
+#include <string_view>
 
 namespace aoc_2017_9 {
 

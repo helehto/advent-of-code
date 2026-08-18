@@ -1,10 +1,14 @@
 #pragma once
 
-#include "macros.h"
 #include <algorithm>
+#include <aoc/macros.h>
+#include <concepts>
 #include <cstddef>
+#include <initializer_list>
 #include <iterator>
 #include <memory>
+#include <ranges>
+#include <type_traits>
 
 template <typename T, std::size_t Capacity>
 class inplace_vector {

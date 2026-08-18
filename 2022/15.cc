@@ -1,6 +1,15 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/math.h>
+#include <aoc/string.h>
 #include <climits>
-#include <set>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace aoc_2022_15 {
 

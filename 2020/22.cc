@@ -1,9 +1,19 @@
-#include "common.h"
-#include "dense_set.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/dense_set.h>
+#include <aoc/hash.h>
+#include <aoc/macros.h>
+#include <aoc/string.h>
+#include <array>
+#include <cstddef>
+#include <cstdint>
 #include <hwy/highway.h>
+#include <string_view>
+#include <utility>
 
 namespace aoc_2020_22 {
 
+namespace hn = hwy::HWY_NAMESPACE;
 using namespace std::literals;
 
 struct Deck {

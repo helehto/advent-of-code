@@ -1,6 +1,18 @@
-#include "common.h"
-#include "small_vector.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/small_vector.h>
+#include <aoc/string.h>
+#include <cctype>
+#include <charconv>
+#include <compare>
+#include <cstddef>
+#include <cstdint>
 #include <optional>
+#include <span>
+#include <string_view>
+#include <system_error>
+#include <vector>
 
 namespace aoc_2022_13 {
 

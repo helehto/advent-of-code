@@ -1,9 +1,18 @@
-#include "common.h"
-#include "inplace_vector.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/inplace_vector.h>
+#include <aoc/macros.h>
+#include <aoc/small_vector.h>
+#include <aoc/string.h>
+#include <array>
 #include <cerrno>
+#include <cstdint>
 #include <cstring>
+#include <span>
+#include <string_view>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <vector>
 
 // Later on, we cast a void* received from mmap() into a function pointer to
 // execute the emitted machine code, which is only conditionally supported.

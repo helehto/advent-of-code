@@ -1,6 +1,12 @@
-#include "common.h"
-#include "dense_map.h"
-#include "dense_set.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/dense_map.h>
+#include <aoc/dense_set.h>
+#include <aoc/string.h>
+#include <cstddef>
+#include <cstdint>
+#include <string_view>
+#include <utility>
 #include <vector>
 
 namespace aoc_2020_1 {

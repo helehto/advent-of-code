@@ -1,6 +1,17 @@
-#include "common.h"
-#include "inplace_vector.h"
-#include "monotonic_bucket_queue.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/inplace_vector.h>
+#include <aoc/macros.h>
+#include <aoc/math.h>
+#include <aoc/monotonic_bucket_queue.h>
+#include <aoc/string.h>
+#include <bit>
+#include <climits>
+#include <cstddef>
+#include <cstdint>
+#include <initializer_list>
+#include <string_view>
+#include <vector>
 
 namespace aoc_2023_17 {
 

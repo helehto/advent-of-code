@@ -1,6 +1,8 @@
 #pragma once
 
-#include "common.h"
+#include <aoc/macros.h>
+#include <array>
+#include <span>
 
 enum Instruction {
     instr_addr,

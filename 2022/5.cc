@@ -1,7 +1,12 @@
-#include "common.h"
 #include <algorithm>
+#include <aoc/base.h>
+#include <aoc/string.h>
 #include <array>
 #include <cctype>
+#include <cstddef>
+#include <span>
+#include <string>
+#include <string_view>
 
 namespace aoc_2022_5 {
 

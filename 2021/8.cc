@@ -1,5 +1,13 @@
-#include "common.h"
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/string.h>
 #include <array>
+#include <bit>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <string>
+#include <string_view>
 
 namespace aoc_2021_8 {
 

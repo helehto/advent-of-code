@@ -1,8 +1,10 @@
 #pragma once
 
-#include "macros.h"
+#include <aoc/macros.h>
 #include <array>
 #include <bit>
+#include <cstddef>
+#include <cstdint>
 #include <hwy/highway.h>
 
 namespace detail {

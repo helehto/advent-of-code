@@ -1,4 +1,9 @@
-#include "thread_pool.h"
+#include <aoc/macros.h>
+#include <aoc/thread_pool.h>
+#include <atomic>
+#include <cstddef>
+#include <cstdint>
+#include <span>
 #include <thread>
 
 struct alignas(16) WorkPackage {

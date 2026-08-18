@@ -1,7 +1,17 @@
-#include "common.h"
-#include "dense_map.h"
-#include <optional>
+#include <aoc/base.h>
+#include <aoc/dense_map.h>
+#include <aoc/inplace_vector.h>
+#include <aoc/macros.h>
+#include <aoc/string.h>
+#include <array>
+#include <charconv>
+#include <cstddef>
+#include <cstdint>
+#include <span>
+#include <string_view>
+#include <utility>
 #include <variant>
+#include <vector>
 
 namespace aoc_2023_19 {
 

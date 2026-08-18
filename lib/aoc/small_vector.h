@@ -1,10 +1,17 @@
 #pragma once
 
-#include "macros.h"
 #include <algorithm>
+#include <aoc/macros.h>
 #include <bit>
+#include <compare>
+#include <concepts>
 #include <cstddef>
+#include <cstdint>
+#include <initializer_list>
+#include <iterator>
 #include <memory>
+#include <new>
+#include <ranges>
 #include <utility>
 
 namespace detail {

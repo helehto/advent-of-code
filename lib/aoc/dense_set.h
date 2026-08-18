@@ -1,7 +1,13 @@
 #ifndef DENSE_SET_H
 #define DENSE_SET_H
 
-#include "dense_map.h"
+#include <aoc/dense_map.h>
+#include <cstddef>
+#include <functional>
+#include <initializer_list>
+#include <iterator>
+#include <tuple>
+#include <utility>
 
 struct dense_set_key {};
 

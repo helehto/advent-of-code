@@ -1,4 +1,18 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/math.h>
+#include <aoc/small_vector.h>
+#include <aoc/string.h>
+#include <array>
+#include <charconv>
+#include <climits>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <string_view>
+#include <tuple>
+#include <vector>
 
 namespace aoc_2019_3 {
 

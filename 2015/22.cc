@@ -1,7 +1,14 @@
-#include "common.h"
-#include "thread_pool.h"
-#include <mutex>
-#include <random>
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/string.h>
+#include <aoc/thread_pool.h>
+#include <array>
+#include <atomic>
+#include <climits>
+#include <cstddef>
+#include <cstdint>
+#include <string_view>
 
 namespace aoc_2015_22 {
 

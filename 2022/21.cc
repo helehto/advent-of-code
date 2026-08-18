@@ -1,5 +1,12 @@
-#include "common.h"
-#include "dense_map.h"
+#include <aoc/base.h>
+#include <aoc/dense_map.h>
+#include <aoc/string.h>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <string>
+#include <string_view>
+#include <vector>
 
 namespace aoc_2022_21 {
 

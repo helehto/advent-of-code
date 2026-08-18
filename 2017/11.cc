@@ -1,4 +1,8 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/math.h>
+#include <climits>
+#include <string_view>
 
 namespace aoc_2017_11 {
 

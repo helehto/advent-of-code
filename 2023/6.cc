@@ -1,4 +1,10 @@
-#include "common.h"
+#include <aoc/base.h>
+#include <aoc/math.h>
+#include <aoc/string.h>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <string_view>
 
 namespace aoc_2023_6 {
 

@@ -1,5 +1,8 @@
-#include "common.h"
-#include <regex>
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <cstddef>
+#include <cstdint>
+#include <string_view>
 
 namespace aoc_2024_3 {
 

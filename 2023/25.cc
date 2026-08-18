@@ -1,9 +1,24 @@
-#include "common.h"
-#include "dense_map.h"
-#include "monotonic_bucket_queue.h"
-#include "small_vector.h"
-#include "thread_pool.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/dense_map.h>
+#include <aoc/hash.h>
+#include <aoc/inplace_vector.h>
+#include <aoc/macros.h>
+#include <aoc/monotonic_bucket_queue.h>
+#include <aoc/small_vector.h>
+#include <aoc/string.h>
+#include <aoc/thread_pool.h>
+#include <array>
+#include <atomic>
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <numeric>
 #include <random>
+#include <span>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace aoc_2023_25 {
 

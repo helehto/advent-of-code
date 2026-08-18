@@ -1,5 +1,12 @@
-#include "common.h"
-#include "monotonic_bucket_queue.h"
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/math.h>
+#include <aoc/monotonic_bucket_queue.h>
+#include <aoc/string.h>
+#include <cstddef>
+#include <cstdint>
+#include <string_view>
+#include <utility>
 
 namespace aoc_2018_22 {
 

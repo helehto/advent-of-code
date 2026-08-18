@@ -3,8 +3,16 @@
 
 #pragma once
 
-#include "common.h"
-#include "dense_map.h"
+#include <aoc/dense_map.h>
+#include <aoc/macros.h>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <initializer_list>
+#include <limits>
+#include <span>
+#include <utility>
+#include <vector>
 
 enum {
     OP_ADD = 1,

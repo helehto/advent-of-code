@@ -1,7 +1,20 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/string.h>
+#include <array>
+#include <bit>
+#include <charconv>
+#include <cstddef>
+#include <cstdint>
 #include <hwy/highway.h>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace aoc_2023_7 {
+
+namespace hn = hwy::HWY_NAMESPACE;
 
 enum : uint8_t {
     high_card,

@@ -1,4 +1,17 @@
-#include "common.h"
+#include <aoc/base.h>
+#include <aoc/hash.h>
+#include <aoc/macros.h>
+#include <aoc/math.h>
+#include <aoc/small_vector.h>
+#include <aoc/string.h>
+#include <cstddef>
+#include <cstdint>
+#include <span>
+#include <string_view>
+#include <sys/types.h>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace aoc_2023_14 {
 

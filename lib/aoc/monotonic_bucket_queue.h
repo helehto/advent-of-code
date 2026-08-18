@@ -1,6 +1,12 @@
 #pragma once
 
-#include "common.h"
+#include <aoc/macros.h>
+#include <bit>
+#include <cstddef>
+#include <cstdint>
+#include <optional>
+#include <utility>
+#include <vector>
 
 /// An implementation of a priority queue in terms of a fixed-size bucket queue
 /// (see <https://en.wikipedia.org/wiki/Bucket_queue>).

@@ -1,4 +1,10 @@
-#include "common.h"
+#include <aoc/base.h>
+#include <aoc/string.h>
+#include <cstddef>
+#include <cstdint>
+#include <span>
+#include <string_view>
+#include <vector>
 
 namespace aoc_2020_18 {
 

@@ -1,4 +1,11 @@
-#include "common.h"
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/string.h>
+#include <array>
+#include <cstddef>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace aoc_2016_3 {
 

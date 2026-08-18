@@ -1,5 +1,18 @@
-#include "common.h"
-#include "inplace_vector.h"
+#include <aoc/base.h>
+#include <aoc/inplace_vector.h>
+#include <aoc/macros.h>
+#include <aoc/math.h>
+#include <aoc/string.h>
+#include <array>
+#include <charconv>
+#include <cstddef>
+#include <cstdint>
+#include <optional>
+#include <span>
+#include <string_view>
+#include <system_error>
+#include <utility>
+#include <vector>
 
 namespace aoc_2017_18 {
 

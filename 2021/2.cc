@@ -1,4 +1,7 @@
-#include "common.h"
+#include <aoc/base.h>
+#include <aoc/string.h>
+#include <charconv>
+#include <string_view>
 
 namespace aoc_2021_2 {
 

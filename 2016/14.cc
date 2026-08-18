@@ -1,10 +1,22 @@
-#include "common.h"
-#include "md5.h"
-#include "small_vector.h"
-#include "thread_pool.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/md5.h>
+#include <aoc/small_vector.h>
+#include <aoc/thread_pool.h>
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <hwy/base.h>
 #include <mutex>
+#include <span>
+#include <string_view>
+#include <vector>
 
 namespace aoc_2016_14 {
+
+namespace hn = hwy::HWY_NAMESPACE;
 
 struct InterestingHash {
     uint32_t index;

@@ -1,8 +1,19 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/math.h>
+#include <aoc/string.h>
+#include <array>
+#include <cstddef>
+#include <cstdint>
 #include <hwy/highway.h>
+#include <memory>
+#include <span>
+#include <string_view>
+#include <sys/types.h>
 
 namespace aoc_2020_17 {
 
+namespace hn = hwy::HWY_NAMESPACE;
 using D = hn::ScalableTag<uint8_t>;
 constexpr D d;
 

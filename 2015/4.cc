@@ -1,7 +1,11 @@
-#include "common.h"
-#include "md5.h"
-#include "thread_pool.h"
+#include <aoc/base.h>
+#include <aoc/md5.h>
+#include <aoc/thread_pool.h>
+#include <atomic>
+#include <bit>
+#include <cstdint>
 #include <hwy/highway.h>
+#include <string_view>
 
 namespace aoc_2015_4 {
 

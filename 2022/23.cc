@@ -1,5 +1,15 @@
-#include "common.h"
-#include "uint256.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/math.h>
+#include <aoc/string.h>
+#include <aoc/uint256.h>
+#include <cstddef>
+#include <span>
+#include <string_view>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 namespace aoc_2022_23 {
 

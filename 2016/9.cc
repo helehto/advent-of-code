@@ -1,4 +1,9 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/string.h>
+#include <cstddef>
+#include <string_view>
 
 namespace aoc_2016_9 {
 

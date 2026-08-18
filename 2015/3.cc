@@ -1,5 +1,8 @@
-#include "common.h"
-#include "dense_set.h"
+#include <aoc/base.h>
+#include <aoc/dense_set.h>
+#include <aoc/math.h>
+#include <cstddef>
+#include <string_view>
 
 namespace aoc_2015_3 {
 

@@ -1,5 +1,10 @@
-#include "common.h"
-#include "dense_map.h"
+#include <aoc/base.h>
+#include <aoc/dense_map.h>
+#include <aoc/math.h>
+#include <aoc/string.h>
+#include <cmath>
+#include <string_view>
+#include <utility>
 
 namespace aoc_2020_25 {
 

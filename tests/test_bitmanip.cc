@@ -1,4 +1,6 @@
-#include "bitmanip.h"
+#include <aoc/bitmanip.h>
+#include <cstddef>
+#include <cstdint>
 #include <random>
 
 #define DOCTEST_CONFIG_SUPER_FAST_ASSERTS

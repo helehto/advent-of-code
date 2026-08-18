@@ -1,4 +1,10 @@
-#include "common.h"
+#include <aoc/base.h>
+#include <aoc/string.h>
+#include <cstdint>
+#include <span>
+#include <string_view>
+#include <tuple>
+#include <utility>
 
 namespace aoc_2018_8 {
 

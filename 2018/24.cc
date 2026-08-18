@@ -1,6 +1,18 @@
-#include "common.h"
-#include "small_vector.h"
-#include "thread_pool.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/small_vector.h>
+#include <aoc/string.h>
+#include <aoc/thread_pool.h>
+#include <atomic>
+#include <climits>
+#include <cstddef>
+#include <ranges>
+#include <span>
+#include <string_view>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 namespace aoc_2018_24 {
 

@@ -1,7 +1,17 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/math.h>
+#include <aoc/string.h>
+#include <array>
+#include <cstddef>
+#include <cstdint>
 #include <hwy/highway.h>
+#include <string_view>
+#include <tuple>
 
 namespace aoc_2018_11 {
+
+namespace hn = hwy::HWY_NAMESPACE;
 
 static Matrix<int> generate_grid(int serial_number, size_t size)
 {

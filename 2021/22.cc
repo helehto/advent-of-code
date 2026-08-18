@@ -1,4 +1,15 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/small_vector.h>
+#include <aoc/string.h>
+#include <array>
+#include <cstdint>
+#include <iterator>
+#include <optional>
+#include <span>
+#include <string_view>
+#include <utility>
 
 namespace aoc_2021_22 {
 

@@ -1,4 +1,14 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/string.h>
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <iterator>
+#include <string>
+#include <string_view>
+#include <vector>
 
 namespace aoc_2016_6 {
 

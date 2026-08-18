@@ -1,4 +1,7 @@
-#include "common.h"
+#include <aoc/base.h>
+#include <bit>
+#include <cstddef>
+#include <string_view>
 
 namespace aoc_2022_6 {
 

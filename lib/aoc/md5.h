@@ -2,11 +2,23 @@
 
 #pragma once
 
-#include "bitmanip.h"
-#include "common.h"
+#include <algorithm>
+#include <aoc/macros.h>
+#include <aoc/math.h>
+#include <array>
+#include <bit>
+#include <concepts>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <hwy/highway.h>
+#include <optional>
+#include <span>
+#include <string_view>
 
 namespace md5 {
+
+namespace hn = hwy::HWY_NAMESPACE;
 
 using D = hn::ScalableTag<uint32_t>;
 using VecT = hn::Vec<D>;

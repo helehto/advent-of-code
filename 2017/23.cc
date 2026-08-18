@@ -1,7 +1,22 @@
-#include "common.h"
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/string.h>
+#include <array>
+#include <charconv>
+#include <cstddef>
+#include <cstdint>
 #include <hwy/highway.h>
+#include <iterator>
+#include <optional>
+#include <span>
+#include <string_view>
+#include <system_error>
+#include <type_traits>
+#include <vector>
 
 namespace aoc_2017_23 {
+
+namespace hn = hwy::HWY_NAMESPACE;
 
 enum class Opcode : uint8_t {
     set_ri,

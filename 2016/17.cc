@@ -1,11 +1,28 @@
-#include "common.h"
-#include "md5.h"
-#include "thread_pool.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/inplace_vector.h>
+#include <aoc/macros.h>
+#include <aoc/math.h>
+#include <aoc/md5.h>
+#include <aoc/small_vector.h>
+#include <aoc/thread_pool.h>
+#include <array>
+#include <atomic>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <hwy/highway.h>
 #include <mutex>
+#include <optional>
 #include <random>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace aoc_2016_17 {
+
+namespace hn = hwy::HWY_NAMESPACE;
 
 enum {
     DOOR_U_OPEN = 1 << 0,
@@ -138,7 +155,7 @@ void run(std::string_view buf, aoc::Answer &answer)
         auto messages = md5::SequentialBlocks::splat(buf);
         prepare_final_blocks(messages, lengths);
         const md5::VecT h = md5::hash_block<0xffff, md5::ResultType::only_a>(messages);
-        return hn::ExtractLane(h, 0);
+        return ExtractLane(h, 0);
     }();
 
     // Push the initial state as the root task.

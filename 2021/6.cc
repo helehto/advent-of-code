@@ -1,5 +1,10 @@
-#include "common.h"
+#include <aoc/base.h>
+#include <aoc/string.h>
+#include <array>
+#include <cstdint>
+#include <iterator>
 #include <numeric>
+#include <string_view>
 
 namespace aoc_2021_6 {
 

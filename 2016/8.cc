@@ -1,4 +1,10 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/math.h>
+#include <aoc/string.h>
+#include <cstddef>
+#include <fmt/format.h>
+#include <string_view>
 
 namespace aoc_2016_8 {
 

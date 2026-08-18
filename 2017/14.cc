@@ -1,7 +1,17 @@
-#include "bitmanip.h"
-#include "common.h"
 #include "knot_hash.h"
-#include "thread_pool.h"
+#include <aoc/base.h>
+#include <aoc/bitmanip.h>
+#include <aoc/math.h>
+#include <aoc/thread_pool.h>
+#include <atomic>
+#include <bit>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <fmt/base.h>
+#include <span>
+#include <string_view>
+#include <vector>
 
 namespace aoc_2017_14 {
 

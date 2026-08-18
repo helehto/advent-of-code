@@ -1,5 +1,16 @@
-#include "common.h"
-#include "dense_map.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/dense_map.h>
+#include <aoc/macros.h>
+#include <aoc/string.h>
+#include <array>
+#include <bit>
+#include <cstddef>
+#include <cstdint>
+#include <fmt/ranges.h>
+#include <ranges>
+#include <string_view>
+#include <vector>
 
 namespace aoc_2020_21 {
 

@@ -1,5 +1,10 @@
-#include "common.h"
-#include "thread_pool.h"
+#include <aoc/base.h>
+#include <aoc/thread_pool.h>
+#include <atomic>
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <string_view>
 
 namespace aoc_2018_5 {
 

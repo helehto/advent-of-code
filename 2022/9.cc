@@ -1,5 +1,13 @@
-#include "common.h"
-#include "dense_set.h"
+#include <aoc/base.h>
+#include <aoc/dense_set.h>
+#include <aoc/math.h>
+#include <aoc/string.h>
+#include <array>
+#include <charconv>
+#include <cstddef>
+#include <cstdlib>
+#include <span>
+#include <string_view>
 
 namespace aoc_2022_9 {
 

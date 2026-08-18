@@ -1,7 +1,21 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/math.h>
+#include <aoc/string.h>
+#include <bit>
+#include <cstddef>
+#include <cstdint>
 #include <hwy/highway.h>
+#include <memory>
+#include <span>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace aoc_2025_8 {
+
+namespace hn = hwy::HWY_NAMESPACE;
 
 struct UnionFind {
     std::vector<uint16_t> parent;
@@ -11,7 +25,8 @@ struct UnionFind {
         : parent(n)
         , size(n, 1)
     {
-        std::ranges::iota(parent, 0);
+        for (size_t i = 0; i < n; i++)
+            parent[i] = i;
     }
 
     constexpr size_t find(size_t n)
@@ -151,7 +166,7 @@ void run(std::string_view buf, aoc::Answer &answer)
             }
             if (iters == part1_iterations) {
                 auto s = uf.size;
-                std::ranges::partial_sort(s, s.begin() + 3, λab(a > b));
+                std::partial_sort(s.begin(), s.begin() + 3, s.end(), λab(a > b));
                 answer.add(s[0] * s[1] * s[2]);
             }
             iters++;

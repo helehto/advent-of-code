@@ -1,6 +1,14 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/string.h>
+#include <cctype>
+#include <charconv>
 #include <climits>
+#include <cstddef>
+#include <string>
+#include <string_view>
 #include <unordered_map>
+#include <vector>
 
 namespace aoc_2022_7 {
 

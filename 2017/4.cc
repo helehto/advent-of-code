@@ -1,5 +1,10 @@
-#include "common.h"
-#include "dense_set.h"
+#include <aoc/base.h>
+#include <aoc/dense_set.h>
+#include <aoc/macros.h>
+#include <aoc/string.h>
+#include <cstdint>
+#include <string_view>
+#include <vector>
 
 namespace aoc_2017_4 {
 

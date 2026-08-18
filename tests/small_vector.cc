@@ -1,6 +1,11 @@
-#include "small_vector.h"
+#include <aoc/small_vector.h>
+#include <array>
+#include <concepts>
+#include <cstddef>
+#include <iterator>
 #include <list>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #define DOCTEST_CONFIG_SUPER_FAST_ASSERTS

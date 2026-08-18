@@ -1,7 +1,21 @@
-#include "common.h"
-#include "dense_map.h"
-#include "monotonic_bucket_queue.h"
-#include <map>
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/dense_map.h>
+#include <aoc/hash.h>
+#include <aoc/macros.h>
+#include <aoc/math.h>
+#include <aoc/monotonic_bucket_queue.h>
+#include <aoc/string.h>
+#include <array>
+#include <bit>
+#include <cstddef>
+#include <cstdint>
+#include <optional>
+#include <span>
+#include <string_view>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 namespace aoc_2019_18 {
 

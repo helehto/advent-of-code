@@ -1,9 +1,18 @@
-#include "common.h"
-#include "dense_set.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/dense_set.h>
+#include <aoc/math.h>
+#include <aoc/string.h>
+#include <climits>
+#include <cstddef>
+#include <cstdint>
 #include <hwy/highway.h>
+#include <string_view>
+#include <utility>
 
 namespace aoc_2020_24 {
 
+namespace hn = hwy::HWY_NAMESPACE;
 constexpr hn::ScalableTag<int8_t> d;
 
 constexpr Vec2i walk(std::string_view s)

@@ -1,5 +1,10 @@
-#include "common.h"
-#include "dense_map.h"
+#include <aoc/base.h>
+#include <aoc/dense_map.h>
+#include <aoc/macros.h>
+#include <aoc/math.h>
+#include <aoc/string.h>
+#include <cmath>
+#include <string_view>
 
 namespace aoc_2017_3 {
 

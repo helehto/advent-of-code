@@ -1,5 +1,10 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/string.h>
+#include <cmath>
 #include <numeric>
+#include <span>
+#include <string_view>
 
 namespace aoc_2021_7 {
 

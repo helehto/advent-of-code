@@ -1,7 +1,20 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/math.h>
+#include <aoc/string.h>
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <hwy/aligned_allocator.h>
+#include <hwy/highway.h>
+#include <span>
+#include <string_view>
+#include <utility>
 
 namespace aoc_2021_20 {
+
+namespace hn = hwy::HWY_NAMESPACE;
 
 void run(std::string_view buf, aoc::Answer &answer)
 {

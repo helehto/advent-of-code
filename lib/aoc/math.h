@@ -1,92 +1,27 @@
 #pragma once
 
-#include "bitmanip.h"
-#include "inplace_vector.h"
-#include "macros.h"
-#include "small_vector.h"
 #include <algorithm>
-#include <cassert>
-#include <charconv>
-#include <cmath>
+#include <aoc/bitmanip.h>
+#include <aoc/inplace_vector.h>
+#include <aoc/macros.h>
+#include <array>
+#include <bit>
+#include <compare>
+#include <concepts>
+#include <cstddef>
 #include <cstdint>
-#include <cstdio>
-#include <cstring>
-#include <fmt/core.h>
-#include <fmt/ranges.h>
+#include <cstdlib>
+#include <fmt/base.h>
 #include <functional>
-#include <hwy/highway.h>
+#include <iterator>
 #include <memory>
-#include <numeric>
 #include <ranges>
 #include <span>
-#include <string>
 #include <string_view>
+#include <sys/types.h>
+#include <tuple>
 #include <type_traits>
 #include <utility>
-#include <vector>
-
-// Define this as a shorthand globally, we assume -march=native and only use
-// static dispatch anyway.
-namespace hn = hwy::HWY_NAMESPACE;
-
-// Machinery for solver registration.
-namespace aoc {
-
-// Formatted output from a solver. Most solvers output two solutions, with the
-// exception being the final day of the year which only outputs one.
-struct Answer {
-    std::string part1;
-    std::string part2;
-    int num_parts = 0;
-
-    void clear()
-    {
-        part1.clear();
-        part2.clear();
-        num_parts = 0;
-    }
-
-    void add_vformatted(fmt::string_view fmt, fmt::format_args args)
-    {
-        if (num_parts == 0)
-            fmt::vformat_to(std::back_inserter(part1), fmt, args);
-        else if (num_parts == 1)
-            fmt::vformat_to(std::back_inserter(part2), fmt, args);
-        else
-            ASSERT(false);
-        num_parts++;
-    }
-
-    template <typename... T>
-    [[gnu::noinline]] void add_formatted(fmt::format_string<T...> fmt, T &&...args)
-    {
-        add_vformatted(fmt.get(), fmt::make_format_args(args...));
-    }
-
-    template <typename T>
-    [[gnu::noinline]] void add(T &&value)
-    {
-        add_formatted("{}", static_cast<T &&>(value));
-    }
-};
-
-struct Problem {
-    int year;
-    int day;
-    void (*run)(std::string_view, aoc::Answer &answer);
-};
-
-// Define and register a solver for a given year and day. Must be used inside a
-// namespace, with the function body following the macro invocation.
-// clang-format off
-#define AOC_REGISTER_SOLVER(y, d, f)                              \
-    __attribute__((used, retain, section("aoc_solvers")))        \
-    constinit extern const ::aoc::Problem _solver = {y, d, f};                                                                      \
-    // clang-format on
-
-} // namespace aoc
-extern const aoc::Problem __start_aoc_solvers[];
-extern const aoc::Problem __stop_aoc_solvers[];
 
 template <typename T>
 struct Vec2 {
@@ -325,182 +260,6 @@ constexpr T modulo(T x, T mod)
     return r;
 }
 
-static inline std::vector<std::string_view> &
-split(std::string_view s, std::vector<std::string_view> &out, char c);
-
-template <typename T>
-constexpr void find_numbers_impl(std::string_view s, auto &&sink)
-{
-    const char *p = s.data();
-    const char *end = p + s.size();
-
-    while (true) {
-        [[maybe_unused]] int mul_overflow, add_overflow;
-
-        while (true) {
-            if (p == end) [[unlikely]]
-                return;
-            if (*p >= '0' && *p <= '9')
-                break;
-            p++;
-        }
-
-        const char *first = p;
-
-        T value{};
-        do {
-            mul_overflow = __builtin_mul_overflow(value, 10, &value);
-            DEBUG_ASSERT_MSG(!mul_overflow, "Overflow: {} * {}", value, 10);
-            add_overflow = __builtin_add_overflow(value, *p - '0', &value);
-            DEBUG_ASSERT_MSG(!add_overflow, "Overflow: {} + {}", value, *p - '0');
-            p++;
-        } while (p != end && *p >= '0' && *p <= '9');
-
-        if constexpr (std::is_signed_v<T>) {
-            if (first != s.data() && first[-1] == '-') {
-                [[maybe_unused]] int neg_overflow;
-                neg_overflow = __builtin_sub_overflow(0, value, &value);
-                DEBUG_ASSERT(!neg_overflow);
-            }
-        }
-
-        sink(value);
-    }
-}
-
-template <typename T>
-constexpr void find_numbers(std::string_view s, small_vector_base<T> &result)
-{
-    result.clear();
-    find_numbers_impl<T>(s, [&](auto &&v) { result.push_back(static_cast<T &&>(v)); });
-}
-
-template <typename T>
-constexpr void find_numbers(std::string_view s, std::vector<T> &result)
-{
-    result.clear();
-    find_numbers_impl<T>(s, [&](auto &&v) { result.push_back(static_cast<T &&>(v)); });
-}
-
-template <typename T, size_t N>
-constexpr std::array<T, N> find_numbers_n(std::string_view s)
-{
-    std::array<T, N> result{};
-    size_t i = 0;
-
-    find_numbers_impl<T>(s, [&](auto &&v) {
-        ASSERT(i < result.size());
-        result[i++] = static_cast<T &&>(v);
-    });
-
-    ASSERT_MSG(i == N, "Expected {} numbers, but got only {}!", N, i);
-    return result;
-}
-
-template <typename T>
-constexpr std::vector<T> find_numbers(std::string_view s)
-{
-    std::vector<T> result;
-    find_numbers(s, result);
-    return result;
-}
-
-template <typename T>
-constexpr small_vector<T> find_numbers_small(std::string_view s)
-{
-    small_vector<T> result;
-    find_numbers(s, result);
-    return result;
-}
-
-static size_t
-split(std::string_view s, std::output_iterator<std::string_view> auto &&out, char c)
-{
-    using D = hn::ScalableTag<uint8_t>;
-    constexpr D d;
-
-    const hn::Vec<D> vsep = hn::Set(d, static_cast<uint8_t>(c));
-    size_t count = 0;
-
-    const char *p = s.data();
-    const char *q = p + s.size();
-    const char *curr_field_start = p;
-
-    auto handle_chunk = [&](hn::Vec<D> vchars) {
-        uint64_t mask = hn::BitsFromMask(d, hn::Eq(vchars, vsep));
-        for (; mask != 0; mask &= mask - 1) {
-            int offset = std::countr_zero(mask);
-            *out++ = std::string_view(curr_field_start, p + offset - curr_field_start);
-            count++;
-            curr_field_start = p + offset + 1;
-        }
-    };
-
-    for (; static_cast<size_t>(q - p) >= hn::Lanes(d); p += hn::Lanes(d))
-        handle_chunk(hn::LoadU(d, reinterpret_cast<const uint8_t *>(p)));
-    if (p != q) {
-        std::array<uint8_t, hn::MaxLanes(d)> buffer{};
-        memcpy(buffer.data(), p, q - p);
-        handle_chunk(hn::LoadU(d, buffer.data()));
-    }
-
-    if (curr_field_start != q) {
-        *out++ = std::string_view(curr_field_start, q - curr_field_start);
-        count++;
-    }
-
-    return count;
-}
-
-static inline std::vector<std::string_view> &
-split(std::string_view s, std::vector<std::string_view> &out, char c)
-{
-    out.clear();
-    out.resize(std::ranges::count(s, c) + 1);
-    size_t n = split(s, out.begin(), c);
-    out.resize(n);
-    return out;
-}
-
-[[gnu::noinline]]
-static inline std::vector<std::string_view> split_lines(std::string_view s)
-{
-    std::vector<std::string_view> lines;
-    split(s, lines, '\n');
-    return lines;
-}
-
-template <typename Predicate>
-constexpr std::vector<std::string_view> &
-split(std::string_view s, std::vector<std::string_view> &out, Predicate &&predicate)
-{
-    out.clear();
-
-    while (true) {
-        while (!s.empty() && predicate(s.front()))
-            s.remove_prefix(1);
-        if (s.empty())
-            break;
-
-        size_t i = 0;
-        while (i < s.size() && !predicate(s[i]))
-            i++;
-        out.emplace_back(s.data(), i);
-        s.remove_prefix(i);
-    }
-
-    return out;
-}
-
-constexpr std::string_view strip(std::string_view s)
-{
-    while (!s.empty() && (s.front() == ' ' || s.front() == '\n'))
-        s.remove_prefix(1);
-    while (!s.empty() && (s.back() == ' ' || s.back() == '\n'))
-        s.remove_suffix(1);
-    return s;
-}
-
 template <typename T>
 struct StridedIterator {
     using difference_type = std::ptrdiff_t;
@@ -582,7 +341,9 @@ template <typename Derived>
 struct MatrixBase {
     constexpr bool operator==(this auto &&self, const Derived &other) noexcept
     {
-        return std::ranges::equal(self.all(), other.all());
+        std::span a = self.all();
+        std::span b = other.all();
+        return std::equal(a.begin(), a.end(), b.begin(), b.end());
     }
     constexpr bool operator!=(this auto &&self, const Derived &other) noexcept
     {
@@ -672,7 +433,8 @@ struct Matrix : MatrixBase<Matrix<T>> {
         , rows(rows_)
         , cols(cols_)
     {
-        std::ranges::fill(this->all(), value);
+        std::span dest = this->all();
+        std::fill(dest.begin(), dest.end(), value);
     }
 
     constexpr Matrix(const Matrix &other)
@@ -680,7 +442,8 @@ struct Matrix : MatrixBase<Matrix<T>> {
         , rows(other.rows)
         , cols(other.cols)
     {
-        std::ranges::copy(other.all(), data());
+        std::span dest = other.all();
+        std::copy(dest.begin(), dest.end(), this->data());
     }
 #pragma GCC diagnostic pop
 
@@ -690,7 +453,8 @@ struct Matrix : MatrixBase<Matrix<T>> {
             return *this;
 
         if (rows == other.rows && cols == other.cols) {
-            std::ranges::copy(other.all(), data());
+            std::span src = other.all();
+            std::copy(src.begin(), src.end(), this->data());
             return *this;
         }
 
@@ -742,8 +506,10 @@ struct Matrix : MatrixBase<Matrix<T>> {
     {
         Matrix<T> result(rows + pad_u + pad_d, cols + pad_l + pad_r, pad_value);
 
-        for (size_t i = 0; i < rows; ++i)
-            std::ranges::copy(this->row(i), result.row(i + pad_u).begin() + pad_l);
+        for (size_t i = 0; i < rows; ++i) {
+            std::span row = this->row(i);
+            std::copy(row.begin(), row.end(), result.row(i + pad_u).begin() + pad_l);
+        }
 
         return result;
     }
@@ -785,13 +551,6 @@ struct fmt::formatter<M> : fmt::formatter<std::remove_cv_t<typename M::value_typ
         return ctx.out();
     }
 };
-
-template <typename Container>
-void erase_swap(Container &c, size_t i)
-{
-    std::swap(c[i], c.back());
-    c.pop_back();
-}
 
 template <typename T>
 constexpr static std::array<Vec2<T>, 4> neighbors4(Vec2<T> p)
@@ -840,103 +599,3 @@ inline inplace_vector<Vec2<U>, 8> neighbors8(const MatrixConcept auto &grid, Vec
 
     return result;
 }
-
-class CrcHasher {
-private:
-    template <std::integral T>
-    static void update_crc(const std::byte *&p, uint64_t &crc) noexcept
-    {
-        T u;
-        std::memcpy(&u, p, sizeof(T));
-        crc = crc32_u64(crc, u);
-        p += sizeof(T);
-    }
-
-    static size_t hash_bytes(const std::byte *p, size_t n) noexcept
-    {
-        uint64_t result = 0;
-
-        for (; n >= 8; n -= 8)
-            update_crc<uint64_t>(p, result);
-
-        if (n) {
-            alignas(8) std::array<std::byte, 8> tail{};
-            for (size_t j = 0; n--; ++j)
-                tail[j] = *p++;
-            result = crc32_u64(result, std::bit_cast<uint64_t>(tail));
-        }
-
-        return result;
-    }
-
-    template <size_t N>
-    static size_t hash_bytes_fixed(const std::byte *p) noexcept
-    {
-        uint64_t result = 0;
-        for (size_t i = 0; i < N / 8; ++i)
-            update_crc<uint64_t>(p, result);
-
-        constexpr size_t rest = N % 8;
-        if constexpr (rest & 4)
-            update_crc<uint32_t>(p, result);
-        if constexpr (rest & 2)
-            update_crc<uint16_t>(p, result);
-        if constexpr (rest & 1)
-            update_crc<uint8_t>(p, result);
-
-        return result;
-    }
-
-public:
-    static size_t operator()(std::integral auto value) noexcept
-    {
-        static_assert(sizeof(value) <= 8);
-        return crc32_u64(0, static_cast<uint64_t>(value));
-    }
-
-    static size_t operator()(const float value) noexcept
-    {
-        return crc32_u64(0, std::bit_cast<uint32_t>(value));
-    }
-
-    static size_t operator()(const double value) noexcept
-    {
-        return crc32_u64(0, std::bit_cast<uint64_t>(value));
-    }
-
-    template <typename T, size_t Extent>
-    static size_t operator()(std::span<T, Extent> s) noexcept
-    {
-        static_assert(std::has_unique_object_representations_v<T>,
-                      "Cannot hash type: it has non-unique object representations "
-                      "(possibly padding?)");
-
-        auto bytes = std::as_bytes(s);
-        if constexpr (decltype(bytes)::extent == std::dynamic_extent) {
-            return hash_bytes(bytes.data(), bytes.size());
-        } else {
-            return hash_bytes_fixed<decltype(bytes)::extent>(bytes.data());
-        }
-    }
-
-    static size_t operator()(std::string_view s) noexcept
-    {
-        return hash_bytes(std::bit_cast<std::byte *>(s.data()), s.size());
-    }
-
-    static size_t operator()(const std::string &s) noexcept
-    {
-        return hash_bytes(std::bit_cast<std::byte *>(s.data()), s.size());
-    }
-
-    template <typename T>
-    static size_t operator()(const T &value) noexcept
-        requires(!std::integral<T>)
-    {
-        static_assert(std::has_unique_object_representations_v<T>,
-                      "Cannot hash type: it has non-unique object representations "
-                      "(possibly padding?)");
-
-        return hash_bytes_fixed<sizeof(T)>(std::bit_cast<std::byte *>(&value));
-    }
-};

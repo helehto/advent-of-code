@@ -1,6 +1,23 @@
-#include "thread_pool.h"
+#include <algorithm>
+#include <aoc/macros.h>
+#include <aoc/small_vector.h>
+#include <aoc/thread_pool.h>
+#include <atomic>
+#include <cerrno>
+#include <climits>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <functional>
+#include <linux/futex.h>
+#include <memory>
+#include <optional>
 #include <random>
+#include <sched.h>
+#include <sys/syscall.h>
 #include <thread>
+#include <unistd.h>
+#include <utility>
 
 struct alignas(64) ThreadPool::Worker {
     std::jthread thread;

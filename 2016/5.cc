@@ -1,8 +1,18 @@
-#include "common.h"
-#include "md5.h"
-#include "thread_pool.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/md5.h>
+#include <aoc/thread_pool.h>
+#include <array>
+#include <atomic>
+#include <bit>
+#include <cstddef>
+#include <cstdint>
 #include <hwy/highway.h>
+#include <iterator>
 #include <mutex>
+#include <string>
+#include <string_view>
 
 namespace aoc_2016_5 {
 
@@ -34,8 +44,8 @@ static void search(std::mutex &mutex,
     auto sink = [&](md5::VecT hashes, uint64_t n) {
         for (auto m = md5::leading_zero_mask<5>(hashes); m; m &= m - 1) {
             const auto bit = std::countr_zero(m);
-            const auto h1 = (hn::ExtractLane(hashes, bit) >> 16) & 0xf;
-            const auto h2 = (hn::ExtractLane(hashes, bit) >> 28) & 0xf;
+            const auto h1 = (ExtractLane(hashes, bit) >> 16) & 0xf;
+            const auto h2 = (ExtractLane(hashes, bit) >> 28) & 0xf;
             std::unique_lock lk(mutex);
             add_part1_character(p1, n + bit, "0123456789abcdef"[h1]);
             add_part2_character(p2, n + bit, h1, "0123456789abcdef"[h2]);

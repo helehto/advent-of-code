@@ -1,6 +1,14 @@
 #pragma once
 
-#include "common.h"
+#include <aoc/macros.h>
+#include <aoc/string.h>
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <span>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 enum Opcode : int64_t {
     OP_NOP,

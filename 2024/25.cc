@@ -1,8 +1,15 @@
-#include "common.h"
-#include "inplace_vector.h"
+#include <aoc/base.h>
+#include <aoc/inplace_vector.h>
+#include <array>
+#include <bit>
+#include <cstddef>
+#include <cstdint>
 #include <hwy/highway.h>
+#include <string_view>
 
 namespace aoc_2024_25 {
+
+namespace hn = hwy::HWY_NAMESPACE;
 
 // Each key and lock is represented using a 16-bit integer, with the lowest 15
 // bit consisting of five 3-bit counters holding the number of occupied slots

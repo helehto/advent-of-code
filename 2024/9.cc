@@ -1,7 +1,18 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <functional>
 #include <hwy/highway.h>
+#include <memory>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace aoc_2024_9 {
+
+namespace hn = hwy::HWY_NAMESPACE;
 
 static int64_t part1(std::string_view line)
 {

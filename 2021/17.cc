@@ -1,8 +1,15 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/string.h>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <hwy/highway.h>
+#include <string_view>
 
 namespace aoc_2021_17 {
 
+namespace hn = hwy::HWY_NAMESPACE;
 using D = hn::ScalableTag<int16_t>;
 constexpr D d;
 

@@ -1,6 +1,19 @@
-#include "common.h"
-#include "dense_map.h"
-#include "thread_pool.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/dense_map.h>
+#include <aoc/macros.h>
+#include <aoc/math.h>
+#include <aoc/string.h>
+#include <aoc/thread_pool.h>
+#include <atomic>
+#include <charconv>
+#include <cstddef>
+#include <cstdint>
+#include <iterator>
+#include <span>
+#include <string_view>
+#include <system_error>
+#include <vector>
 
 namespace aoc_2015_13 {
 

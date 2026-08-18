@@ -1,6 +1,13 @@
-#include "bitmanip.h"
-#include "common.h"
-#include "dense_map.h"
+#include <aoc/base.h>
+#include <aoc/bitmanip.h>
+#include <aoc/dense_map.h>
+#include <aoc/hash.h>
+#include <aoc/string.h>
+#include <bit>
+#include <cstdint>
+#include <string_view>
+#include <tuple>
+#include <utility>
 
 namespace aoc_2020_14 {
 

@@ -1,5 +1,7 @@
-#include "common.h"
 #include "intcode.h"
+#include <aoc/base.h>
+#include <aoc/string.h>
+#include <string_view>
 
 namespace aoc_2019_5 {
 

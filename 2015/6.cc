@@ -1,5 +1,19 @@
-#include "common.h"
-#include "thread_pool.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/math.h>
+#include <aoc/string.h>
+#include <aoc/thread_pool.h>
+#include <array>
+#include <atomic>
+#include <bit>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <span>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace aoc_2015_6 {
 

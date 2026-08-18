@@ -1,4 +1,14 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/math.h>
+#include <aoc/small_vector.h>
+#include <aoc/string.h>
+#include <cstddef>
+#include <memory>
+#include <string_view>
+#include <sys/types.h>
+#include <tuple>
+#include <utility>
 
 namespace aoc_2022_14 {
 

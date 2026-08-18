@@ -1,6 +1,18 @@
-#include "common.h"
-#include "dense_set.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/dense_set.h>
+#include <aoc/macros.h>
+#include <aoc/math.h>
+#include <aoc/string.h>
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <queue>
+#include <span>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace aoc_2023_10 {
 

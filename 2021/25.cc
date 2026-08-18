@@ -1,5 +1,11 @@
-#include "common.h"
-#include "uint256.h"
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/string.h>
+#include <aoc/uint256.h>
+#include <cstddef>
+#include <span>
+#include <string_view>
+#include <vector>
 
 namespace aoc_2021_25 {
 

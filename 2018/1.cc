@@ -1,6 +1,8 @@
-#include "common.h"
-#include "dense_set.h"
+#include <aoc/base.h>
+#include <aoc/dense_set.h>
+#include <aoc/string.h>
 #include <numeric>
+#include <string_view>
 
 namespace aoc_2018_1 {
 

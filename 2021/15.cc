@@ -1,5 +1,16 @@
-#include "common.h"
-#include "monotonic_bucket_queue.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/math.h>
+#include <aoc/monotonic_bucket_queue.h>
+#include <aoc/small_vector.h>
+#include <aoc/string.h>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <memory>
+#include <optional>
+#include <string_view>
 
 namespace aoc_2021_15 {
 

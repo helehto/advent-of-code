@@ -1,4 +1,10 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <array>
+#include <cstddef>
+#include <fmt/ranges.h>
+#include <span>
+#include <string_view>
 
 namespace aoc_2021_24 {
 

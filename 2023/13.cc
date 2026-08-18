@@ -1,6 +1,10 @@
-#include "common.h"
-#include <algorithm>
-#include <ranges>
+#include <aoc/base.h>
+#include <aoc/math.h>
+#include <aoc/string.h>
+#include <cstddef>
+#include <cstdint>
+#include <span>
+#include <string_view>
 
 namespace aoc_2023_13 {
 

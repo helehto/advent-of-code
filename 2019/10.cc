@@ -1,5 +1,17 @@
-#include "common.h"
-#include "dense_map.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/dense_map.h>
+#include <aoc/macros.h>
+#include <aoc/math.h>
+#include <aoc/small_vector.h>
+#include <aoc/string.h>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <numeric>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace aoc_2019_10 {
 

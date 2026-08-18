@@ -1,7 +1,18 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/math.h>
+#include <aoc/string.h>
+#include <array>
+#include <cstddef>
+#include <cstdint>
 #include <hwy/highway.h>
+#include <string_view>
+#include <sys/types.h>
 
 namespace aoc_2020_11 {
+
+namespace hn = hwy::HWY_NAMESPACE;
 
 static size_t part1(Matrix<int8_t> grid)
 {

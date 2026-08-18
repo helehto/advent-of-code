@@ -1,5 +1,10 @@
-#include "common.h"
 #include "intcode.h"
+#include <aoc/base.h>
+#include <aoc/small_vector.h>
+#include <aoc/string.h>
+#include <cstdint>
+#include <string>
+#include <string_view>
 
 namespace aoc_2019_25 {
 

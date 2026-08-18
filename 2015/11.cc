@@ -1,4 +1,13 @@
-#include "common.h"
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <array>
+#include <bit>
+#include <cstddef>
+#include <cstdint>
+#include <span>
+#include <string>
+#include <string_view>
+#include <utility>
 
 namespace aoc_2015_11 {
 
@@ -40,7 +49,8 @@ void run(std::string_view buf, aoc::Answer &answer)
 {
     ASSERT(buf.size() == 8);
     std::array<uint8_t, 8> s;
-    std::ranges::transform(buf, s.begin(), λx(x - 'a'));
+    for (size_t i = 0; i < buf.size(); ++i)
+        s[i] = buf[i] - 'a';
 
     for (int i = 0; i < 2; i++) {
         do {

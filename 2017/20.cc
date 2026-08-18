@@ -1,5 +1,18 @@
-#include "common.h"
-#include "dense_map.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/dense_map.h>
+#include <aoc/hash.h>
+#include <aoc/macros.h>
+#include <aoc/string.h>
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <iterator>
+#include <span>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace aoc_2017_20 {
 
@@ -59,8 +72,10 @@ static int part2(std::vector<Particle> &particles)
         }
 
         std::ranges::sort(pending_deletion);
-        for (size_t i = pending_deletion.size(); i--;)
-            erase_swap(next, pending_deletion[i]);
+        for (size_t i = pending_deletion.size(); i--;) {
+            next[pending_deletion[i]] = next.back();
+            next.pop_back();
+        }
 
         std::swap(particles, next);
     };

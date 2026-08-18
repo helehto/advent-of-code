@@ -1,8 +1,15 @@
-#include "common.h"
+#include <aoc/base.h>
+#include <array>
 #include <charconv>
-#include <unistd.h>
+#include <climits>
+#include <cstddef>
+#include <cstdint>
+#include <hwy/highway.h>
+#include <string_view>
 
 namespace aoc_2019_8 {
+
+namespace hn = hwy::HWY_NAMESPACE;
 
 constexpr size_t layer_cols = 25;
 constexpr size_t layer_rows = 6;

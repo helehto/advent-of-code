@@ -1,4 +1,8 @@
-#include "common.h"
+#include <aoc/base.h>
+#include <array>
+#include <cstddef>
+#include <cstring>
+#include <string_view>
 
 namespace aoc_2019_4 {
 

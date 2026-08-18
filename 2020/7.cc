@@ -1,6 +1,16 @@
-#include "common.h"
-#include "dense_map.h"
-#include "dense_set.h"
+#include <aoc/base.h>
+#include <aoc/dense_map.h>
+#include <aoc/dense_set.h>
+#include <aoc/macros.h>
+#include <aoc/small_vector.h>
+#include <aoc/string.h>
+#include <charconv>
+#include <cstddef>
+#include <iterator>
+#include <string_view>
+#include <system_error>
+#include <utility>
+#include <vector>
 
 namespace aoc_2020_7 {
 

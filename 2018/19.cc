@@ -1,5 +1,12 @@
-#include "common.h"
 #include "vm.h"
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/string.h>
+#include <array>
+#include <cmath>
+#include <cstddef>
+#include <span>
+#include <string_view>
 
 namespace aoc_2018_19 {
 

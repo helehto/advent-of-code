@@ -1,4 +1,9 @@
-#include "common.h"
+#include <aoc/base.h>
+#include <array>
+#include <bit>
+#include <cstddef>
+#include <cstdint>
+#include <string_view>
 
 namespace aoc_2016_18 {
 

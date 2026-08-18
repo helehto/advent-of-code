@@ -1,7 +1,20 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/math.h>
+#include <aoc/string.h>
+#include <cstddef>
+#include <cstdint>
 #include <hwy/highway.h>
+#include <span>
+#include <string_view>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 namespace aoc_2018_18 {
+
+namespace hn = hwy::HWY_NAMESPACE;
 
 enum {
     EMPTY = 0x00,

@@ -1,6 +1,20 @@
-#include "common.h"
-#include "inplace_vector.h"
-#include "thread_pool.h"
+#include <aoc/base.h>
+#include <aoc/inplace_vector.h>
+#include <aoc/macros.h>
+#include <aoc/small_vector.h>
+#include <aoc/string.h>
+#include <aoc/thread_pool.h>
+
+#include <algorithm>
+#include <atomic>
+#include <charconv>
+#include <cstddef>
+#include <cstdint>
+#include <span>
+#include <string_view>
+#include <system_error>
+#include <utility>
+#include <vector>
 
 namespace aoc_2020_19 {
 

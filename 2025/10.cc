@@ -1,6 +1,20 @@
-#include "bitmanip.h"
-#include "common.h"
-#include "thread_pool.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/bitmanip.h>
+#include <aoc/macros.h>
+#include <aoc/math.h>
+#include <aoc/small_vector.h>
+#include <aoc/string.h>
+#include <aoc/thread_pool.h>
+#include <atomic>
+#include <bit>
+#include <climits>
+#include <cstddef>
+#include <cstdint>
+#include <numeric>
+#include <span>
+#include <string_view>
+#include <vector>
 
 namespace aoc_2025_10 {
 

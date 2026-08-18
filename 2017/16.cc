@@ -1,9 +1,23 @@
-#include "common.h"
-#include "dense_map.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/dense_map.h>
+#include <aoc/hash.h>
+#include <aoc/macros.h>
+#include <aoc/small_vector.h>
+#include <aoc/string.h>
+#include <array>
+#include <cstddef>
+#include <cstdint>
 #include <hwy/highway.h>
+#include <span>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace aoc_2017_16 {
 
+namespace hn = hwy::HWY_NAMESPACE;
 using D = hn::FixedTag<uint8_t, 16>;
 constexpr D d;
 

@@ -1,7 +1,14 @@
-#include "common.h"
-#include "dense_map.h"
 #include <algorithm>
+#include <aoc/base.h>
+#include <aoc/dense_map.h>
+#include <aoc/macros.h>
+#include <aoc/string.h>
+#include <array>
+#include <charconv>
+#include <cstdint>
 #include <ranges>
+#include <span>
+#include <string_view>
 
 namespace aoc_2018_4 {
 

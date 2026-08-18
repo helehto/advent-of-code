@@ -94,9 +94,11 @@ link_args = [
 
 libaoc = static_library(
     'aoc',
-    'include/md5.cc',
-    'include/thread_pool.cc',
+    'lib/aoc/md5.cc',
+    'lib/aoc/string.cc',
+    'lib/aoc/thread_pool.cc',
     cpp_args: cpp_args,
+    include_directories: include_directories('lib'),
 )
 libaoc_dep = declare_dependency(
     dependencies: [
@@ -114,7 +116,7 @@ libaoc_dep = declare_dependency(
             },
         ),
     ],
-    include_directories: include_directories('include'),
+    include_directories: include_directories('lib'),
     link_with: libaoc,
 )
 

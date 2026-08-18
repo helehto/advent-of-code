@@ -1,4 +1,13 @@
-#include "common.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/string.h>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <span>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace aoc_2018_12 {
 

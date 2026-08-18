@@ -1,6 +1,13 @@
-#include "common.h"
-#include "dense_set.h"
+#include <aoc/base.h>
+#include <aoc/dense_set.h>
+#include <array>
+#include <bit>
+#include <cstddef>
+#include <cstdint>
 #include <deque>
+#include <iterator>
+#include <string_view>
+#include <utility>
 
 namespace aoc_2019_24 {
 

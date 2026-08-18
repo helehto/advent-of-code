@@ -1,6 +1,12 @@
-#include "common.h"
-#include "dense_set.h"
 #include "intcode.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/dense_set.h>
+#include <aoc/math.h>
+#include <aoc/string.h>
+#include <cstdint>
+#include <string>
+#include <string_view>
 
 namespace aoc_2019_11 {
 

@@ -1,6 +1,16 @@
-#include "common.h"
-#include "dense_map.h"
-#include "monotonic_bucket_queue.h"
+#include <aoc/base.h>
+#include <aoc/dense_map.h>
+#include <aoc/hash.h>
+#include <aoc/macros.h>
+#include <aoc/math.h>
+#include <aoc/monotonic_bucket_queue.h>
+#include <aoc/small_vector.h>
+#include <aoc/string.h>
+#include <bit>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <string_view>
 
 namespace aoc_2023_21 {
 

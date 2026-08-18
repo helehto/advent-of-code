@@ -1,8 +1,22 @@
-#include "common.h"
-#include "thread_pool.h"
+#include <algorithm>
+#include <aoc/base.h>
+#include <aoc/macros.h>
+#include <aoc/string.h>
+#include <aoc/thread_pool.h>
+#include <array>
+#include <atomic>
+#include <cstddef>
+#include <cstdint>
 #include <hwy/highway.h>
+#include <iterator>
+#include <memory>
+#include <span>
+#include <string_view>
+#include <vector>
 
 namespace aoc_2017_15 {
+
+namespace hn = hwy::HWY_NAMESPACE;
 
 using D = hn::FixedTag<uint64_t, 4>; // TODO: Make this scalable
 constexpr D d;

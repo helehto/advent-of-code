@@ -1,6 +1,15 @@
-#include "common.h"
-#include "dense_map.h"
-#include "dense_set.h"
+#include <aoc/base.h>
+#include <aoc/dense_map.h>
+#include <aoc/dense_set.h>
+#include <aoc/small_vector.h>
+#include <aoc/string.h>
+#include <cctype>
+#include <cstddef>
+#include <cstdint>
+#include <span>
+#include <string>
+#include <string_view>
+#include <vector>
 
 namespace aoc_2015_19 {
 
