@@ -6,7 +6,7 @@
 #include <type_traits>
 
 #if defined(__BMI2__)
-#include <immintrin.h> // bextr/bzhi/pdep/pext
+#include <x86gprintrin.h> // bextr/bzhi/pdep/pext
 #define DISPATCH_BMI2(intrinsic, fallback, ...)                                          \
     if !consteval {                                                                      \
         return intrinsic(__VA_ARGS__);                                                   \
@@ -18,7 +18,7 @@
 #endif
 
 #if defined(__SSE4_2__)
-#include <immintrin.h> // crc32
+#include <smmintrin.h> // crc32
 #define DISPATCH_SSE42(intrinsic, fallback, ...)                                         \
     if !consteval {                                                                      \
         return intrinsic(__VA_ARGS__);                                                   \
