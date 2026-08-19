@@ -56,48 +56,52 @@ constexpr int f(std::span<const int> input)
     return z;
 }
 
-constexpr std::array<int, 14> solve(const std::array<int, 9> &digits)
+constexpr std::array<int, 14> solve1()
 {
-    const int n = digits.size();
+    constexpr int ka = k3[0] + k2[13];
+    constexpr int kb = k3[1] + k2[12];
+    constexpr int kc = k3[2] + k2[3];
+    constexpr int kd = k3[4] + k2[11];
+    constexpr int ke = k3[5] + k2[6];
+    constexpr int kf = k3[7] + k2[8];
+    constexpr int kg = k3[9] + k2[10];
 
-    for (int a = 0; a < n; ++a) {
-        for (int b = 0; b < n; ++b) {
-            for (int c = 0; c < n; ++c) {
-                for (int d = 0; d < n; ++d) {
-                    for (int e = 0; e < n; ++e) {
-                        for (int f = 0; f < n; ++f) {
-                            for (int g = 0; g < n; ++g) {
-                                std::array<int, 14> input{
-                                    digits[a], digits[b], digits[c], 0, digits[d],
-                                    digits[e], 0,         digits[f], 0, digits[g],
-                                    0,         0,         0,         0,
-                                };
+    auto a = std::min(9, 9 - ka);
+    auto b = std::min(9, 9 - kb);
+    auto c = std::min(9, 9 - kc);
+    auto d = std::min(9, 9 - kd);
+    auto e = std::min(9, 9 - ke);
+    auto f = std::min(9, 9 - kf);
+    auto g = std::min(9, 9 - kg);
 
-                                input[3] = input[2] + k3[2] + k2[3];
-                                input[6] = input[5] + k3[5] + k2[6];
-                                input[8] = input[7] + k3[7] + k2[8];
-                                input[10] = input[9] + k3[9] + k2[10];
-                                input[11] = input[4] + k3[4] + k2[11];
-                                input[12] = input[1] + k3[1] + k2[12];
-                                input[13] = input[0] + k3[0] + k2[13];
+    return {a, b, c, c + kc, d, e, e + ke, f, f + kf, g, g + kg, d + kd, b + kb, a + ka};
+}
 
-                                if (std::ranges::all_of(input, λx(0 < x && x <= 9)))
-                                    return input;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+constexpr std::array<int, 14> solve2()
+{
+    constexpr int ka = k3[0] + k2[13];
+    constexpr int kb = k3[1] + k2[12];
+    constexpr int kc = k3[2] + k2[3];
+    constexpr int kd = k3[4] + k2[11];
+    constexpr int ke = k3[5] + k2[6];
+    constexpr int kf = k3[7] + k2[8];
+    constexpr int kg = k3[9] + k2[10];
 
-    ASSERT(false);
+    auto a = std::max(1, 1 - ka);
+    auto b = std::max(1, 1 - kb);
+    auto c = std::max(1, 1 - kc);
+    auto d = std::max(1, 1 - kd);
+    auto e = std::max(1, 1 - ke);
+    auto f = std::max(1, 1 - kf);
+    auto g = std::max(1, 1 - kg);
+
+    return {a, b, c, c + kc, d, e, e + ke, f, f + kf, g, g + kg, d + kd, b + kb, a + ka};
 }
 
 void run(std::string_view)
 {
-    fmt::print("{}\n", fmt::join(solve({9, 8, 7, 6, 5, 4, 3, 2, 1}), ""));
-    fmt::print("{}\n", fmt::join(solve({1, 2, 3, 4, 5, 6, 7, 8, 9}), ""));
+    fmt::print("{}\n", fmt::join(solve1(), ""));
+    fmt::print("{}\n", fmt::join(solve2(), ""));
 }
 
 }
