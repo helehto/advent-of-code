@@ -139,6 +139,7 @@ test(
         'tests/test_bitmanip.cc',
         cpp_args: [
             cpp_args,
+            '-Og',
             '-DDOCTEST_CONFIG_NO_EXCEPTIONS_BUT_WITH_ALL_ASSERTS',
         ],
         dependencies: [libaoc_dep, doctest],
@@ -151,7 +152,7 @@ test(
     executable(
         'test-fork-pool',
         'tests/test_fork_pool.cc',
-        cpp_args: cpp_args,
+        cpp_args: [cpp_args, '-Og'],
         dependencies: libaoc_dep,
         link_args: link_args,
     ),
