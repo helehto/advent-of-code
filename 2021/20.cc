@@ -22,7 +22,7 @@ void run(std::string_view buf)
     const size_t rows = init_rows + 2 * (max_iterations + 1);
     const size_t cols = (init_cols + 2 * (max_iterations + 1) + 2 * 64) & ~63; // +SIMD
 
-    // Bounding box for the current image. NOTE: x1/y1 is exclusvie!
+    // Bounding box for the current image. NOTE: x1/y1 is inclusive!
     size_t x0 = max_iterations + 1;
     size_t x1 = x0 + init_cols - 1;
     size_t y0 = max_iterations + 1;
