@@ -17,6 +17,7 @@
 #include <vector>
 
 using namespace std::literals;
+using namespace std::chrono_literals;
 using Problem = aoc::Problem;
 
 #define die(fmt, ...)                                                                    \
@@ -31,8 +32,16 @@ struct Options {
     const char *input_file = nullptr;
     int iterations = 1;
     int num_threads = 0;
-    double target_time = -1;
     bool stable_mode = false;
+
+    // How many seconds and/or iterations to run. Run until both
+    // `min_iterations` and `min_duration` have been reached, and continue
+    // until either `max_iterations` or `max_duration` has been reached.
+    int64_t min_iterations = 1;
+    int64_t max_iterations = INT64_MAX;
+    std::chrono::nanoseconds min_duration = 0ns;
+    std::chrono::nanoseconds max_duration = std::chrono::nanoseconds::max();
+
     bool json = false;
     std::vector<Problem> problems_to_run;
 };
@@ -56,7 +65,7 @@ static std::vector<Problem> glob_problem(std::span<const Problem> problems,
 struct ProblemData {
     int year;
     int day;
-    std::vector<uint64_t> durations;
+    std::vector<std::chrono::nanoseconds> durations;
     std::string output;
 };
 
@@ -81,7 +90,7 @@ static std::string slurp(int fd)
     return contents;
 }
 
-static std::pair<std::vector<uint64_t>, std::string>
+static std::pair<std::vector<std::chrono::nanoseconds>, std::string>
 run_solver(const Problem &s, std::string input_path, const Options &opts)
 {
     using namespace std::chrono;
@@ -100,9 +109,9 @@ run_solver(const Problem &s, std::string input_path, const Options &opts)
             input.pop_back();
     }
 
-    std::vector<uint64_t> durations;
+    std::vector<std::chrono::nanoseconds> durations;
     durations.reserve(opts.iterations);
-    uint64_t total_duration = 0;
+    auto total_duration = 0ns;
     aoc::Answer answer;
     std::optional<aoc::Answer> reference;
 
@@ -111,7 +120,7 @@ run_solver(const Problem &s, std::string input_path, const Options &opts)
         const auto start = high_resolution_clock::now();
         s.run(input, answer);
         const auto end = high_resolution_clock::now();
-        uint64_t duration = duration_cast<nanoseconds>(end - start).count();
+        auto duration = end - start;
         durations.push_back(duration);
         total_duration += duration;
 
@@ -136,7 +145,7 @@ run_solver(const Problem &s, std::string input_path, const Options &opts)
     if (opts.stable_mode) {
         // Run for `warmup_duration` or `warmup_iterations` iterations to warm
         // up, whichever is longer, to determine the batch size.
-        constexpr uint64_t warmup_duration = 20'000'000; // 20 ms
+        constexpr auto warmup_duration = 20ms; // 20 ms
         constexpr size_t warmup_iterations = 3;
         while (total_duration < warmup_duration || durations.size() < warmup_iterations)
             run();
@@ -148,6 +157,7 @@ run_solver(const Problem &s, std::string input_path, const Options &opts)
         const size_t N = std::max<size_t>(
             warmup_iterations, (warmup_duration * durations.size()) / total_duration);
         size_t num_batches = 0;
+        size_t min_iterations = std::max<size_t>(opts.min_iterations, N);
 
         while (true) {
             for (size_t i = 0; i < N; i++)
@@ -163,25 +173,28 @@ run_solver(const Problem &s, std::string input_path, const Options &opts)
                 batch = batch.subspan(0, first_outlier - batch.begin());
             }
 
-            uint64_t sum = std::ranges::fold_left(batch, UINT64_C(0), λab(a + b));
-            uint64_t min = std::ranges::min(batch);
-            auto mean = double(sum) / double(N);
+            auto sum = std::ranges::fold_left(batch, 0ns, λab(a + b));
+            auto min = std::ranges::min(batch);
+            auto mean = std::chrono::duration<double>(sum) / double(N);
 
             double ratio = mean / min;
-            DV(min, mean, ratio);
             ++num_batches;
-            if (ratio <= 1.05 ||
-                (opts.target_time > 0 && total_duration >= opts.target_time * 1e9)) {
-                DV(num_batches);
+            if (total_duration >= opts.min_duration &&
+                num_batches * N >= min_iterations &&
+                (ratio <= 1.05 || total_duration >= opts.max_duration ||
+                 num_batches * N >= static_cast<uint64_t>(opts.max_iterations))) {
                 break;
             }
         }
-    } else if (opts.target_time > 0) {
-        while (total_duration < opts.target_time * 1e9)
-            run();
     } else {
-        for (int i = 1; i < opts.iterations; i++)
+        size_t iterations = 1;
+        while ((total_duration < opts.min_duration ||
+                iterations < static_cast<uint64_t>(opts.min_iterations)) &&
+               total_duration < opts.max_duration &&
+               iterations < static_cast<uint64_t>(opts.max_iterations)) {
             run();
+            ++iterations;
+        }
     }
 
     return {durations, output};
@@ -199,7 +212,7 @@ struct fmt::formatter<ProblemData> {
         const char *separator = "";
         out = fmt::format_to(out, "[{},{},[", p.year, p.day);
         for (auto &t : p.durations) {
-            out = fmt::format_to(out, "{}{}", separator, t);
+            out = fmt::format_to(out, "{}{}", separator, t / 1ns);
             separator = ",";
         }
         out = fmt::format_to(out, "],\"");
@@ -225,15 +238,17 @@ int main(int argc, char **argv)
     while (true) {
         static struct option long_options[] = {
             {"input-file", required_argument, nullptr, 'f'},
-            {"iterations", required_argument, nullptr, 'i'},
             {"jobs", no_argument, nullptr, 'j'},
             {"json", no_argument, nullptr, 'J'},
-            {"target-time", required_argument, nullptr, 't'},
+            {"min-iterations", required_argument, nullptr, 'i'},
+            {"max-iterations", required_argument, nullptr, 'I'},
+            {"min-duration", required_argument, nullptr, 't'},
+            {"max-duration", required_argument, nullptr, 'T'},
             {"stable", no_argument, nullptr, 's'},
         };
 
         int option_index;
-        int c = getopt_long(argc, argv, "f:i:j:Jst:", long_options, &option_index);
+        int c = getopt_long(argc, argv, "f:i:I:j:Jst:T:", long_options, &option_index);
         if (c == -1)
             break;
 
@@ -241,10 +256,24 @@ int main(int argc, char **argv)
         case 'f':
             opts.input_file = optarg;
             break;
-        case 'i':
-            opts.iterations = atoi(optarg);
-            assert(opts.iterations > 0);
+        case 'i': {
+            std::string_view arg(optarg);
+            auto r =
+                std::from_chars(arg.data(), arg.data() + arg.size(), opts.min_iterations);
+            if (r.ec != std::errc() || r.ptr != arg.data() + arg.size() ||
+                opts.min_iterations <= 0)
+                die("invalid minimum number of iterations '%s'", optarg);
             break;
+        }
+        case 'I': {
+            std::string_view arg(optarg);
+            auto r =
+                std::from_chars(arg.data(), arg.data() + arg.size(), opts.max_iterations);
+            if (r.ec != std::errc() || r.ptr != arg.data() + arg.size() ||
+                opts.max_iterations <= 0)
+                die("invalid maximum number of iterations '%s'", optarg);
+            break;
+        }
         case 'j':
             opts.num_threads = atoi(optarg);
             assert(opts.num_threads >= 0);
@@ -255,13 +284,37 @@ int main(int argc, char **argv)
         case 's':
             opts.stable_mode = true;
             break;
-        case 't':
-            opts.target_time = strtod(optarg, nullptr);
-            if (opts.target_time <= 0)
-                die("invalid target time '%s'", optarg);
+        case 't': {
+            std::string_view arg(optarg);
+            double min_duration_sec;
+            auto r =
+                std::from_chars(arg.data(), arg.data() + arg.size(), min_duration_sec);
+            if (r.ec != std::errc() || r.ptr != arg.data() + arg.size() ||
+                min_duration_sec < 0)
+                die("invalid minimum duration '%s'", optarg);
+            opts.min_duration = std::chrono::nanoseconds(
+                static_cast<int64_t>(floor(min_duration_sec * 1e9)));
             break;
         }
+        case 'T': {
+            std::string_view arg(optarg);
+            double max_duration_sec;
+            auto r =
+                std::from_chars(arg.data(), arg.data() + arg.size(), max_duration_sec);
+            if (r.ec != std::errc() || r.ptr != arg.data() + arg.size() ||
+                max_duration_sec < 0)
+                die("invalid maximum duration '%s'", optarg);
+            opts.max_duration = std::chrono::nanoseconds(
+                static_cast<int64_t>(floor(max_duration_sec * 1e9)));
+            break;
+        }
+        }
     }
+
+    if (opts.min_iterations > opts.max_iterations)
+        die("min-iterations cannot be greater than max-iterations");
+    if (opts.min_duration > opts.max_duration)
+        die("min-duration cannot be greater than max-duration");
 
     // Copy the table of solvers and sort it, since its order is not guaranteed
     // (depends on the link order).
