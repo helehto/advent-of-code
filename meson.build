@@ -85,6 +85,11 @@ cpp_args = [
     # AVX-512 breaks Valgrind: <https://bugs.kde.org/show_bug.cgi?id=383010>.
     # Make it togglable.
     get_option('avx512').disabled() ? '-mno-avx512f' : [],
+
+    # Convince Highway to not include standard C++ headers. In particular, it
+    # avoids <ostream> which drags in the entirety of <format> and other junk
+    # that we don't use, but which bloat compile time anyway.
+    '-DHWY_NO_LIBCXX',
 ]
 
 link_args = [
