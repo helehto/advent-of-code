@@ -108,7 +108,6 @@ libaoc = static_library(
 libaoc_dep = declare_dependency(
     dependencies: [
         cpp.find_library('atomic', required: false),
-        dependency('eigen3', include_type: 'system'),
         dependency('fmt'),
         dependency(
             'libhwy',
