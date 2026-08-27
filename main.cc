@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
+#include <fcntl.h>
 #include <fmt/core.h>
 #include <fnmatch.h>
 #include <getopt.h>
@@ -12,6 +13,7 @@
 #include <sys/mman.h>
 #include <thread>
 #include <tuple>
+#include <unistd.h>
 #include <vector>
 
 using namespace std::literals;
@@ -58,23 +60,25 @@ struct ProblemData {
     std::string output;
 };
 
-static std::string slurp(FILE *f)
-{
-    const int fd = fileno(f);
-    const off_t size = lseek(fd, 0, SEEK_END);
-    ASSERT(size > 0);
-
-    std::string contents;
-    contents.resize(size);
-    ASSERT(pread(fd, contents.data(), size, 0) == size);
-
-    return contents;
-}
-
 static std::string format_answer(const aoc::Answer &a)
 {
     return a.num_parts > 1 ? fmt::format("{}\n{}\n", a.part1, a.part2)
                            : fmt::format("{}\n", a.part1);
+}
+
+static std::string slurp(int fd)
+{
+    std::string contents;
+    while (true) {
+        char buf[16384];
+        ssize_t n = read(fd, buf, sizeof(buf));
+        if (n < 0)
+            die("read: %s", strerror(errno));
+        if (n == 0)
+            break;
+        contents.append(buf, n);
+    }
+    return contents;
 }
 
 static std::pair<std::vector<uint64_t>, std::string>
@@ -84,15 +88,16 @@ run_solver(const Problem &s, std::string input_path, const Options &opts)
 
     std::string input;
     {
-        FILE *f = fopen(input_path.c_str(), "r");
-        if (!f)
+        int fd = input_path == "-" ? STDIN_FILENO
+                                   : open(input_path.c_str(), O_RDONLY | O_CLOEXEC);
+        if (fd < 0)
             die("%s: %s", input_path.c_str(), strerror(errno));
-        input = slurp(f);
+        input = slurp(fd);
+        if (fd != STDIN_FILENO)
+            close(fd);
 
         while (input.back() == '\n')
             input.pop_back();
-
-        fclose(f);
     }
 
     std::vector<uint64_t> durations;
