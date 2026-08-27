@@ -85,29 +85,6 @@ def colorize(value: T.Any, fmt: str, is_significant: T.Any = True) -> str:
     return text
 
 
-@dataclass
-class BenchmarkArgs:
-    iterations: T.Optional[int]
-    jobs: T.Optional[int]
-    stable_mode: bool
-    target_time: T.Optional[float]
-    problems: T.Collection[str]
-
-    def to_cmdline(self) -> list[str]:
-        v = ["--json"]
-        if self.jobs:
-            v += ["-j", str(self.jobs)]
-        if self.iterations:
-            v += ["-i", str(self.iterations)]
-        if self.stable_mode:
-            v += ["-s"]
-        if self.target_time:
-            v += ["-t", str(self.target_time)]
-
-        v += [*self.problems]
-        return v
-
-
 def color_diff(diff: T.Sequence[str]) -> list[str]:
     def color_line(s: str) -> str:
         if s.startswith("---") or s.startswith("+++"):
@@ -156,13 +133,13 @@ def diff_solutions(solutions_by_commit: dict[str, dict[tuple[int, int], str]]) -
 
 def two_binaries(
     db: sqlite3.Connection,
-    bargs: BenchmarkArgs,
+    aoc_args: T.Sequence[str],
     binaries: T.Collection[AocBinary],
 ) -> int:
     json_outputs = {}
 
     for binary in binaries:
-        cmd = (str(binary.path.absolute()), *bargs.to_cmdline())
+        cmd = (str(binary.path.absolute()), "--json", *aoc_args)
         data = sp.check_output(cmd, encoding="utf-8").strip().splitlines()[-1]
         json_outputs[binary.commit] = json.loads(data)
 
@@ -366,13 +343,8 @@ def print_timing_diff(db: sqlite3.Connection, run_id: int) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("-b", "--base-change", default="@-", metavar="CHANGE-ID")
-    parser.add_argument("-i", "--iterations", default=1, type=int)
-    parser.add_argument("-j", "--jobs", default=None, type=int)
-    parser.add_argument("-n", "--max-runs", default=5, type=int)
-    parser.add_argument("-t", "--target-time", default=None, type=float)
-    parser.add_argument("-s", "--stable-mode", action="store_true")
     parser.add_argument("--diff", action="store_true")
-    parser.add_argument("problems", nargs="*")
+    parser.add_argument("aoc_args", nargs="*")
     args = parser.parse_args()
 
     base_commit_hash = sp.check_output(
@@ -425,19 +397,11 @@ def main() -> None:
         """
         )
 
-    bargs = BenchmarkArgs(
-        iterations=args.iterations,
-        jobs=args.jobs,
-        stable_mode=args.stable_mode,
-        target_time=args.target_time,
-        problems=tuple(args.problems),
-    )
-
     with (
         binary_for_commit(base_commit_hash) as old_binary,
         binary_for_commit(head_commit_hash) as new_binary,
     ):
-        run_id = two_binaries(conn, bargs, [old_binary, new_binary])
+        run_id = two_binaries(conn, tuple(args.aoc_args), [old_binary, new_binary])
         print_timing_diff(conn, run_id)
 
 
