@@ -289,7 +289,7 @@ def print_timing_diff(db: sqlite3.Connection, run_id: int) -> None:
                 colorize(delta_min_rel, "+.1%", min_significant),
                 mean0_ns / 1e3,
                 mean1_ns / 1e3,
-                colorize(delta_mean_ns / 1e6, ".2f", mean_significant),
+                colorize(delta_mean_ns / 1e3, ".2f", mean_significant),
                 colorize(delta_mean_rel, "+.1%", mean_significant),
             )
         )
@@ -317,7 +317,7 @@ def print_timing_diff(db: sqlite3.Connection, run_id: int) -> None:
                 delta["mean0_ns"].sum() / 1e3,
                 delta["mean1_ns"].sum() / 1e3,
                 colorize(
-                    (delta["mean1_ns"].sum() - delta["mean0_ns"].sum()) / 1e6,
+                    (delta["mean1_ns"].sum() - delta["mean0_ns"].sum()) / 1e3,
                     ".2f",
                     abs(
                         (delta["mean1_ns"].sum() - delta["mean0_ns"].sum())
