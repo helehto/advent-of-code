@@ -1,0 +1,39 @@
+#!/bin/bash
+# Print the build time for each ninja target.
+
+_usage="\
+Usage: ninja-build-time [-b] [-l <logpath>]
+
+Options:
+    -b              remove existing log file and rebuild first
+    -l <PATH>       path to the ninja log file (default: .ninja_log)
+"
+usage() { echo "$_usage" >&2; exit "$1"; }
+
+arg_build=no
+arg_logpath=.ninja_log
+while getopts ":bhl:" opt; do
+	case $opt in
+		b) arg_build=yes ;;
+		h) usage 0 ;;
+		l) arg_logpath=$OPTARG ;;
+		\?) echo "Invalid option: -$OPTARG" 1>&2; usage 1 ;;
+		*) usage 1 ;;
+	esac
+done
+shift $((OPTIND - 1))
+[ $# -eq 0 ] || usage 1
+
+if [ $arg_build = yes ]; then
+	ninja clean
+	rm -f "$arg_logpath"      # avoid stale data from previous builds
+	CCACHE_DISABLE=1 ninja    # caching defeats the point
+fi
+
+while read -r start_ms end_ms _ target _; do
+	case $start_ms in
+		[0-9]*) ;;
+		*) continue ;;
+	esac
+	echo "$target,$((end_ms - start_ms)) ms"
+done <"$arg_logpath" | sort -t, -k2g | column -t -s,
