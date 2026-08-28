@@ -6,7 +6,13 @@ if ! (return 0 2>/dev/null); then
 fi
 
 set -x
+
+# otherwise git will not find the .git directory when building in a ramfs
 export GIT_DISCOVERY_ACROSS_FILESYSTEM=1
+
+# cf. <https://ccache.dev/manual/latest.html#_precompiled_headers>
+export CCACHE_SLOPPINESS=pch_defines,time_macros
+
 mkdir -p build &&
 sudo mount -t ramfs ramfs build &&
 sudo chown -R $USER: build &&

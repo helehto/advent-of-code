@@ -58,9 +58,10 @@ def binary_for_commit(commit: str) -> T.Iterator[AocBinary]:
         exe = Path(d) / f"aoc-{commit}"
 
         with jj_workspace(commit, workspace):
+            env = {**os.environ, "CCACHE_SLOPPINESS": "pch_defines,time_macros"}
             meson_cmd = "meson setup --wipe . build -Dunity=on -Dunity_size=8".split()
-            sp.run(meson_cmd, cwd=workspace, stdout=sp.DEVNULL, check=True)
-            sp.run("ninja", cwd=workspace / "build", check=True)
+            sp.run(meson_cmd, cwd=workspace, stdout=sp.DEVNULL, check=True, env=env)
+            sp.run("ninja", cwd=workspace / "build", check=True, env=env)
             exe.write_bytes((workspace / "build" / "aoc").read_bytes())
 
         exe.chmod(0o755)

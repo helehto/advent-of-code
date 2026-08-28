@@ -125,6 +125,7 @@ executable(
     sources,
     'main.cc',
     cpp_args: cpp_args,
+    cpp_pch: 'lib/aoc/pch.h',
     dependencies: libaoc_dep,
     link_args: link_args,
 )
