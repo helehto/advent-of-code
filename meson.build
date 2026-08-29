@@ -92,10 +92,16 @@ cpp_args = [
     '-DHWY_NO_LIBCXX',
 ]
 
-link_args = [
-    # mold is faster than standard GNU ld; use it if possible.
-    cpp.get_supported_link_arguments('-fuse-ld=mold'),
-]
+link_args = []
+
+# Try a linker that's faster than GNU ld, if available.
+foreach ld : ['wild', 'mold', 'lld']
+    opt = '-fuse-ld=@0@'.format(ld)
+    if cpp.has_argument(opt)
+        link_args += [opt]
+        break
+    endif
+endforeach
 
 libaoc = static_library(
     'aoc',
