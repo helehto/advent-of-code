@@ -17,9 +17,10 @@ constexpr size_t layer_size = layer_cols * layer_rows;
 
 static std::string_view part1(char *out, const uint8_t *input, size_t num_layers)
 {
-    // TODO: Don't assume that we have 256-bit vectors.
-    using D = hn::FixedTag<uint8_t, 32>;
+    using D = hn::CappedTag<uint8_t, 32>;
     constexpr D d;
+    static constexpr size_t histogram_slots = hn::MaxLanes(d) / 4;
+    static_assert(histogram_slots == 4 || histogram_slots == 8);
 
     char *start = out;
     int min0 = INT_MAX;
@@ -29,7 +30,7 @@ static std::string_view part1(char *out, const uint8_t *input, size_t num_layers
         // the unrolled loop below. 8-byte integers are used to simplify
         // vectorization with no risk of overflow, as the input string is
         // guaranteed to be at most 25 * 6 = 150 characters.
-        alignas(32) uint8_t histogram[256][8];
+        alignas(32) uint8_t histogram[256][histogram_slots];
 
         // Zero-fill all histogram slots for the ASCII characters '0', '1' and
         // '2' (and also '3', but that does not matter in our case).
@@ -37,28 +38,31 @@ static std::string_view part1(char *out, const uint8_t *input, size_t num_layers
 
         size_t j = i * layer_size;
         // The core loop: build a histogram of all ASCII characters in the
-        // input string. This is unrolled and stores to eight different slots
-        // per iteration to reduce loop-carried dependencies.
-        for (; j + 7 < (i + 1) * layer_size; j += 8) {
-            histogram[input[j + 0]][0]++;
-            histogram[input[j + 1]][1]++;
-            histogram[input[j + 2]][2]++;
-            histogram[input[j + 3]][3]++;
-            histogram[input[j + 4]][4]++;
-            histogram[input[j + 5]][5]++;
-            histogram[input[j + 6]][6]++;
-            histogram[input[j + 7]][7]++;
-        }
+        // input string. This is unrolled and stores to different slots per
+        // iteration to reduce loop-carried dependencies.
+        for (; j + histogram_slots <= (i + 1) * layer_size; j += histogram_slots)
+            for (size_t k = 0; k < histogram_slots; k++)
+                histogram[input[j + k]][k]++;
         for (; j < (i + 1) * layer_size; j++)
             histogram[input[j]][0]++;
 
         const hn::Vec<D> counts = hn::Load(d, histogram['0']);
-        alignas(32) uint64_t freq[4];
-        hn::Store(hn::SumsOf8(counts), hn::FixedTag<uint64_t, 4>(), freq);
-
-        if (min0 > static_cast<int64_t>(freq[0])) {
-            min0 = freq[0];
-            product = freq[1] * freq[2];
+        if constexpr (histogram_slots == 8) {
+            constexpr hn::Repartition<uint64_t, D> q;
+            HWY_ALIGN_MAX uint64_t freq[hn::MaxLanes(q)];
+            hn::Store(hn::SumsOf8(counts), q, freq);
+            if (min0 > static_cast<int64_t>(freq[0])) {
+                min0 = freq[0];
+                product = freq[1] * freq[2];
+            }
+        } else {
+            constexpr hn::Repartition<uint32_t, D> q;
+            HWY_ALIGN_MAX uint32_t freq[hn::MaxLanes(q)];
+            hn::Store(hn::SumsOf4(counts), q, freq);
+            if (min0 > static_cast<int32_t>(freq[0])) {
+                min0 = freq[0];
+                product = freq[1] * freq[2];
+            }
         }
     }
 
