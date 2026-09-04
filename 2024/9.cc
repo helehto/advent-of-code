@@ -24,9 +24,12 @@ static int64_t part1(std::string_view line)
     size_t offset = 0;
     for (size_t i = 0; i < line.size(); ++i) {
         const int n = line[i] - '0';
-        const int f = i % 2 == 0 ? i / 2 : -1;
-        hn::FixedTag<int16_t, 16> d;
-        hn::StoreU(hn::Set(d, f), d, &disk[offset]);
+        hn::CappedTag<int16_t, 16> d;
+        static_assert(hn::MaxLanes(d) == 8 || hn::MaxLanes(d) == 16);
+        const auto f = hn::Set(d, i % 2 == 0 ? i / 2 : -1);
+        hn::StoreU(f, d, &disk[offset]);
+        if constexpr (hn::MaxLanes(d) < 16)
+            hn::StoreU(f, d, &disk[offset + 8]);
         offset += n;
     }
 
