@@ -18,7 +18,7 @@ namespace aoc_2017_15 {
 
 namespace hn = hwy::HWY_NAMESPACE;
 
-using D = hn::FixedTag<uint64_t, 4>; // TODO: Make this scalable
+using D = hn::ScalableTag<uint64_t>;
 constexpr D d;
 
 /// Compute x mod (2³¹ - 1) for x < 2^62.
@@ -95,8 +95,9 @@ static int part1(uint32_t a, uint32_t b, size_t limit = 40'000'000)
         }
 
         if (i != end) {
-            const hn::Mask<D> eq = hn::Eq(va & mask, vb & mask);
-            count -= hn::VecFromMask(hn::And(eq, hn::FirstN(d, end - i)));
+            hn::Mask<D> eq = hn::Eq(va & mask, vb & mask);
+            eq = hn::And(eq, hn::FirstN(d, end - i));
+            count = hn::MaskedAddOr(count, eq, count, hn::Set(d, 1));
         }
 
         result.fetch_add(hn::ReduceSum(d, count), std::memory_order_relaxed);
@@ -110,24 +111,25 @@ static int part2(uint32_t a, uint32_t b)
     ThreadPool &pool = ThreadPool::get();
     constexpr size_t limit = 5'000'000;
     const size_t n_threads = pool.num_threads();
-    ASSERT(limit % n_threads == 0);
+
+    const size_t lanes = hn::Lanes(d);
+    const size_t chunk_size_4 = hwy::RoundUpTo(4 * limit / n_threads * 102 / 100, lanes);
+    const size_t chunk_size_8 = hwy::RoundUpTo(8 * limit / n_threads * 102 / 100, lanes);
 
     // +20% to handle extra elements
-    const int thread_buffer_size = ((limit * 12 / 10) / n_threads + 7) & ~8;
+    const size_t thread_buffer_size = hwy::RoundUpTo(limit * 12 / 10 / n_threads, lanes);
 
-    const auto buffer_size = (thread_buffer_size + 3) * n_threads;
+    const size_t thread_stride = thread_buffer_size + lanes;
+    const size_t buffer_size = thread_stride * n_threads;
     auto a_buffer = std::make_unique_for_overwrite<uint64_t[]>(buffer_size);
     auto b_buffer = std::make_unique_for_overwrite<uint64_t[]>(buffer_size);
 
     std::vector<std::span<uint64_t>> a_spans(n_threads);
-    for (size_t i = 0; i < n_threads; ++i)
-        a_spans[i] = std::span(a_buffer.get() + i * (thread_buffer_size + 3),
-                               thread_buffer_size + 3);
-
     std::vector<std::span<uint64_t>> b_spans(n_threads);
-    for (size_t i = 0; i < n_threads; ++i)
-        b_spans[i] = std::span(b_buffer.get() + i * (thread_buffer_size + 3),
-                               thread_buffer_size + 3);
+    for (size_t i = 0; i < n_threads; ++i) {
+        a_spans[i] = std::span(&a_buffer[i * thread_stride], thread_stride);
+        b_spans[i] = std::span(&b_buffer[i * thread_stride], thread_stride);
+    }
 
     auto search = [&](std::span<uint64_t> &buffer, uint64_t init, uint64_t k,
                       uint64_t mask, uint64_t begin, uint64_t steps) noexcept {
@@ -152,12 +154,11 @@ static int part2(uint32_t a, uint32_t b)
             state = advance(state, skip);
         }
 
+        ASSERT(n <= thread_buffer_size);
         buffer = buffer.first(n);
     };
 
     pool.for_each_thread([=, &a_spans, &b_spans](size_t thread_id) noexcept {
-        const auto chunk_size_4 = 4 * limit / n_threads * 102 / 100;
-        const auto chunk_size_8 = 8 * limit / n_threads * 102 / 100;
         search(a_spans[thread_id], a, 16807, 3, thread_id * chunk_size_4, chunk_size_4);
         search(b_spans[thread_id], b, 48271, 7, thread_id * chunk_size_8, chunk_size_8);
     });
