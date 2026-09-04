@@ -58,10 +58,23 @@ void run(std::string_view buf, aoc::Answer &answer)
 
     size_t i = 0;
     for (; i + 3 < buf.size(); i += 6 * 7 + 1) {
-        constexpr hn::FixedTag<uint8_t, 32> d;
-        auto vchars = hn::LoadU(d, reinterpret_cast<const uint8_t *>(&buf[i + 6]));
-        auto vfilled = hn::Eq(vchars, hn::Set(d, '#'));
-        unsigned int filled = hn::BitsFromMask(d, vfilled);
+        using D = hn::CappedTag<uint8_t, 32>;
+        constexpr D d;
+        static_assert(hn::MaxLanes(d) == 16 || hn::MaxLanes(d) == 32);
+        uint32_t filled;
+        const uint8_t *p = reinterpret_cast<const uint8_t *>(&buf[i + 6]);
+        if constexpr (hn::MaxLanes(d) == 32) {
+            hn::Vec<D> vchars = hn::LoadU(d, p);
+            hn::Mask<D> vfilled = hn::Eq(vchars, hn::Set(d, '#'));
+            filled = hn::BitsFromMask(d, vfilled);
+        } else {
+            hn::Vec<D> vchars0 = hn::LoadU(d, p);
+            hn::Vec<D> vchars1 = hn::LoadU(d, p + hn::Lanes(d));
+            hn::Mask<D> vfilled0 = hn::Eq(vchars0, hn::Set(d, '#'));
+            hn::Mask<D> vfilled1 = hn::Eq(vchars1, hn::Set(d, '#'));
+            filled = hn::BitsFromMask(d, vfilled0) |
+                     (hn::BitsFromMask(d, vfilled1) << hn::Lanes(d));
+        }
 
         // Add an entire column/group at a time to `u`. The highest bit in each
         // group of 6 here is the newline, which we ignore:
