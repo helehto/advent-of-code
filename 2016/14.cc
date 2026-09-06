@@ -211,7 +211,7 @@ static int solve2(std::string_view prefix)
         }
 
         std::unique_lock lock(hashes_mutex);
-        hashes.append_range(local_hashes);
+        hashes.insert(hashes.end(), local_hashes.begin(), local_hashes.end());
     });
 
     std::unique_lock lock(hashes_mutex);
