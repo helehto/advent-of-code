@@ -70,8 +70,8 @@ static void step_block(D d,
     const hn::Mask<D> has1or2 = hn::Or(has1, has2);
 
     const hn::Vec<D> black = hn::LoadU(d, row_input);
-    const hn::Vec<D> result =
-        hn::IfNegativeThenElse(black, hn::VecFromMask(has1or2), hn::VecFromMask(has2));
+    const hn::Vec<D> result = hn::IfNegativeThenElse(black, hn::VecFromMask(d, has1or2),
+                                                     hn::VecFromMask(d, has2));
 
     hn::StoreU(result, d, dest);
 }

@@ -167,7 +167,7 @@ step_row(const Grid4D &prev_grid, uint8_t *nextp, size_t n, const uint8_t *prevp
     for (;; n -= hn::Lanes(d), nextp += hn::Lanes(d), prevp += hn::Lanes(d)) {
         const hn::Vec<D> neighbors = count_neighbors_4d(prev_grid, prevp);
         const hn::Vec<D> result = step_chunk(neighbors, prevp);
-        const hn::Vec<D> tail_mask = hn::VecFromMask(hn::FirstN(d, n));
+        const hn::Vec<D> tail_mask = hn::VecFromMask(d, hn::FirstN(d, n));
         hn::StoreU(result & tail_mask, d, nextp);
         if (n < hn::Lanes(d))
             break;

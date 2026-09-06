@@ -41,7 +41,7 @@ class Table128x4 {
             hn::TwoTablesLookupLanes(d, lo, hi, hn::IndicesFromVec(d, byte_idx));
         const hn::Vec<D> bit_idx = hn::And(index, hn::Set(d, 7));
         const hn::Vec<D> bitmask = hn::TableLookupBytes(bitmask_lookup, bit_idx);
-        return hn::VecFromMask(hn::TestBit(bitsets, bitmask));
+        return hn::VecFromMask(d, hn::TestBit(bitsets, bitmask));
     }
 
 public:
@@ -79,7 +79,7 @@ class Table256x2 {
             hn::TableLookupLanes(table, hn::IndicesFromVec(d, byte_idx));
         const hn::Vec<D> bit_idx = hn::And(index, hn::Set(d, 7));
         const hn::Vec<D> bitmask = hn::TableLookupBytes(bitmask_lookup, bit_idx);
-        return hn::VecFromMask(hn::TestBit(bitsets, bitmask));
+        return hn::VecFromMask(d, hn::TestBit(bitsets, bitmask));
     }
 
 public:
