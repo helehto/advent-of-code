@@ -32,8 +32,7 @@ struct Deck {
     Deck prefix(size_t len) const
     {
         Deck result;
-        const hn::Vec<D> v = hn::LoadU(d, cards.data());
-        hn::StoreN(v, d, result.cards.data(), len);
+        std::memcpy(result.cards.data(), cards.data(), len);
         return result;
     }
 
