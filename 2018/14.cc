@@ -35,32 +35,33 @@ hn::Vec<D> prefix_sum_u8(D d, const hn::Vec<D> v)
     const hn::Vec<D> v8 = hn::BitCast(d, v64);
 
     // Compute prefix sum for full 128-bit blocks.
-    HWY_ALIGN_MAX static constexpr uint8_t shuf8_to_16[64] = {
-        0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, // --> zero
-        7,    7,    7,    7,    7,    7,    7,    7,
-        0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, // --> zero
-        7,    7,    7,    7,    7,    7,    7,    7,
-        0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, // --> zero
-        7,    7,    7,    7,    7,    7,    7,    7,
+    HWY_ALIGN_MAX static constexpr uint8_t shuf8_to_16[] = {
         0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, // --> zero
         7,    7,    7,    7,    7,    7,    7,    7,
     };
-    const hn::Vec<D> v8k = hn::TableLookupBytesOr0(v8, hn::Load(d, shuf8_to_16));
+    const hn::Vec<D> v8k = hn::TableLookupBytesOr0(v8, hn::LoadDup128(d, shuf8_to_16));
     const hn::Vec<D> v16 = v8 + v8k;
 
-    // Compute prefix sum for 256-bit blocks.
-    const hn::Vec<D> v16k = hn::Set(d, hn::ExtractLane(v16, 15));
-    const hn::Vec<D> v32 = hn::MaskedAddOr(v16, hn::Not(hn::FirstN(d, 16)), v16, v16k);
-
-    if (hn::Lanes(D()) <= 32) {
-        return v32;
+    if constexpr (hn::Lanes(D()) <= 16) {
+        return v16;
     } else {
-        // Compute prefix sum for 512-bit blocks.
-        const hn::Vec<D> v64_0 = hn::MaskedAddOr(v32, hn::Not(hn::FirstN(d, 32)), v32,
-                                                 hn::Set(d, hn::ExtractLane(v16, 31)));
-        const hn::Vec<D> v64_1 = hn::MaskedAddOr(v64_0, hn::Not(hn::FirstN(d, 48)), v64_0,
-                                                 hn::Set(d, hn::ExtractLane(v16, 47)));
-        return v64_1;
+        // Compute prefix sum for 256-bit blocks.
+        const hn::Vec<D> v16k = hn::Set(d, hn::ExtractLane(v16, 15));
+        const hn::Vec<D> v32 =
+            hn::MaskedAddOr(v16, hn::Not(hn::FirstN(d, 16)), v16, v16k);
+
+        if (hn::Lanes(D()) <= 32) {
+            return v32;
+        } else {
+            // Compute prefix sum for 512-bit blocks.
+            const hn::Vec<D> v64_0 =
+                hn::MaskedAddOr(v32, hn::Not(hn::FirstN(d, 32)), v32,
+                                hn::Set(d, hn::ExtractLane(v16, 31)));
+            const hn::Vec<D> v64_1 =
+                hn::MaskedAddOr(v64_0, hn::Not(hn::FirstN(d, 48)), v64_0,
+                                hn::Set(d, hn::ExtractLane(v16, 47)));
+            return v64_1;
+        }
     }
 }
 
@@ -70,11 +71,6 @@ void run(std::string_view buf, aoc::Answer &answer)
 
     using D = hn::ScalableTag<uint8_t>;
     constexpr D d;
-
-    // prefix_sum_u8() currently assumes 256-bit or 512-bit vectors, so it
-    // would break for e.g. NEON (128-bit) or SVE/RVV (potentially >512-bit).
-    // Assert to avoid silent breakage.
-    ASSERT(hn::Lanes(D()) >= 32 && hn::Lanes(D()) <= 64);
 
     inplace_vector<uint8_t, 20> needle;
     for (auto k = n; k; k /= 10)
