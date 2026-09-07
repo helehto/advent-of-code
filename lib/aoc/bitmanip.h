@@ -29,6 +29,18 @@
 #define DISPATCH_SSE42(intrinsic, fallback, ...) return fallback(__VA_ARGS__)
 #endif
 
+#if defined(__ARM_FEATURE_CRC32) || defined(__aarch64__)
+#include <arm_acle.h> // __crc32c{b,h,w,d}
+#define DISPATCH_ACLE(intrinsic, fallback, ...)                                          \
+    if !consteval {                                                                      \
+        return intrinsic(__VA_ARGS__);                                                   \
+    } else {                                                                             \
+        return fallback(__VA_ARGS__);                                                    \
+    }
+#else
+#define DISPATCH_ACLE(intrinsic, fallback, ...) return fallback(__VA_ARGS__)
+#endif
+
 /// constexpr-friendly fallback implementation of bzhi from BMI2.
 template <typename T>
 constexpr T bzhi_fallback(T value, unsigned int index)
@@ -153,6 +165,22 @@ constexpr uint64_t bit_reflect(uint64_t v)
     return v;
 }
 
+#if defined(__SSE4_2__)
+#define crc32c_hw_u8 _mm_crc32_u8
+#define crc32c_hw_u16 _mm_crc32_u16
+#define crc32c_hw_u32 _mm_crc32_u32
+#define crc32c_hw_u64 _mm_crc32_u64
+#define DISPATCH_CRC32 DISPATCH_SSE42
+#elif defined(__ARM_FEATURE_CRC32)
+#define crc32c_hw_u8 __crc32cb
+#define crc32c_hw_u16 __crc32ch
+#define crc32c_hw_u32 __crc32cw
+#define crc32c_hw_u64 __crc32cd
+#define DISPATCH_CRC32 DISPATCH_ACLE
+#else
+#define DISPATCH_CRC32(intrinsic, fallback, ...) return fallback(__VA_ARGS__)
+#endif
+
 /// constexpr-friendly fallback implementation of crc32 from SSE4.2.
 template <typename T>
 constexpr uint32_t crc32_fallback(uint32_t crc, T v)
@@ -167,20 +195,26 @@ constexpr uint32_t crc32_fallback(uint32_t crc, T v)
 }
 constexpr uint32_t crc32_u8(uint32_t crc, uint8_t v)
 {
-    DISPATCH_SSE42(_mm_crc32_u8, crc32_fallback<uint8_t>, crc, v);
+    DISPATCH_CRC32(crc32c_hw_u8, crc32_fallback<uint8_t>, crc, v);
 }
 constexpr uint32_t crc32_u16(uint32_t crc, uint16_t v)
 {
-    DISPATCH_SSE42(_mm_crc32_u16, crc32_fallback<uint16_t>, crc, v);
+    DISPATCH_CRC32(crc32c_hw_u16, crc32_fallback<uint16_t>, crc, v);
 }
 constexpr uint32_t crc32_u32(uint32_t crc, uint32_t v)
 {
-    DISPATCH_SSE42(_mm_crc32_u32, crc32_fallback<uint32_t>, crc, v);
+    DISPATCH_CRC32(crc32c_hw_u32, crc32_fallback<uint32_t>, crc, v);
 }
 constexpr uint32_t crc32_u64(uint32_t crc, uint64_t v)
 {
-    DISPATCH_SSE42(_mm_crc32_u64, crc32_fallback<uint64_t>, crc, v);
+    DISPATCH_CRC32(crc32c_hw_u64, crc32_fallback<uint64_t>, crc, v);
 }
 
 #undef DISPATCH_BMI2
 #undef DISPATCH_SSE42
+#undef DISPATCH_ACLE
+#undef DISPATCH_CRC32
+#undef crc32c_hw_u8
+#undef crc32c_hw_u16
+#undef crc32c_hw_u32
+#undef crc32c_hw_u64
