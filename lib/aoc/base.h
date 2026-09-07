@@ -56,10 +56,11 @@ struct Problem {
 // Define and register a solver for a given year and day. Must be used inside a
 // namespace, with the function body following the macro invocation.
 // clang-format off
-#define AOC_REGISTER_SOLVER(y, d, f)                              \
-    __attribute__((used, retain, section("aoc_solvers")))        \
-    constinit extern const ::aoc::Problem _solver = {y, d, f};                                                                      \
-    // clang-format on
+#define AOC_REGISTER_SOLVER(y, d, f)                           \
+    __attribute__((used, retain, section("aoc_solvers")))      \
+    constinit extern const ::aoc::Problem _solver = {y, d, f}; \
+    static_assert(true, "You forgot a semicolon! --> ")
+// clang-format on
 
 } // namespace aoc
 extern const aoc::Problem __start_aoc_solvers[];
