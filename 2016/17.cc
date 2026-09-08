@@ -55,11 +55,11 @@ static md5::Vec4T md5_full(std::string_view s)
     md5::Vec4T r = md5::initial_state();
 
     for (; s.size() >= 64; s.remove_prefix(64)) {
-        auto m = md5::SequentialBlocks::splat(s.substr(0, 64));
+        auto m = md5::SequentialBlocksN<1>::splat(s.substr(0, 64));
         r = md5::hash_block(m, r);
     }
 
-    md5::SequentialBlocks m{};
+    md5::SequentialBlocksN<1> m{};
     std::optional<size_t> x80_offset;
 
     for (size_t i = 0; i < 4; ++i) {
@@ -152,10 +152,11 @@ void run(std::string_view buf, aoc::Answer &answer)
     // convenience of computing single hashes...
     const uint32_t initial_door_hash = [&] {
         std::array<uint32_t, md5::max_lanes> lengths{static_cast<uint32_t>(buf.size())};
-        auto messages = md5::SequentialBlocks::splat(buf);
+        auto messages = md5::SequentialBlocksN<1>::splat(buf);
         prepare_final_blocks(messages, lengths);
-        const md5::VecT h = md5::hash_block<0xffff, md5::ResultType::only_a>(messages);
-        return ExtractLane(h, 0);
+        return md5::hash_block(
+            interleave(messages), md5::initial_state(),
+            [](md5::Vec4T h) { return ExtractLane(hn::Get4<0>(h), 0); });
     }();
 
     // Push the initial state as the root task.

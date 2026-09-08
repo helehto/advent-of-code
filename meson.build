@@ -105,7 +105,6 @@ endforeach
 
 libaoc = static_library(
     'aoc',
-    'lib/aoc/md5.cc',
     'lib/aoc/string.cc',
     'lib/aoc/thread_pool.cc',
     cpp_args: cpp_args,

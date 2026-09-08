@@ -162,15 +162,18 @@ static void transpose32_4x4(const void *HWY_RESTRICT srcv,
 }
 
 static std::array<std::array<char, 32>, md5::max_lanes>
-md5_hex_stretch1(const std::array<std::array<char, 32>, md5::max_lanes> &hex)
+md5_hex_stretch1(md5::InterleavedBlocksN<1> &scratch,
+                 const std::array<std::array<char, 32>, md5::max_lanes> &hex)
 {
-    HWY_ALIGN_MAX md5::InterleavedBlocks messages;
+    // `scratch` is used as pre-zeroed scratch space to fill with the next
+    // round of MD5 input. We assume that the length of each message never
+    // changes to avoid having to re-zero it every time.
     const size_t lanes = md5::lanes();
 
     // Transform the 32-byte output hex strings back into interleaved 4-byte
     // blocks of ASCII characters ready to be fed directly into MD5 again.
     auto *src = reinterpret_cast<const uint32_t *>(&hex[0][0]);
-    auto *dst = reinterpret_cast<uint32_t *>(messages.data);
+    auto *dst = reinterpret_cast<uint32_t *>(scratch.data);
     for (size_t i = 0; i < hn::Blocks(md5::D()); ++i, src += 32, dst += 4) {
         // We could actually transpose 4 entire ASCII digests of 32 bytes at a
         // time with 256-bit vectors rather than splitting them into two parts.
@@ -181,11 +184,10 @@ md5_hex_stretch1(const std::array<std::array<char, 32>, md5::max_lanes> &hex)
     }
 
     // Insert 0x80 byte and length of of each message (256 bits).
-    hn::Store(hn::Set(md5::D(), 0x80), md5::D(), messages.data[8]);
-    hn::Store(hn::Set(md5::D(), 0x100), md5::D(), messages.data[14]);
+    hn::Store(hn::Set(md5::D(), 0x80), md5::D(), scratch.data[0][8]);
+    hn::Store(hn::Set(md5::D(), 0x100), md5::D(), scratch.data[0][14]);
 
-    constexpr uint16_t non_zero_mask = 0b0100'0001'1111'1111;
-    return to_hex(md5::hash_block<non_zero_mask>(messages));
+    return to_hex(md5::hash_block(scratch));
 }
 
 static int solve2(std::string_view prefix)
@@ -198,12 +200,13 @@ static int solve2(std::string_view prefix)
     pool.for_each_thread([&](size_t thread_id) {
         md5::State md5(prefix);
         small_vector<InterestingHash, 128> local_hashes;
+        HWY_ALIGN_MAX md5::InterleavedBlocksN<1> messages{};
 
         // TODO: Hard-coded limit :(
         for (uint32_t n = md5::lanes() * thread_id; n < 30'000; n += stride) {
             auto hex = to_hex(md5.run(n));
             for (int i = 0; i < 2016; ++i)
-                hex = md5_hex_stretch1(hex);
+                hex = md5_hex_stretch1(messages, hex);
 
             for (size_t i = 0; i < md5::lanes(); ++i)
                 if (char x3 = check_x3(hex[i]), x5 = check_x5(hex[i]); x3 || x5)
