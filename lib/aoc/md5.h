@@ -507,9 +507,11 @@ struct State {
     }
 };
 
+namespace detail {
+
 /// 0000-9999 packed into a single string, plus extra entries wrapping around
 /// to 0000 to avoid bounds checks in hash_4digit_chunks().
-constexpr auto digits_4x = [] consteval {
+alignas(4) constexpr auto digits_4x = [] consteval {
     std::array<char, 4 * (10000 + 6 * max_lanes)> table;
     for (size_t i = 0; 4 * i < table.size(); ++i) {
         table[4 * i + 0] = '0' + i / 1000;
@@ -522,12 +524,57 @@ constexpr auto digits_4x = [] consteval {
     return table;
 }();
 
+/// Write `tail`, `tail+1`, ... as 4 ASCII digits at `offset` in each
+/// successive block (represented in interleaved form).
+template <size_t N>
+inline void patch_tail_digits(InterleavedBlocksN<N> &HWY_RESTRICT blocks,
+                              const uint64_t tail,
+                              size_t offset)
+{
+    DEBUG_ASSERT(tail < 10000);
+    const size_t word_offset = offset / 4;
+    const size_t lo = offset % 4;
+    static_assert(std::endian::native == std::endian::little);
+
+    if (lo == 0) {
+        for (size_t i = 0; i < N; ++i) {
+            // Easy case: the digits are word-aligned; just copy them over.
+            const hn::Vec<D> digits = hn::LoadU(
+                d,
+                reinterpret_cast<const uint32_t *>(&digits_4x[4 * (tail + lanes() * i)]));
+            hn::Store(digits, d, blocks.data[i][word_offset]);
+        }
+    } else {
+        const hn::Vec<D> mask_a = hn::Set(d, UINT32_MAX >> (32 - 8 * lo));
+        const hn::Vec<D> mask_b = hn::Set(d, UINT32_MAX << (8 * lo));
+
+        for (size_t i = 0; i < N; ++i) {
+            const hn::Vec<D> digits = hn::LoadU(
+                d,
+                reinterpret_cast<const uint32_t *>(&digits_4x[4 * (tail + lanes() * i)]));
+            // The more annoying case: the digits are split across two words.
+            // The bytes before the digits in the first word and the bytes
+            // after the digits in the second word need to be preserved.
+            const hn::Vec<D> digits_a = hn::ShiftLeftSame(digits, 8 * lo);
+            const hn::Vec<D> digits_b = hn::ShiftRightSame(digits, 32 - 8 * lo);
+            const hn::Vec<D> curr_a = hn::Load(d, blocks.data[i][word_offset + 0]);
+            const hn::Vec<D> curr_b = hn::Load(d, blocks.data[i][word_offset + 1]);
+            const hn::Vec<D> result_a = hn::BitwiseIfThenElse(mask_a, curr_a, digits_a);
+            const hn::Vec<D> result_b = hn::BitwiseIfThenElse(mask_b, curr_b, digits_b);
+            hn::Store(result_a, d, blocks.data[i][word_offset + 0]);
+            hn::Store(result_b, d, blocks.data[i][word_offset + 1]);
+        }
+    }
+}
+
+} // namespace detail
+
 /// Shared logic between 2015/4 and 2016/5.
 ///
 /// Hashes 10,000 messages with a given prefix with the length `prefix_len`
 /// concatenated with a incrementing numeric suffix starting at `chunk_start`,
 /// which must be divisible by 10,000. `messages` is assumed to already be
-/// filled with the prefix in each block, and is modified in place.
+/// filled with the prefix in each block.
 ///
 /// `sink_fn` is repeatedly called with a vector containing the first 32 bits
 /// of each hash, plus the numeric suffix of the first message in the vector.
@@ -545,9 +592,7 @@ inline bool hash_4digit_chunks(SequentialBlocksN<N> &messages,
     uint64_t tail = 0;
     std::array<uint32_t, N * max_lanes> lengths;
 
-    auto sink = [&](const uint64_t n) {
-        auto M = interleave(messages);
-
+    auto sink = [&](const InterleavedBlocksN<N> &HWY_RESTRICT M, const uint64_t n) {
         // We want the steps of each MD5 block to be computed at the same time
         // in an interleaved fashion to exploit ILP. Unfortunately, after
         // inlining, GCC realizes that the lambda uses the output of only one
@@ -582,7 +627,7 @@ inline bool hash_4digit_chunks(SequentialBlocksN<N> &messages,
                 to_chars(&messages.data[i][prefix_len], tail + i);
             }
             prepare_final_blocks(messages, lengths);
-            if (!sink(tail))
+            if (!sink(interleave(messages), tail))
                 return false;
         }
     }
@@ -599,26 +644,11 @@ inline bool hash_4digit_chunks(SequentialBlocksN<N> &messages,
     for (size_t i = 0; i < N * lanes; i++)
         to_chars(&messages.data[i][prefix_len], chunk_start + tail + i);
 
-    for (; tail < 10000; tail += N * lanes) {
-        // Since we can write four digits at a time using a single 4-byte
-        // store, this inner loop updates only the last four digits of each
-        // message. We tolerate `tail` being slightly larger than 9999 here
-        // since the digits_4x table contains a few extra entries wrapping
-        // around to 0000.
-        for (size_t i = 0; i < N * lanes; i++)
-            memcpy(&messages.data[i][tail_offset], &digits_4x[4 * (tail + i)], 4);
+    InterleavedBlocksN<N> interleaved = interleave(messages);
 
-        // NOTE: This still has to interleave the message blocks for each batch
-        // of messages to hash. This is likely the one remaining thing that
-        // would yield a non-trivial speedup if eliminated; it accounts for
-        // ~20% of the total runtime for 2015/4 on my machine.
-        //
-        // But in that case, all logic in this function would have to deal with
-        // the suffix potentially being split into 4-byte words at variable
-        // offsets depending on the prefix length, instead of being contiguous
-        // in each message. Thinking about that gives me a headache, so let's
-        // just not.
-        if (!sink(chunk_start + tail))
+    for (; tail < 10000; tail += N * lanes) {
+        detail::patch_tail_digits(interleaved, tail, tail_offset);
+        if (!sink(interleaved, chunk_start + tail))
             return false;
     }
     return true;
