@@ -253,6 +253,7 @@ public:
     }
 };
 
+#ifndef __cpp_lib_atomic_min_max
 /// Store `min(a, b)` into `a` atomically, returning the previous value of `a`.
 /// Memory is affected according to `order`.
 template <typename T>
@@ -286,6 +287,7 @@ T atomic_fetch_max(std::atomic<T> *obj,
             return value;
     }
 }
+#endif
 
 /// Implementation of a concurrent lock-free deque.
 ///
