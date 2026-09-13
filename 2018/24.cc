@@ -241,7 +241,7 @@ static int part2(small_vector<Group, 32> groups)
 void run(std::string_view buf, aoc::Answer &answer)
 {
     const auto lines = split_lines(buf);
-    auto separator = std::ranges::find(lines, "");
+    auto separator = std::ranges::find(lines, std::string_view(""));
 
     small_vector<Group, 32> groups;
     for (auto it = lines.begin() + 1; it != separator; ++it)

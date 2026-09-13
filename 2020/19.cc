@@ -99,7 +99,7 @@ static bool match(std::string_view s, std::span<const Rule> rules)
 void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
-    auto separator = std::ranges::find(lines, "");
+    auto separator = std::ranges::find(lines, std::string_view(""));
     ASSERT(separator != lines.end());
     ThreadPool &pool = ThreadPool::get();
 

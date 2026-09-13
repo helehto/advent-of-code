@@ -166,7 +166,7 @@ static int part2(MatrixView<const char> grid, std::string_view moves)
 void run(std::string_view buf, aoc::Answer &answer)
 {
     auto lines = split_lines(buf);
-    auto nl = std::ranges::find(lines, "") - lines.begin();
+    auto nl = std::ranges::find(lines, std::string_view("")) - lines.begin();
     auto grid = Matrix<char>::from_lines(std::span(lines.begin(), nl));
 
     std::string moves;
