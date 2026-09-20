@@ -596,7 +596,7 @@ inline bool hash_4digit_chunks(SequentialBlocksN<N> &messages,
         // We want the steps of each MD5 block to be computed at the same time
         // in an interleaved fashion to exploit ILP. Unfortunately, after
         // inlining, GCC realizes that the lambda uses the output of only one
-        // of the independent chains; code motion (-free-sink) then sinks the
+        // of the independent chains; code motion (-ftree-sink) then sinks the
         // other chains to immediately before they are used, turning the code
         // into:
         //
