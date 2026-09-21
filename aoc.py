@@ -340,30 +340,27 @@ def print_timing_diff(db: sqlite3.Connection, run_id: int) -> None:
 
     print(tabulate(rows, headers=headers))
 
+def jj_resolve_revset(revset: str) -> str:
+    return (
+        sp.check_output(
+            ("jj", "log", "--no-graph", "-r", f"exactly({revset}, 1)", "-T", "self.commit_id() ++ '\n'"),
+            encoding="utf-8",
+        )
+        .strip()
+    )
+
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("-b", "--base-change", default="@-", metavar="CHANGE-ID")
+    parser.add_argument("-b", "--base-change", metavar="CHANGE-ID")
     parser.add_argument("--diff", action="store_true")
     parser.add_argument("aoc_args", nargs="*")
     args = parser.parse_args()
 
-    base_commit_hash = sp.check_output(
-        (
-            "jj",
-            "log",
-            "--no-graph",
-            "-r",
-            args.base_change,
-            "-T",
-            "self.commit_id() ++ '\n'",
-        ),
-        encoding="utf-8",
-    ).strip()
-    head_commit_hash = sp.check_output(
-        ("jj", "log", "--no-graph", "-r", "@", "-T", "self.commit_id() ++ '\n'"),
-        encoding="utf-8",
-    ).strip()
+    head_commit_hash = jj_resolve_revset("heads(::@ ~ empty())")
+
+    base_change = args.base_change or f"{head_commit_hash}-"
+    base_commit_hash = jj_resolve_revset(base_change)
 
     conn = sqlite3.connect("../scratch/aoc.db", autocommit=False)
 
