@@ -1,0 +1,27 @@
+#!/bin/bash
+# Disassemble a function from `aoc` picked via fzf.
+
+set -euo pipefail
+fatal() {
+	echo "$@" >&2
+	exit 1
+}
+
+exe=${1:-}
+if [ -z "$exe" ]; then
+	if [ -f aoc ]; then
+		exe=aoc
+	elif [ -f build/aoc ]; then
+		exe=build/aoc
+	else
+		fatal "usage: $0 <executable>"
+	fi
+fi
+
+syms="$(nm -U "$exe" | awk '$2 ~ /[tT]/ {print $3}')"
+selected=$(
+	paste - <<<"$syms" <(c++filt -n <<<"$syms") |
+	fzf -d '\t' --accept-nth=1 --with-nth 2..
+)
+[ -n "$selected" ] || fatal "error: no symbol selected"
+objdump --disassemble="$selected" -S "$exe" | c++filt -n | "$VISUAL" -
