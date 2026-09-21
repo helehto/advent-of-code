@@ -6,9 +6,8 @@
 # pylint: disable=missing-module-docstring
 
 from __future__ import annotations
-from pathlib import Path
+
 import argparse
-from contextlib import contextmanager
 import difflib
 import json
 import os
@@ -18,11 +17,13 @@ import subprocess as sp
 import sys
 import tempfile
 import typing as T
+from contextlib import contextmanager
 from dataclasses import dataclass
+from pathlib import Path
 
-import polars as pl
 import numpy as np
-from tabulate import tabulate, SEPARATING_LINE
+import polars as pl
+from tabulate import SEPARATING_LINE, tabulate
 
 T1 = T.TypeVar("T1")
 T2 = T.TypeVar("T2")
@@ -33,7 +34,7 @@ TMPDIR = Path(os.environ.get("TMPDIR", "/tmp"))
 class AocBinary:
     path: Path
     commit: str
-    description: T.Optional[str]
+    description: str | None
 
 
 @contextmanager
@@ -59,7 +60,7 @@ def binary_for_commit(commit: str) -> T.Iterator[AocBinary]:
 
         with jj_workspace(commit, workspace):
             env = {**os.environ, "CCACHE_SLOPPINESS": "pch_defines,time_macros"}
-            meson_cmd = "meson setup --wipe . build -Dunity=on -Dunity_size=8".split()
+            meson_cmd = ["meson", "setup", "--wipe", ".", "build", "-Dunity=on", "-Dunity_size=8"]
             sp.run(meson_cmd, cwd=workspace, stdout=sp.DEVNULL, check=True, env=env)
             sp.run("ninja", cwd=workspace / "build", check=True, env=env)
             exe.write_bytes((workspace / "build" / "aoc").read_bytes())
@@ -88,7 +89,7 @@ def colorize(value: T.Any, fmt: str, is_significant: T.Any = True) -> str:
 
 def color_diff(diff: T.Sequence[str]) -> list[str]:
     def color_line(s: str) -> str:
-        if s.startswith("---") or s.startswith("+++"):
+        if s.startswith(("---", "+++")):
             return wrap_ansi(s, "1")
         if s.startswith("@@"):
             return wrap_ansi(s, "36")
@@ -107,7 +108,7 @@ def diff_solutions(solutions_by_commit: dict[str, dict[tuple[int, int], str]]) -
     for commit_hash, solutions in solutions_by_commit.items():
         if set(solutions.keys()) != set(first_solutions.keys()):
             print(
-                f"Different set of solutions between commits {first_commit_hash} and {commit_hash}!?"
+                f"Different set of solutions between commits {first_commit_hash} and {commit_hash}!?",
             )
             return False
 
@@ -123,7 +124,7 @@ def diff_solutions(solutions_by_commit: dict[str, dict[tuple[int, int], str]]) -
                         fromfile=f"{y}/{d}: commit {first_commit_hash}",
                         tofile=f"{y}/{d}: commit {commit_hash}",
                         lineterm="",
-                    )
+                    ),
                 )
                 if diff:
                     print("\n".join(color_diff(diff)))
@@ -205,7 +206,7 @@ def two_binaries(
 
 def print_timing_diff(db: sqlite3.Connection, run_id: int) -> None:
     commits = db.execute(
-        "SELECT commit_hash FROM commit_runs WHERE run_id = ?", (run_id,)
+        "SELECT commit_hash FROM commit_runs WHERE run_id = ?", (run_id,),
     ).fetchall()
     commits = [c for (c,) in commits]
     assert len(commits) == 2
@@ -243,9 +244,9 @@ def print_timing_diff(db: sqlite3.Connection, run_id: int) -> None:
             df1["mean_ns"].alias("mean1_ns"),
             (df1["mean_ns"] - df0["mean_ns"]).alias("delta_mean_ns"),
             ((df1["mean_ns"] - df0["mean_ns"]) / df0["mean_ns"]).alias(
-                "delta_mean_rel"
+                "delta_mean_rel",
             ),
-        ]
+        ],
     )
 
     headers = (
@@ -291,7 +292,7 @@ def print_timing_diff(db: sqlite3.Connection, run_id: int) -> None:
                 mean1_ns / 1e3,
                 colorize(delta_mean_ns / 1e3, ".2f", mean_significant),
                 colorize(delta_mean_rel, "+.1%", mean_significant),
-            )
+            ),
         )
 
     if len(rows) > 1:
@@ -321,7 +322,7 @@ def print_timing_diff(db: sqlite3.Connection, run_id: int) -> None:
                     ".2f",
                     abs(
                         (delta["mean1_ns"].sum() - delta["mean0_ns"].sum())
-                        / delta["mean0_ns"].sum()
+                        / delta["mean0_ns"].sum(),
                     )
                     >= 0.1,
                 ),
@@ -331,11 +332,11 @@ def print_timing_diff(db: sqlite3.Connection, run_id: int) -> None:
                     "+.1%",
                     abs(
                         (delta["mean1_ns"].sum() - delta["mean0_ns"].sum())
-                        / delta["mean0_ns"].sum()
+                        / delta["mean0_ns"].sum(),
                     )
                     >= 0.1,
                 ),
-            )
+            ),
         )
 
     print(tabulate(rows, headers=headers))
@@ -392,7 +393,7 @@ def main() -> None:
             mean_ns INTEGER NOT NULL,
             FOREIGN KEY(commit_run_id) REFERENCES commit_runs(id)
         );
-        """
+        """,
         )
 
     with (
